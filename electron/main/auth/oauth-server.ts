@@ -26,8 +26,8 @@ export function createOAuthServer(): Promise<OAuthServer> {
         const error = url.searchParams.get('error');
 
         if (error) {
-          res.writeHead(400, { 'Content-Type': 'text/plain' });
-          res.end(`Authorization Failed: ${error}`);
+          res.writeHead(400, { 'Content-Type': 'text/html' });
+          res.end(`<h1>Authorization Failed</h1><p>${error}</p>`);
           if (callbackResolve) {
             callbackResolve({ code: '', state: '' });
           }
