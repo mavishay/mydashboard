@@ -9,21 +9,36 @@ const N8nStatusResponseSchema = z.object({
 
 const N8nActionResponseSchema = z.object({
   success: z.boolean(),
+  error: z.string().optional(),
 });
 
 export function registerN8nHandlers(ipcMain: IpcMain, composeDir: string): void {
   ipcMain.handle('n8n:status', async () => {
-    const status = await checkHealth();
-    return N8nStatusResponseSchema.parse({ status });
+    try {
+      const status = await checkHealth();
+      return N8nStatusResponseSchema.parse({ status });
+    } catch {
+      return N8nStatusResponseSchema.parse({ status: 'unknown' });
+    }
   });
 
   ipcMain.handle('n8n:start', async () => {
-    await composeUp(composeDir);
-    return N8nActionResponseSchema.parse({ success: true });
+    try {
+      await composeUp(composeDir);
+      return N8nActionResponseSchema.parse({ success: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return N8nActionResponseSchema.parse({ success: false, error: message });
+    }
   });
 
   ipcMain.handle('n8n:stop', async () => {
-    await composeDown(composeDir);
-    return N8nActionResponseSchema.parse({ success: true });
+    try {
+      await composeDown(composeDir);
+      return N8nActionResponseSchema.parse({ success: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return N8nActionResponseSchema.parse({ success: false, error: message });
+    }
   });
 }

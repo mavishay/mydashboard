@@ -25,6 +25,8 @@ export function startHealthPoller(
   onStatusChange: (status: HealthStatus) => void,
   intervalMs: number = 30000
 ): NodeJS.Timeout {
+  checkHealth().then(onStatusChange);
+
   return setInterval(async () => {
     const status = await checkHealth();
     onStatusChange(status);

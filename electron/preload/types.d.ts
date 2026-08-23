@@ -14,8 +14,8 @@ declare global {
     };
     n8n: {
       status: () => Promise<{ status: string }>;
-      start: () => Promise<{ success: boolean }>;
-      stop: () => Promise<{ success: boolean }>;
+      start: () => Promise<{ success: boolean; error?: string }>;
+      stop: () => Promise<{ success: boolean; error?: string }>;
       onHealth: (callback: (status: string) => void) => void;
     };
   }

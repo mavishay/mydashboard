@@ -10,8 +10,14 @@ import { startHealthPoller } from './docker/health';
 let mainWindow: BrowserWindow | null = null;
 let db: Database.Database | null = null;
 let healthPoller: NodeJS.Timeout | null = null;
+let isQuitting = false;
 
-const COMPOSE_DIR = join(__dirname, '../../..');
+function getComposeDir(): string {
+  if (is.dev) {
+    return join(__dirname, '../../..');
+  }
+  return join(process.resourcesPath, 'app');
+}
 
 function createWindow(): BrowserWindow {
   mainWindow = new BrowserWindow({
@@ -49,10 +55,11 @@ function createWindow(): BrowserWindow {
 
 app.whenReady().then(async () => {
   db = initializeDatabase();
-  registerIpcHandlers(db, () => mainWindow, () => app.quit());
+  const composeDir = getComposeDir();
+  registerIpcHandlers(db, () => mainWindow, () => app.quit(), composeDir);
 
   try {
-    await composeUp(COMPOSE_DIR);
+    await composeUp(composeDir);
     healthPoller = startHealthPoller((status) => {
       mainWindow?.webContents.send('n8n:health', status);
     });
@@ -69,17 +76,25 @@ app.whenReady().then(async () => {
   });
 });
 
-app.on('will-quit', async () => {
+app.on('before-quit', () => {
+  isQuitting = true;
+});
+
+app.on('will-quit', (e) => {
+  if (!isQuitting) {
+    e.preventDefault();
+    return;
+  }
+
   if (healthPoller) {
     clearInterval(healthPoller);
     healthPoller = null;
   }
 
-  try {
-    await composeDown(COMPOSE_DIR);
-  } catch (err) {
+  const composeDir = getComposeDir();
+  composeDown(composeDir).catch((err) => {
     console.error('Failed to stop n8n sidecar:', err);
-  }
+  });
 
   if (db) {
     db.close();

@@ -213,7 +213,14 @@ import { z } from 'zod';
 import { checkHealth } from '../docker/health';
 import { composeUp, composeDown } from '../docker/compose';
 
-const N8nStatusSchema = z.object({});
+const N8nStatusResponseSchema = z.object({
+  status: z.enum(['healthy', 'unhealthy', 'starting', 'unknown']),
+});
+
+const N8nActionResponseSchema = z.object({
+  success: z.boolean(),
+  error: z.string().optional(),
+});
 
 export function registerN8nHandlers(ipcMain: IpcMain, composeDir: string): void {
   ipcMain.handle('n8n:status', async () => {

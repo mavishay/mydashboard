@@ -43,8 +43,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   n8n: {
     status: () => gatedInvoke('n8n:status') as Promise<{ status: string }>,
-    start: () => gatedInvoke('n8n:start') as Promise<{ success: boolean }>,
-    stop: () => gatedInvoke('n8n:stop') as Promise<{ success: boolean }>,
+    start: () => gatedInvoke('n8n:start') as Promise<{ success: boolean; error?: string }>,
+    stop: () => gatedInvoke('n8n:stop') as Promise<{ success: boolean; error?: string }>,
     onHealth: (callback: (status: string) => void) => gatedOn('n8n:health', callback),
   },
 });

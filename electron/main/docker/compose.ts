@@ -13,7 +13,7 @@ export async function composeUp(composeDir: string): Promise<void> {
 }
 
 export async function composeDown(composeDir: string): Promise<void> {
-  await execFileAsync('docker-compose', ['-f', COMPOSE_FILE, 'down'], {
+  await execFileAsync('docker-compose', ['-f', COMPOSE_FILE, 'down', '--remove-orphans'], {
     cwd: composeDir,
   });
 }

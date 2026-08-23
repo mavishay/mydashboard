@@ -32,4 +32,3 @@ volumes:
 networks:
   n8n_internal:
     driver: bridge
-    internal: true
