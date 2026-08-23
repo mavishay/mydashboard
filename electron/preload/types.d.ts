@@ -12,6 +12,12 @@ declare global {
       quit: () => Promise<void>;
       onQuit: (callback: () => void) => void;
     };
+    n8n: {
+      status: () => Promise<{ status: string }>;
+      start: () => Promise<{ success: boolean; error?: string }>;
+      stop: () => Promise<{ success: boolean; error?: string }>;
+      onHealth: (callback: (status: string) => void) => void;
+    };
   }
 
   interface Window {

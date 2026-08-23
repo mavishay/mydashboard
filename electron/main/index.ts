@@ -4,9 +4,21 @@ import { is } from '@electron-toolkit/utils';
 import type Database from 'better-sqlite3';
 import { initializeDatabase } from './db';
 import { registerIpcHandlers } from './ipc';
+import { composeUp, composeDown } from './docker/compose';
+import { startHealthPoller } from './docker/health';
 
 let mainWindow: BrowserWindow | null = null;
 let db: Database.Database | null = null;
+let healthPoller: NodeJS.Timeout | null = null;
+let isQuitting = false;
+
+function getComposeDir(): string {
+  if (is.dev) {
+    return join(__dirname, '../../..');
+  }
+  const appPath = app.getAppPath();
+  return join(appPath, '..');
+}
 
 function createWindow(): BrowserWindow {
   mainWindow = new BrowserWindow({
@@ -42,9 +54,19 @@ function createWindow(): BrowserWindow {
   return mainWindow;
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   db = initializeDatabase();
-  registerIpcHandlers(db, () => mainWindow, () => app.quit());
+  const composeDir = getComposeDir();
+  registerIpcHandlers(db, () => mainWindow, () => app.quit(), composeDir);
+
+  try {
+    await composeUp(composeDir);
+    healthPoller = startHealthPoller((status) => {
+      mainWindow?.webContents.send('n8n:health', status);
+    });
+  } catch (err) {
+    console.error('Failed to start n8n sidecar:', err);
+  }
 
   createWindow();
 
@@ -55,7 +77,26 @@ app.whenReady().then(() => {
   });
 });
 
-app.on('will-quit', () => {
+app.on('before-quit', () => {
+  isQuitting = true;
+});
+
+app.on('will-quit', (e) => {
+  if (!isQuitting) {
+    e.preventDefault();
+    return;
+  }
+
+  if (healthPoller) {
+    clearInterval(healthPoller);
+    healthPoller = null;
+  }
+
+  const composeDir = getComposeDir();
+  composeDown(composeDir).catch((err) => {
+    console.error('Failed to stop n8n sidecar:', err);
+  });
+
   if (db) {
     db.close();
     db = null;
