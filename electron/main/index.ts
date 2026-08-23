@@ -16,7 +16,8 @@ function getComposeDir(): string {
   if (is.dev) {
     return join(__dirname, '../../..');
   }
-  return join(process.resourcesPath, 'app');
+  const appPath = app.getAppPath();
+  return join(appPath, '..');
 }
 
 function createWindow(): BrowserWindow {
