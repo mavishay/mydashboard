@@ -1,0 +1,38 @@
+{
+  "version": "1.0",
+  "phase": "completed",
+  "feature_areas": [
+    {
+      "id": "system",
+      "name": "System",
+      "pdrs": ["PDR-001", "PDR-002", "PDR-003", "PDR-004"],
+      "dag": ["document-info", "executive-summary", "overview", "problem", "market-opportunity", "goals", "metrics", "personas", "requirements", "nfrs", "out-of-scope", "risks", "investment", "roadmap", "gtm", "pdr-summary"],
+      "progress": {"all": "completed"}
+    },
+    {
+      "id": "core",
+      "name": "Core",
+      "pdrs": ["PDR-005", "PDR-006"],
+      "dag": ["document-info", "executive-summary", "overview", "problem", "market-opportunity", "goals", "metrics", "personas", "requirements", "nfrs", "out-of-scope", "risks", "investment", "roadmap", "gtm", "pdr-summary"],
+      "progress": {"all": "completed"}
+    },
+    {
+      "id": "business",
+      "name": "Business",
+      "pdrs": ["PDR-007"],
+      "dag": ["document-info", "executive-summary", "overview", "problem", "market-opportunity", "goals", "metrics", "personas", "requirements", "nfrs", "out-of-scope", "risks", "investment", "roadmap", "gtm", "pdr-summary"],
+      "progress": {"all": "completed"}
+    }
+  ],
+  "checkpoint": {
+    "enabled": true,
+    "after_section": "requirements",
+    "status": "approved"
+  },
+  "pdr_lifecycle": {
+    "pdrs_promoted": 7,
+    "memory_pdr_written": true,
+    "drafts_retained": false,
+    "drafts_reason": "All PDRs were Accepted; all promoted to memory"
+  }
+}
