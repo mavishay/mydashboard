@@ -1,0 +1,78 @@
+{
+  "feature": "electron-shell-sqlite-setup",
+  "route": "spec",
+  "execution": "sync",
+  "supervision": "gated",
+  "brief": {
+    "goal": "Set up the Electron desktop application shell with embedded SQLite database, enforcing contextBridge/IPC security rules and basic window management.",
+    "constraints": "Electron + Node.js stack (PRD PDR-001); SQLite with WAL mode for local data storage; contextBridge and IPC handler security rules (team security directives); Phase 1 of the Alpha milestone roadmap; Must pass Electron security best practices (no node integration in renderer)",
+    "non_goals": "No email connectors (Gmail/M365); No AI triage engine; No n8n Docker sidecar; No LAN dashboard server",
+    "success_criteria": [
+      "Electron app launches and displays a dashboard UI",
+      "SQLite database initialized on first run with WAL mode",
+      "contextBridge and IPC handler security rules enforced",
+      "Basic window management (minimize, maximize, close) works"
+    ]
+  },
+  "steps": [
+    {
+      "id": "brainstorm",
+      "phase": "brainstorm",
+      "tier": "strong",
+      "prompt": "Explore approaches and tradeoffs for the goal below. Consider multiple viable solutions and present a recommended design.\n\nSet up the Electron desktop application shell with embedded SQLite database, enforcing contextBridge/IPC security rules and basic window management.",
+      "status": "pending"
+    },
+    {
+      "id": "specify",
+      "phase": "specify",
+      "tier": "strong",
+      "prompt": "Write a feature specification for the goal below. Include requirements, constraints, and measurable success criteria.\n\nSet up the Electron desktop application shell with embedded SQLite database, enforcing contextBridge/IPC security rules and basic window management.",
+      "status": "pending"
+    },
+    {
+      "id": "plan",
+      "phase": "plan",
+      "tier": "strong",
+      "prompt": "Break down the specification into an implementation plan with ordered, verifiable tasks.",
+      "status": "pending"
+    },
+    {
+      "id": "tasks",
+      "phase": "tasks",
+      "tier": "fast",
+      "prompt": "Generate the detailed task list from the plan — each task must have exact file paths and verification steps.",
+      "status": "pending"
+    },
+    {
+      "id": "analyze",
+      "phase": "analyze",
+      "tier": "fast",
+      "prompt": "Adversarially review the plan before implementation. Challenge every non-trivial decision.",
+      "status": "pending"
+    },
+    {
+      "id": "implement",
+      "phase": "implement",
+      "tier": "strong",
+      "prompt": "Implement the next pending task from the plan. Follow test-driven practices.",
+      "status": "pending"
+    },
+    {
+      "id": "converge",
+      "phase": "converge",
+      "tier": "fast",
+      "prompt": "Review the implementation against the specification and success criteria. Verify independently — you are the checker, not the maker.",
+      "status": "pending"
+    }
+  ],
+  "discovered": {
+    "skills_dirs": [],
+    "commands_dirs": [],
+    "local_skills": []
+  },
+  "completed_steps": [],
+  "consecutive_tasks_appended": 0,
+  "consecutive_score_regressions": 0,
+  "spec_corrections": 0,
+  "iteration": 0
+}
