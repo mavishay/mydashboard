@@ -6,12 +6,14 @@ const ALLOWED_INVOKE = new Set([
   'window:close',
   'window:isMaximized',
   'app:quit',
+  'n8n:status',
+  'n8n:start',
+  'n8n:stop',
 ] as const);
-
-const ALLOWED_SEND = new Set([] as const);
 
 const ALLOWED_ON = new Set([
   'app:quit',
+  'n8n:health',
 ] as const);
 
 function gatedInvoke(channel: string, ...args: unknown[]): Promise<unknown> {
@@ -19,13 +21,6 @@ function gatedInvoke(channel: string, ...args: unknown[]): Promise<unknown> {
     throw new Error(`Blocked IPC invoke: ${channel}`);
   }
   return ipcRenderer.invoke(channel, ...args);
-}
-
-function gatedSend(channel: string, ...args: unknown[]): void {
-  if (!ALLOWED_SEND.has(channel as typeof ALLOWED_SEND extends Set<infer T> ? T : never)) {
-    throw new Error(`Blocked IPC send: ${channel}`);
-  }
-  ipcRenderer.send(channel, ...args);
 }
 
 function gatedOn(channel: string, callback: (...args: unknown[]) => void): void {
@@ -45,5 +40,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   app: {
     quit: () => gatedInvoke('app:quit'),
     onQuit: (callback: () => void) => gatedOn('app:quit', callback),
+  },
+  n8n: {
+    status: () => gatedInvoke('n8n:status') as Promise<{ status: string }>,
+    start: () => gatedInvoke('n8n:start') as Promise<{ success: boolean }>,
+    stop: () => gatedInvoke('n8n:stop') as Promise<{ success: boolean }>,
+    onHealth: (callback: (status: string) => void) => gatedOn('n8n:health', callback),
   },
 });
