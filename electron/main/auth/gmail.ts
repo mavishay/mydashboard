@@ -1,5 +1,5 @@
 import { safeStorage } from 'electron';
-import { randomBytes, createHash } from 'crypto';
+import { randomBytes, createHash, timingSafeEqual } from 'crypto';
 import type Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -23,7 +23,9 @@ export function generateState(): string {
 export function validateState(received: string, expected: string): boolean {
   const receivedHash = createHash('sha256').update(received).digest('hex');
   const expectedHash = createHash('sha256').update(expected).digest('hex');
-  return receivedHash === expectedHash;
+  const receivedBuf = Buffer.from(receivedHash, 'hex');
+  const expectedBuf = Buffer.from(expectedHash, 'hex');
+  return timingSafeEqual(receivedBuf, expectedBuf);
 }
 
 export function encryptToken(token: string): Buffer {
