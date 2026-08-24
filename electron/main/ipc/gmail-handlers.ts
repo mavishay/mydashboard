@@ -5,7 +5,6 @@ import {
   generateState,
   validateState,
   storeTokens,
-  retrieveTokens,
   createAccount,
   listAccounts,
   deleteAccount,
@@ -16,11 +15,6 @@ const GMAIL_SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/gmail.labels',
 ];
-
-interface ConnectGmailRequest {
-  clientId: string;
-  clientSecret: string;
-}
 
 interface AccountResponse {
   id: string;
@@ -34,8 +28,14 @@ export function registerGmailHandlers(
 ): void {
   ipcMain.handle(
     'gmail:connect',
-    async (_event, request: ConnectGmailRequest): Promise<AccountResponse> => {
-      const { clientId, clientSecret } = request;
+    async (): Promise<AccountResponse> => {
+      const clientId = process.env.GOOGLE_CLIENT_ID;
+      const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+      if (!clientId || !clientSecret) {
+        throw new Error(
+          'Google OAuth credentials not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.'
+        );
+      }
 
       const oauthServer = await createOAuthServer();
       const state = generateState();
@@ -105,16 +105,6 @@ export function registerGmailHandlers(
         email: a.email,
         displayName: a.display_name,
       }));
-    }
-  );
-
-  ipcMain.handle(
-    'gmail:getToken',
-    async (_event, accountId: string): Promise<{ accessToken: string } | null> => {
-      const tokens = retrieveTokens(db, accountId);
-      if (!tokens) return null;
-
-      return { accessToken: tokens.access_token };
     }
   );
 }
