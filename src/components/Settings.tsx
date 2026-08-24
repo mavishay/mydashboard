@@ -1,0 +1,246 @@
+import { useState, useEffect, useCallback } from 'react';
+
+type Provider = 'openai' | 'anthropic' | 'litellm';
+
+interface ApiKeyMeta {
+  id: string;
+  provider: Provider;
+  label: string;
+  baseUrl?: string;
+  createdAt: string;
+}
+
+const PROVIDER_LABELS: Record<Provider, string> = {
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  litellm: 'liteLLM (Custom)',
+};
+
+function maskKey(label: string, provider: string): string {
+  return `${provider.charAt(0).toUpperCase()}${provider.slice(1)}: ${label.slice(0, 3)}***`;
+}
+
+export function Settings({ onBack }: { onBack: () => void }) {
+  const [keys, setKeys] = useState<ApiKeyMeta[]>([]);
+  const [provider, setProvider] = useState<Provider>('openai');
+  const [label, setLabel] = useState('');
+  const [apiKey, setApiKey] = useState('');
+  const [showKey, setShowKey] = useState(false);
+  const [baseUrl, setBaseUrl] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const loadKeys = useCallback(async () => {
+    try {
+      const list = await window.electronAPI.apikey.list();
+      setKeys(list);
+    } catch (err) {
+      console.error('Failed to load API keys:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadKeys();
+  }, [loadKeys]);
+
+  const handleSave = async () => {
+    setError(null);
+    setSuccess(false);
+    setSaving(true);
+
+    try {
+      await window.electronAPI.apikey.save({
+        provider,
+        label: label || `${PROVIDER_LABELS[provider]} Key`,
+        apiKey,
+        baseUrl: provider === 'litellm' ? baseUrl : undefined,
+      });
+      setSuccess(true);
+      setLabel('');
+      setApiKey('');
+      setBaseUrl('');
+      setShowKey(false);
+      await loadKeys();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save API key');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (keyId: string) => {
+    try {
+      await window.electronAPI.apikey.delete(keyId);
+      await loadKeys();
+    } catch (err) {
+      console.error('Failed to delete API key:', err);
+    }
+  };
+
+  return (
+    <div style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif', maxWidth: '640px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+        <button
+          onClick={onBack}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '1.2rem',
+            padding: '0.25rem',
+          }}
+        >
+          ← Back
+        </button>
+        <h1 style={{ margin: 0, fontSize: '1.5rem' }}>API Key Settings</h1>
+      </div>
+
+      <section style={{ marginBottom: '2rem' }}>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Add API Key</h2>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+              Provider
+            </label>
+            <select
+              value={provider}
+              onChange={(e) => setProvider(e.target.value as Provider)}
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+            >
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="litellm">liteLLM (Custom URL)</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+              Label
+            </label>
+            <input
+              type="text"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder={`${PROVIDER_LABELS[provider]} Key`}
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+            />
+          </div>
+
+          {provider === 'litellm' && (
+            <div>
+              <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                Base URL
+              </label>
+              <input
+                type="url"
+                value={baseUrl}
+                onChange={(e) => setBaseUrl(e.target.value)}
+                placeholder="http://localhost:4000"
+                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+              />
+            </div>
+          )}
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+              API Key
+            </label>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <input
+                type={showKey ? 'text' : 'password'}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="sk-..."
+                style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowKey(!showKey)}
+                style={{ padding: '0.5rem 0.75rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f5f5f5', cursor: 'pointer' }}
+              >
+                {showKey ? 'Hide' : 'Show'}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div style={{ color: '#d32f2f', fontSize: '0.875rem', padding: '0.5rem', background: '#ffeaea', borderRadius: '4px' }}>
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div style={{ color: '#2e7d32', fontSize: '0.875rem', padding: '0.5rem', background: '#e8f5e9', borderRadius: '4px' }}>
+              API key saved and validated successfully.
+            </div>
+          )}
+
+          <button
+            onClick={handleSave}
+            disabled={saving || !apiKey}
+            style={{
+              padding: '0.625rem 1.25rem',
+              borderRadius: '4px',
+              border: 'none',
+              background: saving || !apiKey ? '#ccc' : '#1976d2',
+              color: '#fff',
+              cursor: saving || !apiKey ? 'not-allowed' : 'pointer',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              alignSelf: 'flex-start',
+            }}
+          >
+            {saving ? 'Validating & Saving...' : 'Save API Key'}
+          </button>
+        </div>
+      </section>
+
+      <section>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Saved API Keys</h2>
+        {keys.length === 0 ? (
+          <p style={{ color: '#666', fontSize: '0.875rem' }}>No API keys configured.</p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid #eee' }}>
+                <th style={{ textAlign: 'left', padding: '0.5rem' }}>Label</th>
+                <th style={{ textAlign: 'left', padding: '0.5rem' }}>Provider</th>
+                <th style={{ textAlign: 'left', padding: '0.5rem' }}>Key</th>
+                <th style={{ textAlign: 'left', padding: '0.5rem' }}>Base URL</th>
+                <th style={{ padding: '0.5rem' }} />
+              </tr>
+            </thead>
+            <tbody>
+              {keys.map((key) => (
+                <tr key={key.id} style={{ borderBottom: '1px solid #eee' }}>
+                  <td style={{ padding: '0.5rem' }}>{key.label}</td>
+                  <td style={{ padding: '0.5rem' }}>{PROVIDER_LABELS[key.provider]}</td>
+                  <td style={{ padding: '0.5rem', fontFamily: 'monospace' }}>{maskKey(key.label, key.provider)}</td>
+                  <td style={{ padding: '0.5rem', fontFamily: 'monospace' }}>{key.baseUrl ?? '—'}</td>
+                  <td style={{ padding: '0.5rem', textAlign: 'right' }}>
+                    <button
+                      onClick={() => handleDelete(key.id)}
+                      style={{
+                        background: 'none',
+                        border: '1px solid #d32f2f',
+                        color: '#d32f2f',
+                        borderRadius: '4px',
+                        padding: '0.25rem 0.5rem',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+    </div>
+  );
+}

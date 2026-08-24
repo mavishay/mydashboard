@@ -6,6 +6,7 @@ import { registerGmailHandlers } from './gmail-handlers';
 import { registerN8nHandlers } from './n8n-handlers';
 import { registerLanHandlers } from './lan-handlers';
 import type { LanServerInstance } from '../server/index';
+import { registerApiKeyHandlers } from './api-key-handlers';
 
 export function registerIpcHandlers(
   db: Database.Database,
@@ -17,6 +18,7 @@ export function registerIpcHandlers(
   registerWindowHandlers(ipcMain, getWindow, quit);
   registerGmailHandlers(ipcMain, db);
   registerN8nHandlers(ipcMain, composeDir);
+  registerApiKeyHandlers(ipcMain, db);
   if (lanServer) {
     registerLanHandlers(ipcMain, lanServer);
   }

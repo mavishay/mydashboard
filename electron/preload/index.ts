@@ -19,6 +19,10 @@ const ALLOWED_INVOKE = new Set([
   'lan:getToken',
   'lan:regenerateToken',
   'lan:getConnectedDevices',
+  'apikey:save',
+  'apikey:list',
+  'apikey:delete',
+  'apikey:validate',
 ] as const);
 
 const ALLOWED_ON = new Set([
@@ -76,5 +80,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getConnectedDevices: () => gatedInvoke('lan:getConnectedDevices') as Promise<{ count: number }>,
     onDeviceConnected: (callback: (data: unknown) => void) => gatedOn('lan:deviceConnected', callback),
     onDeviceDisconnected: (callback: (data: unknown) => void) => gatedOn('lan:deviceDisconnected', callback),
+  },
+  apikey: {
+    save: (data: { provider: string; label: string; apiKey: string; baseUrl?: string }) =>
+      gatedInvoke('apikey:save', data) as Promise<{ id: string; provider: string; label: string; baseUrl?: string; createdAt: string }>,
+    list: () =>
+      gatedInvoke('apikey:list') as Promise<{ id: string; provider: string; label: string; baseUrl?: string; createdAt: string }[]>,
+    delete: (keyId: string) =>
+      gatedInvoke('apikey:delete', { keyId }),
+    validate: (keyId: string) =>
+      gatedInvoke('apikey:validate', { keyId }) as Promise<{ valid: boolean; error?: string }>,
   },
 });
