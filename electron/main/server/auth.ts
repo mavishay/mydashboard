@@ -6,6 +6,9 @@ const TOKEN_CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1 to avoid
 const MAX_ATTEMPTS_PER_MINUTE = 5;
 const TOKEN_EXPIRY_DAYS = 3650;
 
+// In-memory storage for plaintext token (not persisted to database for security)
+let currentTokenPlaintext: string | null = null;
+
 export interface PairingToken {
   token: string;
   tokenHash: string;
@@ -43,19 +46,23 @@ export function storeToken(
   const salt = generateSalt();
   const tokenHash = hashToken(token, salt);
 
+  // Store only hash and salt in database (security: SEC-LAN-003)
   db.prepare(
-    'INSERT INTO pairing_tokens (token_hash, salt, token_plaintext) VALUES (?, ?, ?)'
-  ).run(tokenHash, salt, token);
+    'INSERT INTO pairing_tokens (token_hash, salt) VALUES (?, ?)'
+  ).run(tokenHash, salt);
+
+  // Store plaintext in memory only (for display purposes)
+  currentTokenPlaintext = token;
 
   return { tokenHash, salt };
 }
 
-export function getTokenFromDb(db: Database.Database): { tokenHash: string; salt: string; tokenPlaintext: string } | null {
+export function getTokenFromDb(db: Database.Database): { tokenHash: string; salt: string } | null {
   const row = db.prepare(
-    'SELECT token_hash, salt, token_plaintext FROM pairing_tokens ORDER BY id DESC LIMIT 1'
-  ).get() as { token_hash: string; salt: string; token_plaintext: string } | undefined;
+    'SELECT token_hash, salt FROM pairing_tokens ORDER BY id DESC LIMIT 1'
+  ).get() as { token_hash: string; salt: string } | undefined;
   if (!row) return null;
-  return { tokenHash: row.token_hash, salt: row.salt, tokenPlaintext: row.token_plaintext };
+  return { tokenHash: row.token_hash, salt: row.salt };
 }
 
 export function validateToken(
@@ -123,22 +130,28 @@ export function regenerateToken(db: Database.Database): string {
   const token = generateToken();
   storeToken(db, token);
 
+  // Update in-memory token
+  currentTokenPlaintext = token;
+
   return token;
 }
 
 export function ensureTokenExists(db: Database.Database): string {
-  const existing = getTokenFromDb(db);
-  if (existing) {
-    // For existing tokens without plaintext (pre-migration), generate and store a new one
-    if (!existing.tokenPlaintext) {
-      const token = generateToken();
-      db.prepare('UPDATE pairing_tokens SET token_plaintext = ? WHERE token_hash = ?')
-        .run(token, existing.tokenHash);
-      return token;
-    }
-    return existing.tokenPlaintext;
+  // Check if we already have a token in memory
+  if (currentTokenPlaintext) {
+    return currentTokenPlaintext;
   }
 
+  const existing = getTokenFromDb(db);
+  if (existing) {
+    // Token exists in database but not in memory (server restarted)
+    // We cannot recover the plaintext from the hash, so generate a new one
+    const token = generateToken();
+    storeToken(db, token);
+    return token;
+  }
+
+  // No token exists, generate and store a new one
   const token = generateToken();
   storeToken(db, token);
   return token;

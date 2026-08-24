@@ -1,7 +1,7 @@
 import type Database from 'better-sqlite3';
 import { getOrCreateCerts } from './tls.js';
 import { createLanServer, getLanUrl, type LanServer, type LanServerConfig } from './http-server.js';
-import { ensureTokenExists, getConnectedDeviceCount, generateToken, storeToken, getTokenFromDb } from './auth.js';
+import { ensureTokenExists, getConnectedDeviceCount, regenerateToken as authRegenerateToken } from './auth.js';
 
 export interface LanServerInstance {
   start: () => Promise<void>;
@@ -79,22 +79,11 @@ export function createLanServerInstance(
     },
 
     getToken(): string {
-      const stored = getTokenFromDb(db);
-      if (!stored || !stored.tokenPlaintext) {
-        // Fallback: regenerate if somehow missing
-        return ensureTokenExists(db);
-      }
-      return stored.tokenPlaintext;
+      return ensureTokenExists(db);
     },
 
     regenerateToken(): string {
-      // Delete existing sessions
-      db.prepare('DELETE FROM lan_sessions').run();
-      db.prepare('DELETE FROM pairing_tokens').run();
-
-      const token = generateToken();
-      storeToken(db, token);
-      return token;
+      return authRegenerateToken(db);
     },
 
     getConnectedDevices(): number {

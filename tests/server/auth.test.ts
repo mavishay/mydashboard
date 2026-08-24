@@ -6,7 +6,7 @@ vi.mock('electron', () => ({
 
 // Shared in-memory store for the mock db
 const sharedStore: {
-  pairing_tokens: Array<{ token_hash: string; salt: string; token_plaintext: string; id: number }>;
+  pairing_tokens: Array<{ token_hash: string; salt: string; id: number }>;
   lan_sessions: Array<{ session_token: string; expires_at: string; ip_address: string; id: number }>;
   token_attempts: Array<{ ip_address: string; attempted_at: string; id: number }>;
 } = {
@@ -20,21 +20,18 @@ function createMockDb() {
     prepare: vi.fn((sql: string) => {
       if (sql.includes('INSERT INTO pairing_tokens')) {
         return {
-          run: vi.fn((tokenHash: string, salt: string, tokenPlaintext: string) => {
-            sharedStore.pairing_tokens.push({ token_hash: tokenHash, salt, token_plaintext: tokenPlaintext, id: sharedStore.pairing_tokens.length + 1 });
+          run: vi.fn((tokenHash: string, salt: string) => {
+            sharedStore.pairing_tokens.push({ token_hash: tokenHash, salt, id: sharedStore.pairing_tokens.length + 1 });
           }),
         };
       }
-      if (sql.includes('SELECT token_hash, salt, token_plaintext FROM pairing_tokens')) {
+      if (sql.includes('SELECT token_hash, salt FROM pairing_tokens')) {
         return {
           get: vi.fn(() => {
             const last = sharedStore.pairing_tokens[sharedStore.pairing_tokens.length - 1];
-            return last ? { token_hash: last.token_hash, salt: last.salt, token_plaintext: last.token_plaintext } : undefined;
+            return last ? { token_hash: last.token_hash, salt: last.salt } : undefined;
           }),
         };
-      }
-      if (sql.includes('UPDATE pairing_tokens SET token_plaintext')) {
-        return { run: vi.fn() };
       }
       if (sql.includes('UPDATE pairing_tokens SET last_used_at')) {
         return { run: vi.fn() };
