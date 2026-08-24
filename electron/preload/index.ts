@@ -6,6 +6,10 @@ const ALLOWED_INVOKE = new Set([
   'window:close',
   'window:isMaximized',
   'app:quit',
+  'gmail:connect',
+  'gmail:disconnect',
+  'gmail:listAccounts',
+  'gmail:getToken',
 ] as const);
 
 const ALLOWED_SEND = new Set([] as const);
@@ -45,5 +49,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   app: {
     quit: () => gatedInvoke('app:quit'),
     onQuit: (callback: () => void) => gatedOn('app:quit', callback),
+  },
+  gmail: {
+    connect: (clientId: string, clientSecret: string) =>
+      gatedInvoke('gmail:connect', { clientId, clientSecret }),
+    disconnect: (accountId: string) =>
+      gatedInvoke('gmail:disconnect', accountId),
+    listAccounts: () => gatedInvoke('gmail:listAccounts'),
+    getToken: (accountId: string) =>
+      gatedInvoke('gmail:getToken', accountId),
   },
 });
