@@ -6,11 +6,13 @@ import { initializeDatabase } from './db';
 import { registerIpcHandlers } from './ipc';
 import { composeUp, composeDown } from './docker/compose';
 import { startHealthPoller } from './docker/health';
+import { createLanServerInstance, type LanServerInstance } from './server';
 
 let mainWindow: BrowserWindow | null = null;
 let db: Database.Database | null = null;
 let healthPoller: NodeJS.Timeout | null = null;
 let isQuitting = false;
+let lanServer: LanServerInstance | null = null;
 
 function getComposeDir(): string {
   if (is.dev) {
@@ -57,7 +59,14 @@ function createWindow(): BrowserWindow {
 app.whenReady().then(async () => {
   db = initializeDatabase();
   const composeDir = getComposeDir();
-  registerIpcHandlers(db, () => mainWindow, () => app.quit(), composeDir);
+
+  lanServer = createLanServerInstance(
+    db,
+    is.dev ? join(__dirname, '../../dist/renderer') : join(__dirname, '../renderer'),
+    app.getPath('userData')
+  );
+
+  registerIpcHandlers(db, () => mainWindow, () => app.quit(), composeDir, lanServer);
 
   try {
     await composeUp(composeDir);
@@ -66,6 +75,12 @@ app.whenReady().then(async () => {
     });
   } catch (err) {
     console.error('Failed to start n8n sidecar:', err);
+  }
+
+  try {
+    await lanServer.start();
+  } catch (err) {
+    console.error('Failed to start LAN server:', err);
   }
 
   createWindow();
@@ -96,6 +111,13 @@ app.on('will-quit', (e) => {
   composeDown(composeDir).catch((err) => {
     console.error('Failed to stop n8n sidecar:', err);
   });
+
+  if (lanServer) {
+    lanServer.stop().catch((err) => {
+      console.error('Failed to stop LAN server:', err);
+    });
+    lanServer = null;
+  }
 
   if (db) {
     db.close();
