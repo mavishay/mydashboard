@@ -1,6 +1,14 @@
 export {};
 
 declare global {
+  interface ApiKeyMeta {
+    id: string;
+    provider: 'openai' | 'anthropic' | 'litellm';
+    label: string;
+    baseUrl?: string;
+    createdAt: string;
+  }
+
   interface ElectronAPI {
     window: {
       minimize: () => Promise<void>;
@@ -27,6 +35,17 @@ declare global {
       start: () => Promise<{ success: boolean; error?: string }>;
       stop: () => Promise<{ success: boolean; error?: string }>;
       onHealth: (callback: (status: string) => void) => void;
+    };
+    apikey: {
+      save: (data: {
+        provider: 'openai' | 'anthropic' | 'litellm';
+        label: string;
+        apiKey: string;
+        baseUrl?: string;
+      }) => Promise<ApiKeyMeta>;
+      list: () => Promise<ApiKeyMeta[]>;
+      delete: (keyId: string) => Promise<void>;
+      validate: (keyId: string) => Promise<{ valid: boolean; error?: string }>;
     };
   }
 
