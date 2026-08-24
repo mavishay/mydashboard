@@ -9,6 +9,7 @@ const ALLOWED_INVOKE = new Set([
   'gmail:connect',
   'gmail:disconnect',
   'gmail:listAccounts',
+  'gmail:getToken',
 ] as const);
 
 const ALLOWED_SEND = new Set([] as const);
@@ -54,5 +55,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     disconnect: (accountId: string) =>
       gatedInvoke('gmail:disconnect', accountId),
     listAccounts: () => gatedInvoke('gmail:listAccounts'),
+    getToken: (accountId: string) =>
+      gatedInvoke('gmail:getToken', accountId),
   },
 });

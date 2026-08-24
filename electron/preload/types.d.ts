@@ -18,6 +18,9 @@ declare global {
       listAccounts: () => Promise<
         { id: string; email: string; displayName: string }[]
       >;
+      getToken: (
+        accountId: string
+      ) => Promise<{ accessToken: string } | null>;
     };
   }
 
