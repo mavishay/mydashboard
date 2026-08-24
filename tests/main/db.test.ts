@@ -47,6 +47,7 @@ describe('initializeDatabase', () => {
     expect(names).toContain('accounts');
     expect(names).toContain('emails');
     expect(names).toContain('tasks');
+    expect(names).toContain('oauth_tokens');
     expect(names).toContain('schema_migrations');
     db.close();
   });

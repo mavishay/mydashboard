@@ -12,6 +12,16 @@ declare global {
       quit: () => Promise<void>;
       onQuit: (callback: () => void) => void;
     };
+    gmail: {
+      connect: () => Promise<{ id: string; email: string; displayName: string }>;
+      disconnect: (accountId: string) => Promise<void>;
+      listAccounts: () => Promise<
+        { id: string; email: string; displayName: string }[]
+      >;
+      getToken: (
+        accountId: string
+      ) => Promise<{ accessToken: string } | null>;
+    };
     n8n: {
       status: () => Promise<{ status: string }>;
       start: () => Promise<{ success: boolean; error?: string }>;

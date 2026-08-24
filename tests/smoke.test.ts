@@ -44,6 +44,10 @@ describe('app smoke test', () => {
     expect(registeredChannels).toContain('window:maximize');
     expect(registeredChannels).toContain('window:close');
     expect(registeredChannels).toContain('window:isMaximized');
+    expect(registeredChannels).toContain('gmail:connect');
+    expect(registeredChannels).toContain('gmail:disconnect');
+    expect(registeredChannels).toContain('gmail:listAccounts');
+    expect(registeredChannels).toContain('gmail:getToken');
   });
 
   it('preload exposes electronAPI with window methods', async () => {

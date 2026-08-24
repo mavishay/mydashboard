@@ -45,3 +45,4 @@ out/
 
 # Misc
 .cache/
+.worktrees/

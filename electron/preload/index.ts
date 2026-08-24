@@ -6,6 +6,10 @@ const ALLOWED_INVOKE = new Set([
   'window:close',
   'window:isMaximized',
   'app:quit',
+  'gmail:connect',
+  'gmail:disconnect',
+  'gmail:listAccounts',
+  'gmail:getToken',
   'n8n:status',
   'n8n:start',
   'n8n:stop',
@@ -40,6 +44,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   app: {
     quit: () => gatedInvoke('app:quit'),
     onQuit: (callback: () => void) => gatedOn('app:quit', callback),
+  },
+  gmail: {
+    connect: () => gatedInvoke('gmail:connect'),
+    disconnect: (accountId: string) =>
+      gatedInvoke('gmail:disconnect', accountId),
+    listAccounts: () => gatedInvoke('gmail:listAccounts'),
+    getToken: (accountId: string) =>
+      gatedInvoke('gmail:getToken', accountId),
   },
   n8n: {
     status: () => gatedInvoke('n8n:status') as Promise<{ status: string }>,
