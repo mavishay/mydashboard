@@ -2,14 +2,16 @@ import Database, { Database as DatabaseType } from 'better-sqlite3';
 import { app } from 'electron';
 import { join } from 'path';
 
-const CURRENT_SCHEMA_VERSION = 2;
+const CURRENT_SCHEMA_VERSION = 3;
 
 import migration001 from './migrations/001-initial.sql?raw';
 import migration002 from './migrations/002-gmail-oauth.sql?raw';
+import migration003 from './migrations/003-api-keys.sql?raw';
 
 const MIGRATIONS: Record<number, string> = {
   1: migration001,
   2: migration002,
+  3: migration003,
 };
 
 export function initializeDatabase(

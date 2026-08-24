@@ -13,6 +13,10 @@ const ALLOWED_INVOKE = new Set([
   'n8n:status',
   'n8n:start',
   'n8n:stop',
+  'apikey:save',
+  'apikey:list',
+  'apikey:delete',
+  'apikey:validate',
 ] as const);
 
 const ALLOWED_ON = new Set([
@@ -58,5 +62,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
     start: () => gatedInvoke('n8n:start') as Promise<{ success: boolean; error?: string }>,
     stop: () => gatedInvoke('n8n:stop') as Promise<{ success: boolean; error?: string }>,
     onHealth: (callback: (status: string) => void) => gatedOn('n8n:health', callback),
+  },
+  apikey: {
+    save: (data: { provider: string; label: string; apiKey: string; baseUrl?: string }) =>
+      gatedInvoke('apikey:save', data) as Promise<{ id: string; provider: string; label: string; baseUrl?: string; createdAt: string }>,
+    list: () =>
+      gatedInvoke('apikey:list') as Promise<{ id: string; provider: string; label: string; baseUrl?: string; createdAt: string }[]>,
+    delete: (keyId: string) =>
+      gatedInvoke('apikey:delete', { keyId }),
+    validate: (keyId: string) =>
+      gatedInvoke('apikey:validate', { keyId }) as Promise<{ valid: boolean; error?: string }>,
   },
 });
