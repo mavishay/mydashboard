@@ -1,0 +1,64 @@
+{
+  "feature": "n8n-docker-sidecar",
+  "route": "change",
+  "execution": "sync",
+  "supervision": "gated",
+  "brief": {
+    "goal": "Add n8n as a hidden Docker sidecar to the Electron productivity dashboard, providing workflow automation, polling, and health-check monitoring.",
+    "constraints": "Electron desktop app (existing project), n8n runs as Docker sidecar hidden from user (REQ-020), health-check endpoint monitored by app (REQ-023), auto-restart on failure, Alpha milestone (PDR-003)",
+    "non_goals": "Exposing n8n editor UI to users, n8n workflow customization UI in the Electron app, external Docker orchestration (Kubernetes, Swarm), Phase 2+ features (M365 connector, LAN dashboard)",
+    "success_criteria": [
+      "docker-compose.yml with n8n service exists and is valid",
+      "n8n editor is NOT exposed (no port mapping to host)",
+      "Health-check endpoint is monitored by the Electron main process",
+      "Container auto-restarts on failure (restart: unless-stopped)",
+      "Integration with existing Electron app via IPC for status reporting"
+    ]
+  },
+  "steps": [
+    {
+      "id": "specify",
+      "phase": "specify",
+      "tier": "strong",
+      "prompt": "Write a feature specification for the n8n Docker sidecar",
+      "status": "completed"
+    },
+    {
+      "id": "implement",
+      "phase": "implement",
+      "tier": "strong",
+      "prompt": "Create docker-compose.yml, n8n service config, health-check module, IPC handlers",
+      "status": "completed"
+    },
+    {
+      "id": "converge",
+      "phase": "converge",
+      "tier": "fast",
+      "prompt": "Verify implementation against spec and acceptance criteria",
+      "status": "completed"
+    }
+  ],
+  "completed_steps": ["specify", "implement", "converge"],
+  "step_results": {
+    "specify": {
+      "output": "Feature specification written to specs/002-n8n-docker-sidecar/spec.md covering docker-compose.yml, health checks, IPC handlers, and security requirements.",
+      "confidence": "HIGH"
+    },
+    "implement": {
+      "output": "Created docker-compose.yml, Docker compose/health modules, n8n IPC handlers, updated main process lifecycle, and preload allowlist.",
+      "confidence": "HIGH"
+    },
+    "converge": {
+      "output": "Verified all acceptance criteria: docker-compose.yml valid, n8n not exposed to host, health check configured, auto-restart policy set, IPC integration complete. Lint and typecheck pass.",
+      "confidence": "HIGH"
+    }
+  },
+  "discovered": {
+    "skills_dirs": [],
+    "commands_dirs": [],
+    "local_skills": []
+  },
+  "spec_corrections": 0,
+  "consecutive_tasks_appended": 0,
+  "consecutive_score_regressions": 0
+}

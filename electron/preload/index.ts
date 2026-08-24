@@ -10,12 +10,14 @@ const ALLOWED_INVOKE = new Set([
   'gmail:disconnect',
   'gmail:listAccounts',
   'gmail:getToken',
+  'n8n:status',
+  'n8n:start',
+  'n8n:stop',
 ] as const);
-
-const ALLOWED_SEND = new Set([] as const);
 
 const ALLOWED_ON = new Set([
   'app:quit',
+  'n8n:health',
 ] as const);
 
 function gatedInvoke(channel: string, ...args: unknown[]): Promise<unknown> {
@@ -23,13 +25,6 @@ function gatedInvoke(channel: string, ...args: unknown[]): Promise<unknown> {
     throw new Error(`Blocked IPC invoke: ${channel}`);
   }
   return ipcRenderer.invoke(channel, ...args);
-}
-
-function gatedSend(channel: string, ...args: unknown[]): void {
-  if (!ALLOWED_SEND.has(channel as typeof ALLOWED_SEND extends Set<infer T> ? T : never)) {
-    throw new Error(`Blocked IPC send: ${channel}`);
-  }
-  ipcRenderer.send(channel, ...args);
 }
 
 function gatedOn(channel: string, callback: (...args: unknown[]) => void): void {
@@ -57,5 +52,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     listAccounts: () => gatedInvoke('gmail:listAccounts'),
     getToken: (accountId: string) =>
       gatedInvoke('gmail:getToken', accountId),
+  },
+  n8n: {
+    status: () => gatedInvoke('n8n:status') as Promise<{ status: string }>,
+    start: () => gatedInvoke('n8n:start') as Promise<{ success: boolean; error?: string }>,
+    stop: () => gatedInvoke('n8n:stop') as Promise<{ success: boolean; error?: string }>,
+    onHealth: (callback: (status: string) => void) => gatedOn('n8n:health', callback),
   },
 });
