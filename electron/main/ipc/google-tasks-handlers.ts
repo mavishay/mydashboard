@@ -4,6 +4,7 @@ import { z } from 'zod';
 import {
   listAccounts,
   deleteAccount,
+  createAccount,
   storeGoogleTasksTokens,
   startAuthFlow,
 } from '../auth/google-tasks';
@@ -94,10 +95,11 @@ function getTasksWithSource(
               gt.updated_at, gt.list_id, gtl.title as list_title
        FROM google_tasks gt
        JOIN google_task_lists gtl ON gt.list_id = gtl.id
-       JOIN accounts a ON gtl.id IN (
-         SELECT id FROM accounts WHERE type = 'google_tasks'
-       )
-       WHERE a.id = ? AND gt.is_deleted = 0
+       WHERE gtl.id IN (
+         SELECT DISTINCT gtl2.id
+         FROM google_task_lists gtl2
+         JOIN oauth_tokens ot ON ot.account_id = ?
+       ) AND gt.is_deleted = 0
        ORDER BY gt.updated_at DESC`
     : `SELECT gt.id, gt.title, gt.notes, gt.status, gt.due, gt.completed_at,
               gt.updated_at, gt.list_id, gtl.title as list_title
@@ -153,7 +155,8 @@ export function registerGoogleTasksHandlers(
   db: Database.Database
 ): void {
   ipcMain.handle('google-tasks:connect', async (): Promise<ConnectResponse> => {
-    const { account, tokens } = await startAuthFlow();
+    const { userInfo, tokens } = await startAuthFlow();
+    const account = createAccount(db, userInfo.email, userInfo.displayName);
     storeGoogleTasksTokens(db, account.id, tokens);
     return ConnectResponseSchema.parse({
       id: account.id,
@@ -316,32 +319,20 @@ export function registerGoogleTasksHandlers(
 
       await updateTask(accessToken, taskListId, taskId, updates);
 
-      // Update locally
+      // Update locally with fixed parameterized query
       const now = new Date().toISOString();
-      const setClauses: string[] = ['updated_at = ?', 'synced_at = ?'];
-      const params: Array<string | null> = [now, now];
+      const completedAt = status === 'completed' ? now : null;
 
-      if (title !== undefined) {
-        setClauses.push('title = ?');
-        params.push(title);
-      }
-      if (notes !== undefined) {
-        setClauses.push('notes = ?');
-        params.push(notes);
-      }
-      if (status !== undefined) {
-        setClauses.push('status = ?');
-        params.push(status);
-        if (status === 'completed') {
-          setClauses.push('completed_at = ?');
-          params.push(now);
-        }
-      }
-
-      params.push(taskId);
       db.prepare(
-        `UPDATE google_tasks SET ${setClauses.join(', ')} WHERE id = ?`
-      ).run(...params);
+        `UPDATE google_tasks
+         SET title = COALESCE(?, title),
+             notes = COALESCE(?, notes),
+             status = COALESCE(?, status),
+             completed_at = COALESCE(?, completed_at),
+             updated_at = ?,
+             synced_at = ?
+         WHERE id = ?`
+      ).run(title ?? null, notes ?? null, status ?? null, completedAt, now, now, taskId);
 
       return { success: true };
     }

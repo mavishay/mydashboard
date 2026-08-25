@@ -108,19 +108,3 @@ export async function deleteTask(
     task: taskId,
   });
 }
-
-export async function getSyncToken(
-  accessToken: string,
-  taskListId: string
-): Promise<string> {
-  const tasks = createClient(accessToken);
-  const response = await tasks.tasks.list({
-    tasklist: taskListId,
-    maxResults: 1,
-  });
-  const syncToken = response.data.nextSyncToken;
-  if (!syncToken) {
-    throw new Error('No sync token returned from Google Tasks API');
-  }
-  return syncToken;
-}

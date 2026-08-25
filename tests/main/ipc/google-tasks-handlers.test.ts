@@ -13,6 +13,7 @@ vi.mock('electron', () => ({
 
 const mockListAccounts = vi.fn();
 const mockDeleteAccount = vi.fn();
+const mockCreateAccount = vi.fn();
 const mockStoreGoogleTasksTokens = vi.fn();
 const mockStartAuthFlow = vi.fn();
 const mockGetValidAccessToken = vi.fn();
@@ -20,6 +21,7 @@ const mockGetValidAccessToken = vi.fn();
 vi.mock('../../../electron/main/auth/google-tasks', () => ({
   listAccounts: (...args: unknown[]) => mockListAccounts(...args),
   deleteAccount: (...args: unknown[]) => mockDeleteAccount(...args),
+  createAccount: (...args: unknown[]) => mockCreateAccount(...args),
   storeGoogleTasksTokens: (...args: unknown[]) =>
     mockStoreGoogleTasksTokens(...args),
   startAuthFlow: (...args: unknown[]) => mockStartAuthFlow(...args),
@@ -71,8 +73,9 @@ describe('Google Tasks IPC Handlers', () => {
     vi.clearAllMocks();
     vi.resetModules();
     mockListAccounts.mockReturnValue([]);
+    mockCreateAccount.mockReturnValue({ id: 'acct-1', email: 'test@gmail.com', display_name: 'Test' });
     mockStartAuthFlow.mockResolvedValue({
-      account: { id: 'acct-1', email: 'test@gmail.com', display_name: 'Test' },
+      userInfo: { id: 'user-1', email: 'test@gmail.com', displayName: 'Test' },
       tokens: {
         access_token: 'access-123',
         refresh_token: 'refresh-456',
@@ -124,6 +127,7 @@ describe('Google Tasks IPC Handlers', () => {
         displayName: 'Test',
       });
       expect(mockStartAuthFlow).toHaveBeenCalled();
+      expect(mockCreateAccount).toHaveBeenCalledWith(db, 'test@gmail.com', 'Test');
       expect(mockStoreGoogleTasksTokens).toHaveBeenCalled();
     });
   });

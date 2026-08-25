@@ -18,6 +18,8 @@ declare global {
     source: string;
     completedAt: string | null;
     updatedAt: string;
+    listId: string;
+    listTitle: string;
   }
 
   interface GoogleTaskList {
@@ -33,9 +35,10 @@ declare global {
   }
 
   interface GoogleTasksSyncStatus {
-    lastSync: string | null;
-    health: 'idle' | 'syncing' | 'error';
-    syncing: boolean;
+    status: 'idle' | 'syncing' | 'error';
+    lastSyncAt: string | null;
+    error: string | null;
+    accountCount: number;
   }
 
   interface ElectronAPI {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Component, type ReactNode } from 'react';
 
 const GOOGLE_BLUE = '#4285F4';
 
@@ -11,12 +11,15 @@ interface TaskItem {
   source: string;
   completedAt: string | null;
   updatedAt: string;
+  listId: string;
+  listTitle: string;
 }
 
 interface SyncStatus {
-  lastSync: string | null;
-  health: 'idle' | 'syncing' | 'error';
-  syncing: boolean;
+  status: 'idle' | 'syncing' | 'error';
+  lastSyncAt: string | null;
+  error: string | null;
+  accountCount: number;
 }
 
 interface Account {
@@ -25,7 +28,28 @@ interface Account {
   displayName: string;
 }
 
-export function TaskList() {
+class ErrorBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode; fallback: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
+function TaskListInner() {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -80,7 +104,7 @@ export function TaskList() {
     try {
       await window.electronAPI.googleTasks.updateTask({
         accountId: accounts[0].id,
-        taskListId: task.source,
+        taskListId: task.listId,
         taskId: task.id,
         status: task.status === 'completed' ? 'needsAction' : 'completed',
       });
@@ -95,7 +119,7 @@ export function TaskList() {
     try {
       await window.electronAPI.googleTasks.deleteTask({
         accountId: accounts[0].id,
-        taskListId: task.source,
+        taskListId: task.listId,
         taskId: task.id,
       });
       await loadData();
@@ -132,15 +156,15 @@ export function TaskList() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
         <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-          {syncStatus?.lastSync
-            ? `Last sync: ${new Date(syncStatus.lastSync).toLocaleTimeString()}`
+          {syncStatus?.lastSyncAt
+            ? `Last sync: ${new Date(syncStatus.lastSyncAt).toLocaleTimeString()}`
             : 'Not yet synced'}
-          {syncStatus?.health === 'syncing' && ' (syncing...)'}
+          {syncStatus?.status === 'syncing' && ' (syncing...)'}
         </span>
         <button
           onClick={handleSync}
-          disabled={syncStatus?.syncing}
-          style={{ ...buttonStyle, fontSize: '0.75rem', opacity: syncStatus?.syncing ? 0.5 : 1 }}
+          disabled={syncStatus?.status === 'syncing'}
+          style={{ ...buttonStyle, fontSize: '0.75rem', opacity: syncStatus?.status === 'syncing' ? 0.5 : 1 }}
         >
           Sync
         </button>
@@ -223,3 +247,11 @@ const buttonStyle: React.CSSProperties = {
   cursor: 'pointer',
   fontSize: '0.875rem',
 };
+
+export function TaskList() {
+  return (
+    <ErrorBoundary fallback={<p>Failed to load tasks</p>}>
+      <TaskListInner />
+    </ErrorBoundary>
+  );
+}

@@ -59,8 +59,38 @@ export function deleteAccount(db: Database.Database, accountId: string): void {
   db.prepare('DELETE FROM accounts WHERE id = ?').run(accountId);
 }
 
+export interface GoogleUserInfo {
+  email: string;
+  displayName: string;
+}
+
+export async function fetchGoogleUserInfo(
+  accessToken: string
+): Promise<GoogleUserInfo> {
+  const response = await fetch(
+    'https://www.googleapis.com/oauth2/v2/userinfo',
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch user info from Google');
+  }
+
+  const data = (await response.json()) as {
+    email: string;
+    name: string;
+  };
+
+  return {
+    email: data.email,
+    displayName: data.name,
+  };
+}
+
 export async function startAuthFlow(): Promise<{
-  account: GoogleTasksAccount;
+  userInfo: GoogleUserInfo;
   tokens: GoogleTasksTokenSet;
 }> {
   const clientId = getGoogleTasksClientId();
@@ -88,7 +118,8 @@ export async function startAuthFlow(): Promise<{
     }
 
     const tokens = await exchangeCode(callback.code, redirectUri);
-    return { account: null as unknown as GoogleTasksAccount, tokens };
+    const userInfo = await fetchGoogleUserInfo(tokens.access_token);
+    return { userInfo, tokens };
   } catch (err) {
     await server.close();
     throw err;
