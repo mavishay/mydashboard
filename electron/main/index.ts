@@ -13,6 +13,7 @@ import { listAccounts as listTickTickAccounts } from './auth/ticktick';
 import { TickTickSync } from './sync/ticktick-sync';
 import { TickTickAdapter } from './sync/ticktick-adapter';
 import { getAccessToken as getTickTickAccessToken } from './auth/ticktick';
+import { recordTelemetryEvent } from './telemetry';
 
 let mainWindow: BrowserWindow | null = null;
 let db: Database.Database | null = null;
@@ -144,6 +145,12 @@ function createWindow(): BrowserWindow {
 app.whenReady().then(async () => {
   db = initializeDatabase();
   const composeDir = getComposeDir();
+
+  recordTelemetryEvent(db, 'app_start', {
+    platform: process.platform,
+    arch: process.arch,
+    electronVersion: process.versions.electron,
+  });
 
   lanServer = createLanServerInstance(
     db,

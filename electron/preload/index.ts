@@ -41,6 +41,10 @@ const ALLOWED_INVOKE = new Set([
   'ticktick:createTask',
   'ticktick:updateTask',
   'ticktick:deleteTask',
+  'telemetry:getSettings',
+  'telemetry:setOptIn',
+  'telemetry:getEvents',
+  'telemetry:clearEvents',
 ] as const);
 
 const ALLOWED_ON = new Set([
@@ -154,5 +158,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
       gatedInvoke('ticktick:deleteTask', data) as Promise<{ success: boolean }>,
     onSyncHealth: (callback: (state: { status: string; lastSyncAt: string | null; error: string | null }) => void) =>
       gatedOn('ticktick:sync-health', callback),
+  },
+  telemetry: {
+    getSettings: () =>
+      gatedInvoke('telemetry:getSettings') as Promise<{ optedIn: boolean; consentedAt: string | null }>,
+    setOptIn: (optedIn: boolean) =>
+      gatedInvoke('telemetry:setOptIn', { optedIn }),
+    getEvents: (limit?: number) =>
+      gatedInvoke('telemetry:getEvents', { limit }) as Promise<TelemetryEvent[]>,
+    clearEvents: () =>
+      gatedInvoke('telemetry:clearEvents'),
   },
 });

@@ -67,6 +67,13 @@ declare global {
     accountCount: number;
   }
 
+  interface TelemetryEvent {
+    id: string;
+    eventType: string;
+    payload: string;
+    createdAt: string;
+  }
+
   interface ElectronAPI {
     window: {
       minimize: () => Promise<void>;
@@ -153,6 +160,12 @@ declare global {
       updateTask: (data: { accountId: string; projectId: string; taskId: string; title?: string; content?: string; dueDate?: string; status?: '0' | '1'; sortOrder?: number }) => Promise<{ success: boolean }>;
       deleteTask: (data: { accountId: string; projectId: string; taskId: string }) => Promise<{ success: boolean }>;
       onSyncHealth: (callback: (state: { status: string; lastSyncAt: string | null; error: string | null }) => void) => void;
+    };
+    telemetry: {
+      getSettings: () => Promise<{ optedIn: boolean; consentedAt: string | null }>;
+      setOptIn: (optedIn: boolean) => Promise<void>;
+      getEvents: (limit?: number) => Promise<TelemetryEvent[]>;
+      clearEvents: () => Promise<void>;
     };
   }
 
