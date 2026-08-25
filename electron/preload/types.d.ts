@@ -9,6 +9,35 @@ declare global {
     createdAt: string;
   }
 
+  interface GoogleTask {
+    id: string;
+    title: string;
+    body: string | null;
+    status: 'needsAction' | 'completed';
+    dueAt: string | null;
+    source: string;
+    completedAt: string | null;
+    updatedAt: string;
+  }
+
+  interface GoogleTaskList {
+    id: string;
+    title: string;
+    syncToken: string | null;
+  }
+
+  interface GoogleTasksAccount {
+    id: string;
+    email: string;
+    displayName: string;
+  }
+
+  interface GoogleTasksSyncStatus {
+    lastSync: string | null;
+    health: 'idle' | 'syncing' | 'error';
+    syncing: boolean;
+  }
+
   interface ElectronAPI {
     window: {
       minimize: () => Promise<void>;
@@ -46,6 +75,33 @@ declare global {
       list: () => Promise<ApiKeyMeta[]>;
       delete: (keyId: string) => Promise<void>;
       validate: (keyId: string) => Promise<{ valid: boolean; error?: string }>;
+    };
+    googleTasks: {
+      connect: () => Promise<GoogleTasksAccount>;
+      disconnect: (accountId: string) => Promise<void>;
+      listAccounts: () => Promise<GoogleTasksAccount[]>;
+      sync: (accountId: string) => Promise<{ success: boolean; error?: string }>;
+      status: () => Promise<GoogleTasksSyncStatus>;
+      listTasks: (accountId?: string) => Promise<GoogleTask[]>;
+      createTask: (data: {
+        accountId: string;
+        taskListId: string;
+        title: string;
+        notes?: string;
+      }) => Promise<GoogleTask>;
+      updateTask: (data: {
+        accountId: string;
+        taskListId: string;
+        taskId: string;
+        title?: string;
+        notes?: string;
+        status?: 'needsAction' | 'completed';
+      }) => Promise<{ success: boolean }>;
+      deleteTask: (data: {
+        accountId: string;
+        taskListId: string;
+        taskId: string;
+      }) => Promise<{ success: boolean }>;
     };
   }
 

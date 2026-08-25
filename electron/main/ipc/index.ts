@@ -5,6 +5,7 @@ import { registerWindowHandlers } from './window-handlers';
 import { registerGmailHandlers } from './gmail-handlers';
 import { registerN8nHandlers } from './n8n-handlers';
 import { registerApiKeyHandlers } from './api-key-handlers';
+import { registerGoogleTasksHandlers } from './google-tasks-handlers';
 
 export function registerIpcHandlers(
   db: Database.Database,
@@ -16,4 +17,5 @@ export function registerIpcHandlers(
   registerGmailHandlers(ipcMain, db);
   registerN8nHandlers(ipcMain, composeDir);
   registerApiKeyHandlers(ipcMain, db);
+  registerGoogleTasksHandlers(ipcMain, db);
 }

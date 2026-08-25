@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Settings } from './Settings';
+import { TaskList } from './TaskList';
 
 type Page = 'dashboard' | 'settings';
 
@@ -36,7 +37,7 @@ export function Dashboard() {
         </div>
         <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '1rem' }}>
           <h2>Tasks</h2>
-          <p>No tasks yet</p>
+          <TaskList />
         </div>
       </div>
     </div>

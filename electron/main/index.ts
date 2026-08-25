@@ -6,11 +6,14 @@ import { initializeDatabase } from './db';
 import { registerIpcHandlers } from './ipc';
 import { composeUp, composeDown } from './docker/compose';
 import { startHealthPoller } from './docker/health';
+import { listAccounts } from './auth/google-tasks';
+import { GoogleTasksSync } from './sync/google-tasks-sync';
 
 let mainWindow: BrowserWindow | null = null;
 let db: Database.Database | null = null;
 let healthPoller: NodeJS.Timeout | null = null;
 let isQuitting = false;
+const googleTasksSyncs = new Map<string, GoogleTasksSync>();
 
 function getComposeDir(): string {
   if (is.dev) {
@@ -18,6 +21,44 @@ function getComposeDir(): string {
   }
   const appPath = app.getAppPath();
   return join(appPath, '..');
+}
+
+async function startGoogleTasksSyncers(database: Database.Database): Promise<void> {
+  const accounts = listAccounts(database);
+  for (const account of accounts) {
+    const existing = googleTasksSyncs.get(account.id);
+    if (existing) continue;
+
+    const sync = new GoogleTasksSync(database, account.id);
+    sync.onSyncStatus((state) => {
+      mainWindow?.webContents.send('google-tasks:sync-health', state);
+    });
+
+    googleTasksSyncs.set(account.id, sync);
+
+    try {
+      await sync.start();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes('No tokens found') || message.includes('No refresh token')) {
+        mainWindow?.webContents.send('google-tasks:sync-health', {
+          status: 'error',
+          lastSyncAt: null,
+          error: 'Re-authentication required',
+        });
+      } else {
+        console.error(`Failed to start Google Tasks sync for account ${account.id}:`, err);
+      }
+      googleTasksSyncs.delete(account.id);
+    }
+  }
+}
+
+function stopGoogleTasksSyncers(): void {
+  for (const [id, sync] of googleTasksSyncs) {
+    sync.stop();
+    googleTasksSyncs.delete(id);
+  }
 }
 
 function createWindow(): BrowserWindow {
@@ -68,6 +109,8 @@ app.whenReady().then(async () => {
     console.error('Failed to start n8n sidecar:', err);
   }
 
+  await startGoogleTasksSyncers(db);
+
   createWindow();
 
   app.on('activate', () => {
@@ -86,6 +129,8 @@ app.on('will-quit', (e) => {
     e.preventDefault();
     return;
   }
+
+  stopGoogleTasksSyncers();
 
   if (healthPoller) {
     clearInterval(healthPoller);
