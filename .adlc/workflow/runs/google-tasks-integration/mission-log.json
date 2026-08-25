@@ -1,0 +1,118 @@
+{
+  "feature": "google-tasks-integration",
+  "route": "spec",
+  "execution": "sync",
+  "supervision": "gated",
+  "brief": {
+    "goal": "Connect Google Tasks via API with bidirectional sync, consolidating tasks into the unified task view with source badges.",
+    "constraints": "Electron desktop app (existing project), Google Tasks API OAuth2, bidirectional sync (create/complete/delete), source badge per task, Beta milestone (PDR-007), must integrate with existing task consolidation view.",
+    "non_goals": "M365 Graph connector, TickTick integration, TickTick bidirectional sync, LAN dashboard, onboarding consent flow, telemetry.",
+    "success_criteria": [
+      "Google Tasks API OAuth2 connection works",
+      "Tasks from Google Tasks appear in consolidated task view",
+      "Bidirectional sync: create, complete, and delete propagate both ways",
+      "Source badge (Google Tasks) visible on each synced task",
+      "Lint and typecheck pass"
+    ]
+  },
+  "steps": [
+    {
+      "id": "specify",
+      "phase": "specify",
+      "tier": "strong",
+      "prompt": "Write a feature specification for the goal below. Include requirements, constraints, and measurable success criteria.",
+      "status": "completed"
+    },
+    {
+      "id": "plan",
+      "phase": "plan",
+      "tier": "strong",
+      "prompt": "Break down the specification into an implementation plan with ordered, verifiable tasks.",
+      "status": "completed"
+    },
+    {
+      "id": "tasks",
+      "phase": "tasks",
+      "tier": "fast",
+      "prompt": "Generate the detailed task list from the plan — each task must have exact file paths and verification steps.",
+      "status": "completed"
+    },
+    {
+      "id": "implement",
+      "phase": "implement",
+      "tier": "strong",
+      "prompt": "Implement the next pending task from the plan. Follow test-driven practices.",
+      "status": "completed"
+    },
+    {
+      "id": "converge",
+      "phase": "converge",
+      "tier": "fast",
+      "prompt": "Review the implementation against the specification and success criteria. Verify independently — you are the checker, not the maker.",
+      "status": "completed"
+    }
+  ],
+  "completed_steps": ["specify", "plan", "tasks", "loop_0_implement", "loop_1_implement", "loop_2_implement", "loop_3_implement", "loop_4_implement", "loop_5_implement", "loop_6_implement", "loop_7_implement", "loop_8_implement", "converge"],
+  "step_results": {
+    "specify": {
+      "output": "Created 5 PDRs (PDR-008 through PDR-012) covering OAuth2 auth, bidirectional sync strategy, source badges, conflict resolution, and error handling.",
+      "confidence": "HIGH"
+    },
+    "plan": {
+      "output": "9-task implementation plan with source reference analysis, SC-to-task mapping, and verification steps.",
+      "confidence": "HIGH"
+    },
+    "tasks": {
+      "output": "Generated detailed task list with 9 tasks, ~15 files to create/modify, 9 commits.",
+      "confidence": "HIGH"
+    },
+    "loop_0_implement": {
+      "output": "Created 004-google-tasks.sql migration with google_task_lists, google_tasks, and google_tasks_sync_state tables.",
+      "confidence": "HIGH"
+    },
+    "loop_1_implement": {
+      "output": "Created google-tasks.ts OAuth2 auth module with token exchange, refresh logic, and account management.",
+      "confidence": "HIGH"
+    },
+    "loop_2_implement": {
+      "output": "Created google-tasks-api.ts — thin googleapis wrapper for Google Tasks API v1 with CRUD operations.",
+      "confidence": "HIGH"
+    },
+    "loop_3_implement": {
+      "output": "Created google-tasks-sync.ts — bidirectional sync service with polling, sync tokens, conflict resolution, circuit breaker.",
+      "confidence": "HIGH"
+    },
+    "loop_4_implement": {
+      "output": "Created google-tasks-handlers.ts with 9 IPC channels. Updated ipc/index.ts orchestrator.",
+      "confidence": "HIGH"
+    },
+    "loop_5_implement": {
+      "output": "Updated preload/index.ts and types.d.ts with Google Tasks channels and type declarations.",
+      "confidence": "HIGH"
+    },
+    "loop_6_implement": {
+      "output": "Created TaskList.tsx component with source badges. Updated Dashboard.tsx to integrate it.",
+      "confidence": "HIGH"
+    },
+    "loop_7_implement": {
+      "output": "Created 4 unit test files with 47 tests covering API, sync, handlers, and auth. All tests pass.",
+      "confidence": "HIGH"
+    },
+    "loop_8_implement": {
+      "output": "Wired sync poller into main process lifecycle. Added sync health events. Token refresh error handling.",
+      "confidence": "HIGH"
+    },
+    "converge": {
+      "output": "All success criteria met. Typecheck passes. Tests pass (110/110). New Google Tasks files lint clean. Pre-existing lint errors in gmail-handlers.ts and oauth-server.test.ts are unrelated to this feature. No non-goals violations.",
+      "confidence": "HIGH"
+    }
+  },
+  "discovered": {
+    "skills_dirs": [],
+    "commands_dirs": [],
+    "local_skills": []
+  },
+  "spec_corrections": 0,
+  "consecutive_tasks_appended": 0,
+  "consecutive_score_regressions": 0
+}
