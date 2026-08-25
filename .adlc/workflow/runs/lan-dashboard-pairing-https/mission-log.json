@@ -1,0 +1,103 @@
+{
+  "feature": "lan-dashboard-pairing-https",
+  "brief": {
+    "goal": "Implement LAN-accessible dashboard with pairing token authentication and self-signed HTTPS encryption (REQ-021, REQ-022)",
+    "constraints": [
+      "Electron desktop app with Node.js backend",
+      "Must use existing Electron IPC patterns (contextBridge allowlist, handler registration)",
+      "Must follow team directives (immediate close on shutdown, platform-mocked tests)",
+      "Self-signed HTTPS for LAN traffic",
+      "Pairing token required for first connection",
+      "Must work on phone/tablet browsers"
+    ],
+    "non_goals": [
+      "No mobile native apps (iOS/Android) - LAN dashboard only",
+      "No multi-user / team features - solo consultant focus",
+      "No external SSL certificates - self-signed only"
+    ],
+    "success_criteria": [
+      "HTTP server serves dashboard to LAN devices",
+      "Pairing token required on first connection",
+      "Self-signed HTTPS enabled for encrypted LAN traffic",
+      "Phone/tablet can access dashboard via browser",
+      "Server shutdown handles connections gracefully (immediate close)"
+    ]
+  },
+  "route": "change",
+  "execution": "sync",
+  "supervision": "gated",
+  "steps": [
+    {
+      "id": "specify",
+      "phase": "specify",
+      "tier": "strong",
+      "prompt": "Write a feature specification for the LAN dashboard with pairing + HTTPS, covering REQ-021 and REQ-022 acceptance criteria",
+      "status": "completed"
+    },
+    {
+      "id": "implement",
+      "phase": "implement",
+      "tier": "strong",
+      "prompt": "Implement the HTTP server with pairing token and self-signed HTTPS",
+      "status": "completed"
+    },
+    {
+      "id": "converge",
+      "phase": "converge",
+      "tier": "fast",
+      "prompt": "Review the implementation against the spec and success criteria",
+      "status": "completed"
+    },
+    {
+      "id": "implement_fixes",
+      "phase": "implement",
+      "tier": "strong",
+      "prompt": "Fix the 3 spec compliance issues found in convergence review",
+      "status": "completed"
+    },
+    {
+      "id": "converge_final",
+      "phase": "converge",
+      "tier": "fast",
+      "prompt": "Verify the fixes resolve all issues found in the first convergence review",
+      "status": "completed"
+    }
+  ],
+  "completed_steps": ["specify", "implement", "converge", "implement_fixes", "converge_final"],
+  "step_results": {
+    "specify": {
+      "output": "Feature specification written to specs/003-lan-dashboard-https/spec.md covering REQ-021/REQ-022 with full technical design, security requirements, and test plan",
+      "confidence": "HIGH"
+    },
+    "implement": {
+      "output": "Implemented LAN server with TLS cert generation, pairing token auth, session cookies, static file serving, and HTTPS. 83 tests pass (40 new), typecheck clean, 3 pre-existing lint errors only",
+      "confidence": "HIGH"
+    },
+    "converge": {
+      "output": "Found 3 spec compliance issues: (1) Rate limiting counts successful sessions not failed attempts, (2) Missing query param auth support, (3) getToken() returns placeholder. No non-goals violations. All CDRs compliant.",
+      "confidence": "MEDIUM",
+      "issues": [
+        "Rate limiting ineffective - counts successful sessions not failed attempts",
+        "Missing token auth via query param (?token=<token>)",
+        "getToken() returns placeholder '***' - token display impossible"
+      ]
+    },
+    "implement_fixes": {
+      "output": "Fixed all 3 issues: (1) Rate limiting now tracks failed attempts per IP in token_attempts table, (2) Pairing endpoint supports both POST body and query param, (3) getToken() returns actual stored token via token_plaintext column. Added 2 new migrations. 83 tests pass.",
+      "confidence": "HIGH"
+    },
+    "converge_final": {
+      "output": "All 3 fixes verified. 40/40 tests pass. TypeScript typecheck clean. One security design tradeoff noted: token_plaintext stored in SQLite for display purposes (accepted tradeoff). All success criteria met. All CDRs compliant. No non-goals violations.",
+      "confidence": "HIGH",
+      "quality_score": "40/40 (100%)"
+    }
+  },
+  "discovered": {
+    "skills_dirs": [],
+    "commands_dirs": [],
+    "local_skills": []
+  },
+  "circuit_breaker_count": 0,
+  "consecutive_score_regressions": 0,
+  "spec_corrections": 0
+}

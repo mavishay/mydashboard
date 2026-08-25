@@ -68,6 +68,16 @@ declare global {
       stop: () => Promise<{ success: boolean; error?: string }>;
       onHealth: (callback: (status: string) => void) => void;
     };
+    lan: {
+      start: () => Promise<{ success: boolean; error?: string; url?: string }>;
+      stop: () => Promise<{ success: boolean; error?: string }>;
+      status: () => Promise<{ running: boolean; port: number; url: string | null }>;
+      getToken: () => Promise<{ token: string }>;
+      regenerateToken: () => Promise<{ token: string }>;
+      getConnectedDevices: () => Promise<{ count: number }>;
+      onDeviceConnected: (callback: (data: unknown) => void) => void;
+      onDeviceDisconnected: (callback: (data: unknown) => void) => void;
+    };
     apikey: {
       save: (data: {
         provider: 'openai' | 'anthropic' | 'litellm';

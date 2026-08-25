@@ -13,6 +13,12 @@ const ALLOWED_INVOKE = new Set([
   'n8n:status',
   'n8n:start',
   'n8n:stop',
+  'lan:start',
+  'lan:stop',
+  'lan:status',
+  'lan:getToken',
+  'lan:regenerateToken',
+  'lan:getConnectedDevices',
   'apikey:save',
   'apikey:list',
   'apikey:delete',
@@ -31,6 +37,8 @@ const ALLOWED_INVOKE = new Set([
 const ALLOWED_ON = new Set([
   'app:quit',
   'n8n:health',
+  'lan:deviceConnected',
+  'lan:deviceDisconnected',
   'google-tasks:sync-health',
 ] as const);
 
@@ -72,6 +80,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     start: () => gatedInvoke('n8n:start') as Promise<{ success: boolean; error?: string }>,
     stop: () => gatedInvoke('n8n:stop') as Promise<{ success: boolean; error?: string }>,
     onHealth: (callback: (status: string) => void) => gatedOn('n8n:health', callback),
+  },
+  lan: {
+    start: () => gatedInvoke('lan:start') as Promise<{ success: boolean; error?: string; url?: string }>,
+    stop: () => gatedInvoke('lan:stop') as Promise<{ success: boolean; error?: string }>,
+    status: () => gatedInvoke('lan:status') as Promise<{ running: boolean; port: number; url: string | null }>,
+    getToken: () => gatedInvoke('lan:getToken') as Promise<{ token: string }>,
+    regenerateToken: () => gatedInvoke('lan:regenerateToken') as Promise<{ token: string }>,
+    getConnectedDevices: () => gatedInvoke('lan:getConnectedDevices') as Promise<{ count: number }>,
+    onDeviceConnected: (callback: (data: unknown) => void) => gatedOn('lan:deviceConnected', callback),
+    onDeviceDisconnected: (callback: (data: unknown) => void) => gatedOn('lan:deviceDisconnected', callback),
   },
   apikey: {
     save: (data: { provider: string; label: string; apiKey: string; baseUrl?: string }) =>
