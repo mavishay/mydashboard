@@ -41,6 +41,32 @@ declare global {
     accountCount: number;
   }
 
+  interface TickTickTask {
+    id: string;
+    title: string;
+    content: string | null;
+    status: '0' | '1';
+    dueDate: string | null;
+    source: string;
+    completedAt: string | null;
+    updatedAt: string;
+    projectId: string;
+    projectTitle: string | null;
+  }
+
+  interface TickTickAccount {
+    id: string;
+    email: string;
+    displayName: string;
+  }
+
+  interface TickTickSyncStatus {
+    status: 'idle' | 'syncing' | 'error';
+    lastSyncAt: string | null;
+    error: string | null;
+    accountCount: number;
+  }
+
   interface ElectronAPI {
     window: {
       minimize: () => Promise<void>;
@@ -115,6 +141,18 @@ declare global {
         taskListId: string;
         taskId: string;
       }) => Promise<{ success: boolean }>;
+    };
+    ticktick: {
+      connect: (data: { token: string; email: string; displayName: string }) => Promise<TickTickAccount>;
+      disconnect: (accountId: string) => Promise<void>;
+      listAccounts: () => Promise<TickTickAccount[]>;
+      sync: (accountId: string) => Promise<{ success: boolean; error?: string }>;
+      status: () => Promise<TickTickSyncStatus>;
+      listTasks: (accountId?: string) => Promise<TickTickTask[]>;
+      createTask: (data: { accountId: string; projectId: string; title: string; content?: string; dueDate?: string }) => Promise<TickTickTask>;
+      updateTask: (data: { accountId: string; projectId: string; taskId: string; title?: string; content?: string; dueDate?: string; status?: '0' | '1'; sortOrder?: number }) => Promise<{ success: boolean }>;
+      deleteTask: (data: { accountId: string; projectId: string; taskId: string }) => Promise<{ success: boolean }>;
+      onSyncHealth: (callback: (state: { status: string; lastSyncAt: string | null; error: string | null }) => void) => void;
     };
   }
 
