@@ -12,7 +12,6 @@ import {
   deleteAccount,
 } from '../auth/gmail';
 import { createOAuthServer, buildAuthUrl } from '../auth/oauth-server';
-import { recordTelemetryEvent } from '../telemetry';
 
 const GMAIL_SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
@@ -89,10 +88,6 @@ export function registerGmailHandlers(
         refresh_token: tokens.refresh_token ?? undefined,
         expiry_date: tokens.expiry_date ?? Date.now(),
         scope: tokens.scope ?? GMAIL_SCOPES.join(' '),
-      });
-
-      recordTelemetryEvent(db, 'gmail_connect', {
-        accountId: account.id,
       });
 
       return {

@@ -7,7 +7,6 @@ import {
   type TaskEntry,
 } from './google-tasks-api';
 import { getValidAccessToken } from '../auth/google-tasks';
-import { recordTelemetryEvent } from '../telemetry';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -109,11 +108,6 @@ export class GoogleTasksSync {
       }
       const message = err instanceof Error ? err.message : String(err);
       this.emitStatus('error', message);
-      recordTelemetryEvent(this.db, 'sync_error', {
-        accountId: this.accountId,
-        error: message,
-        consecutiveFailures: this.consecutiveFailures,
-      });
     }
   }
 
@@ -143,17 +137,10 @@ export class GoogleTasksSync {
     const accessToken = await getValidAccessToken(this.db, this.accountId);
     const remoteLists = await listTaskLists(accessToken);
 
-    let syncedListCount = 0;
     for (const list of remoteLists) {
       this.ensureListRow(list.id, list.title, list.updated);
       await this.syncSingleList(accessToken, list.id);
-      syncedListCount++;
     }
-
-    recordTelemetryEvent(this.db, 'sync_complete', {
-      accountId: this.accountId,
-      listCount: syncedListCount,
-    });
   }
 
   private async syncSingleList(

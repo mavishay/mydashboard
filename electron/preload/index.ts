@@ -32,6 +32,15 @@ const ALLOWED_INVOKE = new Set([
   'google-tasks:createTask',
   'google-tasks:updateTask',
   'google-tasks:deleteTask',
+  'ticktick:connect',
+  'ticktick:disconnect',
+  'ticktick:listAccounts',
+  'ticktick:sync',
+  'ticktick:status',
+  'ticktick:listTasks',
+  'ticktick:createTask',
+  'ticktick:updateTask',
+  'ticktick:deleteTask',
   'telemetry:getSettings',
   'telemetry:setOptIn',
   'telemetry:getEvents',
@@ -44,6 +53,7 @@ const ALLOWED_ON = new Set([
   'lan:deviceConnected',
   'lan:deviceDisconnected',
   'google-tasks:sync-health',
+  'ticktick:sync-health',
 ] as const);
 
 function gatedInvoke(channel: string, ...args: unknown[]): Promise<unknown> {
@@ -126,6 +136,28 @@ contextBridge.exposeInMainWorld('electronAPI', {
       gatedInvoke('google-tasks:deleteTask', data) as Promise<{ success: boolean }>,
     onSyncHealth: (callback: (state: { status: string; lastSyncAt: string | null; error: string | null }) => void) =>
       gatedOn('google-tasks:sync-health', callback),
+  },
+  ticktick: {
+    connect: (data: { token: string; email: string; displayName: string }) =>
+      gatedInvoke('ticktick:connect', data) as Promise<TickTickAccount>,
+    disconnect: (accountId: string) =>
+      gatedInvoke('ticktick:disconnect', { accountId }),
+    listAccounts: () =>
+      gatedInvoke('ticktick:listAccounts') as Promise<TickTickAccount[]>,
+    sync: (accountId: string) =>
+      gatedInvoke('ticktick:sync', { accountId }) as Promise<{ success: boolean; error?: string }>,
+    status: () =>
+      gatedInvoke('ticktick:status') as Promise<TickTickSyncStatus>,
+    listTasks: (accountId?: string) =>
+      gatedInvoke('ticktick:listTasks', accountId ? { accountId } : undefined) as Promise<TickTickTask[]>,
+    createTask: (data: { accountId: string; projectId: string; title: string; content?: string; dueDate?: string }) =>
+      gatedInvoke('ticktick:createTask', data) as Promise<TickTickTask>,
+    updateTask: (data: { accountId: string; projectId: string; taskId: string; title?: string; content?: string; dueDate?: string; status?: '0' | '1'; sortOrder?: number }) =>
+      gatedInvoke('ticktick:updateTask', data) as Promise<{ success: boolean }>,
+    deleteTask: (data: { accountId: string; projectId: string; taskId: string }) =>
+      gatedInvoke('ticktick:deleteTask', data) as Promise<{ success: boolean }>,
+    onSyncHealth: (callback: (state: { status: string; lastSyncAt: string | null; error: string | null }) => void) =>
+      gatedOn('ticktick:sync-health', callback),
   },
   telemetry: {
     getSettings: () =>

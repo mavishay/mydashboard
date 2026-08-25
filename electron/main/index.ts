@@ -9,6 +9,10 @@ import { startHealthPoller } from './docker/health';
 import { createLanServerInstance, type LanServerInstance } from './server';
 import { listAccounts } from './auth/google-tasks';
 import { GoogleTasksSync } from './sync/google-tasks-sync';
+import { listAccounts as listTickTickAccounts } from './auth/ticktick';
+import { TickTickSync } from './sync/ticktick-sync';
+import { TickTickAdapter } from './sync/ticktick-adapter';
+import { getAccessToken as getTickTickAccessToken } from './auth/ticktick';
 import { recordTelemetryEvent } from './telemetry';
 
 let mainWindow: BrowserWindow | null = null;
@@ -17,6 +21,7 @@ let healthPoller: NodeJS.Timeout | null = null;
 let isQuitting = false;
 let lanServer: LanServerInstance | null = null;
 const googleTasksSyncs = new Map<string, GoogleTasksSync>();
+const ticktickSyncs = new Map<string, TickTickSync>();
 
 function getComposeDir(): string {
   if (is.dev) {
@@ -61,6 +66,45 @@ function stopGoogleTasksSyncers(): void {
   for (const [id, sync] of googleTasksSyncs) {
     sync.stop();
     googleTasksSyncs.delete(id);
+  }
+}
+
+async function startTickTickSyncers(database: Database.Database): Promise<void> {
+  const accounts = listTickTickAccounts(database);
+  for (const account of accounts) {
+    const existing = ticktickSyncs.get(account.id);
+    if (existing) continue;
+
+    try {
+      const accessToken = getTickTickAccessToken(database, account.id);
+      const adapter = new TickTickAdapter(accessToken);
+      const sync = new TickTickSync(database, account.id, adapter);
+      sync.onSyncStatus((state) => {
+        mainWindow?.webContents.send('ticktick:sync-health', state);
+      });
+
+      ticktickSyncs.set(account.id, sync);
+      await sync.start();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes('No tokens found')) {
+        mainWindow?.webContents.send('ticktick:sync-health', {
+          status: 'error',
+          lastSyncAt: null,
+          error: 'Re-authentication required',
+        });
+      } else {
+        console.error(`Failed to start TickTick sync for account ${account.id}:`, err);
+      }
+      ticktickSyncs.delete(account.id);
+    }
+  }
+}
+
+function stopTickTickSyncers(): void {
+  for (const [id, sync] of ticktickSyncs) {
+    sync.stop();
+    ticktickSyncs.delete(id);
   }
 }
 
@@ -132,6 +176,7 @@ app.whenReady().then(async () => {
   }
 
   await startGoogleTasksSyncers(db);
+  await startTickTickSyncers(db);
 
   createWindow();
 
@@ -153,6 +198,7 @@ app.on('will-quit', (e) => {
   }
 
   stopGoogleTasksSyncers();
+  stopTickTickSyncers();
 
   if (healthPoller) {
     clearInterval(healthPoller);

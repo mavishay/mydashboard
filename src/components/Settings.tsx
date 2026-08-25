@@ -10,11 +10,6 @@ interface ApiKeyMeta {
   createdAt: string;
 }
 
-interface TelemetrySettings {
-  optedIn: boolean;
-  consentedAt: string | null;
-}
-
 const PROVIDER_LABELS: Record<Provider, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic',
@@ -35,8 +30,6 @@ export function Settings({ onBack }: { onBack: () => void }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [telemetrySettings, setTelemetrySettings] = useState<TelemetrySettings | null>(null);
-  const [telemetrySaving, setTelemetrySaving] = useState(false);
 
   const loadKeys = useCallback(async () => {
     try {
@@ -47,19 +40,9 @@ export function Settings({ onBack }: { onBack: () => void }) {
     }
   }, []);
 
-  const loadTelemetrySettings = useCallback(async () => {
-    try {
-      const settings = await window.electronAPI.telemetry.getSettings();
-      setTelemetrySettings(settings);
-    } catch (err) {
-      console.error('Failed to load telemetry settings:', err);
-    }
-  }, []);
-
   useEffect(() => {
     loadKeys();
-    loadTelemetrySettings();
-  }, [loadKeys, loadTelemetrySettings]);
+  }, [loadKeys]);
 
   const handleSave = async () => {
     setError(null);
@@ -95,19 +78,6 @@ export function Settings({ onBack }: { onBack: () => void }) {
     }
   };
 
-  const handleTelemetryToggle = async () => {
-    if (!telemetrySettings) return;
-    setTelemetrySaving(true);
-    try {
-      await window.electronAPI.telemetry.setOptIn(!telemetrySettings.optedIn);
-      await loadTelemetrySettings();
-    } catch (err) {
-      console.error('Failed to update telemetry settings:', err);
-    } finally {
-      setTelemetrySaving(false);
-    }
-  };
-
   return (
     <div style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif', maxWidth: '640px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -123,7 +93,7 @@ export function Settings({ onBack }: { onBack: () => void }) {
         >
           ← Back
         </button>
-        <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Settings</h1>
+        <h1 style={{ margin: 0, fontSize: '1.5rem' }}>API Key Settings</h1>
       </div>
 
       <section style={{ marginBottom: '2rem' }}>
@@ -269,36 +239,6 @@ export function Settings({ onBack }: { onBack: () => void }) {
               ))}
             </tbody>
           </table>
-        )}
-      </section>
-
-      <section style={{ marginTop: '2rem', borderTop: '1px solid #eee', paddingTop: '2rem' }}>
-        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Telemetry</h2>
-        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '1rem' }}>
-          Help us improve by sharing anonymous usage statistics. No personal data is collected.
-        </p>
-        {telemetrySettings ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={telemetrySettings.optedIn}
-                onChange={handleTelemetryToggle}
-                disabled={telemetrySaving}
-                style={{ width: '1.25rem', height: '1.25rem' }}
-              />
-              <span style={{ fontSize: '0.875rem' }}>
-                {telemetrySettings.optedIn ? 'Telemetry enabled' : 'Telemetry disabled'}
-              </span>
-            </label>
-            {telemetrySettings.consentedAt && (
-              <span style={{ color: '#999', fontSize: '0.75rem' }}>
-                Since: {new Date(telemetrySettings.consentedAt).toLocaleDateString()}
-              </span>
-            )}
-          </div>
-        ) : (
-          <p style={{ color: '#999', fontSize: '0.875rem' }}>Loading...</p>
         )}
       </section>
     </div>

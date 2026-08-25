@@ -8,6 +8,7 @@ import { registerLanHandlers } from './lan-handlers';
 import type { LanServerInstance } from '../server/index';
 import { registerApiKeyHandlers } from './api-key-handlers';
 import { registerGoogleTasksHandlers } from './google-tasks-handlers';
+import { registerTickTickHandlers } from './ticktick-handlers';
 import { registerTelemetryHandlers } from './telemetry-handlers';
 
 export function registerIpcHandlers(
@@ -25,5 +26,6 @@ export function registerIpcHandlers(
     registerLanHandlers(ipcMain, lanServer);
   }
   registerGoogleTasksHandlers(ipcMain, db);
+  registerTickTickHandlers(ipcMain, db);
   registerTelemetryHandlers(ipcMain, db);
 }
