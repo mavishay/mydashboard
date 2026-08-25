@@ -9,6 +9,7 @@ import { startHealthPoller } from './docker/health';
 import { createLanServerInstance, type LanServerInstance } from './server';
 import { listAccounts } from './auth/google-tasks';
 import { GoogleTasksSync } from './sync/google-tasks-sync';
+import { recordTelemetryEvent } from './telemetry';
 
 let mainWindow: BrowserWindow | null = null;
 let db: Database.Database | null = null;
@@ -100,6 +101,12 @@ function createWindow(): BrowserWindow {
 app.whenReady().then(async () => {
   db = initializeDatabase();
   const composeDir = getComposeDir();
+
+  recordTelemetryEvent(db, 'app_start', {
+    platform: process.platform,
+    arch: process.arch,
+    electronVersion: process.versions.electron,
+  });
 
   lanServer = createLanServerInstance(
     db,
