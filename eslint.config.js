@@ -5,7 +5,7 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    ignores: ['dist/', 'dist-electron/', 'node_modules/', 'out/'],
+    ignores: ['dist/', 'dist-electron/', 'node_modules/', 'out/', '.worktrees/'],
   },
   {
     rules: {

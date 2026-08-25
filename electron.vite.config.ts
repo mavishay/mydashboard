@@ -20,6 +20,10 @@ export default defineConfig({
         input: {
           index: resolve(__dirname, 'electron/preload/index.ts'),
         },
+        output: {
+          entryFileNames: 'index.js',
+          format: 'cjs',
+        },
       },
     },
   },
@@ -28,7 +32,7 @@ export default defineConfig({
     build: {
       rollupOptions: {
         input: {
-          index: resolve(__dirname, 'src/index.html'),
+          index: resolve(__dirname, 'index.html'),
         },
       },
     },

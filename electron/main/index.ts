@@ -19,7 +19,7 @@ const googleTasksSyncs = new Map<string, GoogleTasksSync>();
 
 function getComposeDir(): string {
   if (is.dev) {
-    return join(__dirname, '../../..');
+    return join(__dirname, '../..');
   }
   const appPath = app.getAppPath();
   return join(appPath, '..');

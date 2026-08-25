@@ -49,6 +49,7 @@ async function validateKey(
       });
       if (response.ok) return { valid: true };
       if (response.status === 401) return { valid: false, error: 'Invalid API key' };
+      if (response.status === 404) return { valid: true };
       return { valid: false, error: `Validation failed: HTTP ${response.status}` };
     }
 
@@ -70,6 +71,7 @@ async function validateKey(
       if (response.ok) return { valid: true };
       if (response.status === 401) return { valid: false, error: 'Invalid API key' };
       if (response.status === 400) return { valid: true };
+      if (response.status === 404) return { valid: true };
       return { valid: false, error: `Validation failed: HTTP ${response.status}` };
     }
 
@@ -82,6 +84,7 @@ async function validateKey(
       });
       if (response.ok) return { valid: true };
       if (response.status === 401) return { valid: false, error: 'Invalid API key' };
+      if (response.status === 404) return { valid: true };
       return { valid: false, error: `Validation failed: HTTP ${response.status}` };
     }
 

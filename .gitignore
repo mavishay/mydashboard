@@ -46,3 +46,4 @@ out/
 # Misc
 .cache/
 .worktrees/
+.adlc/drafts/
