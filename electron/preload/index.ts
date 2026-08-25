@@ -23,6 +23,15 @@ const ALLOWED_INVOKE = new Set([
   'apikey:list',
   'apikey:delete',
   'apikey:validate',
+  'google-tasks:connect',
+  'google-tasks:disconnect',
+  'google-tasks:listAccounts',
+  'google-tasks:sync',
+  'google-tasks:status',
+  'google-tasks:listTasks',
+  'google-tasks:createTask',
+  'google-tasks:updateTask',
+  'google-tasks:deleteTask',
 ] as const);
 
 const ALLOWED_ON = new Set([
@@ -30,6 +39,7 @@ const ALLOWED_ON = new Set([
   'n8n:health',
   'lan:deviceConnected',
   'lan:deviceDisconnected',
+  'google-tasks:sync-health',
 ] as const);
 
 function gatedInvoke(channel: string, ...args: unknown[]): Promise<unknown> {
@@ -90,5 +100,27 @@ contextBridge.exposeInMainWorld('electronAPI', {
       gatedInvoke('apikey:delete', { keyId }),
     validate: (keyId: string) =>
       gatedInvoke('apikey:validate', { keyId }) as Promise<{ valid: boolean; error?: string }>,
+  },
+  googleTasks: {
+    connect: () =>
+      gatedInvoke('google-tasks:connect') as Promise<GoogleTasksAccount>,
+    disconnect: (accountId: string) =>
+      gatedInvoke('google-tasks:disconnect', { accountId }),
+    listAccounts: () =>
+      gatedInvoke('google-tasks:listAccounts') as Promise<GoogleTasksAccount[]>,
+    sync: (accountId: string) =>
+      gatedInvoke('google-tasks:sync', { accountId }) as Promise<{ success: boolean; error?: string }>,
+    status: () =>
+      gatedInvoke('google-tasks:status') as Promise<GoogleTasksSyncStatus>,
+    listTasks: (accountId?: string) =>
+      gatedInvoke('google-tasks:listTasks', accountId ? { accountId } : undefined) as Promise<GoogleTask[]>,
+    createTask: (data: { accountId: string; taskListId: string; title: string; notes?: string }) =>
+      gatedInvoke('google-tasks:createTask', data) as Promise<GoogleTask>,
+    updateTask: (data: { accountId: string; taskListId: string; taskId: string; title?: string; notes?: string; status?: 'needsAction' | 'completed' }) =>
+      gatedInvoke('google-tasks:updateTask', data) as Promise<{ success: boolean }>,
+    deleteTask: (data: { accountId: string; taskListId: string; taskId: string }) =>
+      gatedInvoke('google-tasks:deleteTask', data) as Promise<{ success: boolean }>,
+    onSyncHealth: (callback: (state: { status: string; lastSyncAt: string | null; error: string | null }) => void) =>
+      gatedOn('google-tasks:sync-health', callback),
   },
 });

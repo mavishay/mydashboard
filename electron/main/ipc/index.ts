@@ -7,6 +7,7 @@ import { registerN8nHandlers } from './n8n-handlers';
 import { registerLanHandlers } from './lan-handlers';
 import type { LanServerInstance } from '../server/index';
 import { registerApiKeyHandlers } from './api-key-handlers';
+import { registerGoogleTasksHandlers } from './google-tasks-handlers';
 
 export function registerIpcHandlers(
   db: Database.Database,
@@ -22,4 +23,5 @@ export function registerIpcHandlers(
   if (lanServer) {
     registerLanHandlers(ipcMain, lanServer);
   }
+  registerGoogleTasksHandlers(ipcMain, db);
 }
