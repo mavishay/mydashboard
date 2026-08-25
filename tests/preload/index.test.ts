@@ -91,4 +91,11 @@ describe('preload contextBridge', () => {
     const api = mockContextBridge.exposeInMainWorld.mock.calls[0][1];
     expect(api).not.toHaveProperty('db');
   });
+
+  it('n8n.dockerStatus calls correct channel', () => {
+    mockIpcRenderer.invoke.mockClear();
+    const api = mockContextBridge.exposeInMainWorld.mock.calls[0][1];
+    api.n8n.dockerStatus();
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('n8n:docker-status');
+  });
 });
