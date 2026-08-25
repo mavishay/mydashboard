@@ -32,6 +32,10 @@ const ALLOWED_INVOKE = new Set([
   'google-tasks:createTask',
   'google-tasks:updateTask',
   'google-tasks:deleteTask',
+  'telemetry:getSettings',
+  'telemetry:setOptIn',
+  'telemetry:getEvents',
+  'telemetry:clearEvents',
 ] as const);
 
 const ALLOWED_ON = new Set([
@@ -122,5 +126,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
       gatedInvoke('google-tasks:deleteTask', data) as Promise<{ success: boolean }>,
     onSyncHealth: (callback: (state: { status: string; lastSyncAt: string | null; error: string | null }) => void) =>
       gatedOn('google-tasks:sync-health', callback),
+  },
+  telemetry: {
+    getSettings: () =>
+      gatedInvoke('telemetry:getSettings') as Promise<{ optedIn: boolean; consentedAt: string | null }>,
+    setOptIn: (optedIn: boolean) =>
+      gatedInvoke('telemetry:setOptIn', { optedIn }),
+    getEvents: (limit?: number) =>
+      gatedInvoke('telemetry:getEvents', { limit }) as Promise<TelemetryEvent[]>,
+    clearEvents: () =>
+      gatedInvoke('telemetry:clearEvents'),
   },
 });
