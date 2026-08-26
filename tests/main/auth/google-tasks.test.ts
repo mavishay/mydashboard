@@ -45,7 +45,7 @@ describe('Google Tasks Auth', () => {
         '../../../electron/main/auth/google-tasks'
       );
       expect(() => getGoogleTasksClientId()).toThrow(
-        'GOOGLE_TASKS_CLIENT_ID environment variable is required'
+        'GOOGLE_TASKS_CLIENT_ID or GOOGLE_CLIENT_ID environment variable is required'
       );
     });
   });
@@ -219,6 +219,7 @@ describe('Google Tasks Auth', () => {
       });
       vi.stubGlobal('fetch', mockFetch);
       process.env.GOOGLE_TASKS_CLIENT_ID = 'test-client-id';
+      process.env.GOOGLE_TASKS_CLIENT_SECRET = 'test-client-secret';
 
       const { getValidAccessToken } = await import(
         '../../../electron/main/auth/google-tasks'
@@ -233,6 +234,7 @@ describe('Google Tasks Auth', () => {
       );
 
       delete process.env.GOOGLE_TASKS_CLIENT_ID;
+      delete process.env.GOOGLE_TASKS_CLIENT_SECRET;
       vi.unstubAllGlobals();
     });
   });

@@ -11,13 +11,19 @@ import {
   listAccounts,
   deleteAccount,
 } from '../auth/gmail';
+import {
+  createAccount as createGoogleTasksAccount,
+  listAccounts as listGoogleTasksAccounts,
+  deleteAccount as deleteGoogleTasksAccount,
+} from '../auth/google-tasks';
 import { createOAuthServer, buildAuthUrl } from '../auth/oauth-server';
 import { recordTelemetryEvent } from '../telemetry';
 import { GmailSyncManager } from '../gmail/sync';
 
-const GMAIL_SCOPES = [
+const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/gmail.labels',
+  'https://www.googleapis.com/auth/tasks.readonly',
 ];
 
 const DisconnectSchema = z.object({
@@ -62,7 +68,7 @@ export function registerGmailHandlers(
       clientId,
       redirectUri,
       state,
-      scopes: GMAIL_SCOPES,
+      scopes: GOOGLE_SCOPES,
     });
 
     await shell.openExternal(authUrl);
@@ -85,34 +91,38 @@ export function registerGmailHandlers(
       oauth2Client.setCredentials(tokens);
 
       const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
-      const profile = await gmail.users.get({ userId: 'me' });
+      const profile = await gmail.users.getProfile({ userId: 'me' });
 
       const email = profile.data.emailAddress ?? '';
       const displayName = profile.data.name ?? email;
 
-      const account = createAccount(db, email, displayName);
+      const gmailAccount = createAccount(db, email, displayName);
+      const tasksAccount = createGoogleTasksAccount(db, email, displayName);
 
-      storeTokens(db, account.id, {
+      const tokenData = {
         access_token: tokens.access_token ?? '',
         refresh_token: tokens.refresh_token ?? undefined,
         expiry_date: tokens.expiry_date ?? Date.now(),
-        scope: tokens.scope ?? GMAIL_SCOPES.join(' '),
-      });
+        scope: tokens.scope ?? GOOGLE_SCOPES.join(' '),
+      };
+
+      storeTokens(db, gmailAccount.id, tokenData);
+      storeTokens(db, tasksAccount.id, tokenData);
 
       recordTelemetryEvent(db, 'gmail_connect', {
-        accountId: account.id,
+        accountId: gmailAccount.id,
       });
 
       return {
-        id: account.id,
-        email: account.email,
-        displayName: account.display_name,
+        id: gmailAccount.id,
+        email: gmailAccount.email,
+        displayName: gmailAccount.display_name,
       };
     } catch (error) {
       if (error instanceof Error) {
-        throw new Error(`Failed to complete Gmail authorization: ${error.message}`, { cause: error });
+        throw new Error(`Failed to complete Google authorization: ${error.message}`, { cause: error });
       }
-      throw new Error('Failed to complete Gmail authorization', { cause: error });
+      throw new Error('Failed to complete Google authorization', { cause: error });
     }
   });
 
@@ -123,6 +133,17 @@ export function registerGmailHandlers(
       if (!parsed.success) {
         throw new Error('Invalid account ID');
       }
+
+      const gmailAccounts = listAccounts(db);
+      const account = gmailAccounts.find((a) => a.id === parsed.data.accountId);
+      if (account) {
+        const tasksAccounts = listGoogleTasksAccounts(db);
+        const tasksAccount = tasksAccounts.find((a) => a.email === account.email);
+        if (tasksAccount) {
+          deleteGoogleTasksAccount(db, tasksAccount.id);
+        }
+      }
+
       deleteAccount(db, parsed.data.accountId);
     }
   );

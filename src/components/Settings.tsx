@@ -167,9 +167,9 @@ export function Settings({ onBack }: { onBack: () => void }) {
       </div>
 
       <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Gmail Accounts</h2>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Google Accounts</h2>
         <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '1rem' }}>
-          Connect your Gmail accounts to sync and classify emails.
+          Connect your Google account to access Gmail and Google Tasks.
         </p>
 
         {gmailAccounts.length === 0 ? (

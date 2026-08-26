@@ -1,7 +1,10 @@
 import { app, BrowserWindow, shell } from 'electron';
 import { join } from 'path';
 import { is } from '@electron-toolkit/utils';
+import dotenv from 'dotenv';
 import type Database from 'better-sqlite3';
+
+dotenv.config({ path: '.env.local' });
 import { initializeDatabase } from './db';
 import { registerIpcHandlers } from './ipc';
 import { composeUp, composeDown } from './docker/compose';

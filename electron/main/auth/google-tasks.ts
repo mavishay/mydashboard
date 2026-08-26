@@ -26,11 +26,19 @@ export interface GoogleTasksAccount {
 }
 
 export function getGoogleTasksClientId(): string {
-  const clientId = process.env.GOOGLE_TASKS_CLIENT_ID;
+  const clientId = process.env.GOOGLE_TASKS_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
   if (!clientId) {
-    throw new Error('GOOGLE_TASKS_CLIENT_ID environment variable is required');
+    throw new Error('GOOGLE_TASKS_CLIENT_ID or GOOGLE_CLIENT_ID environment variable is required');
   }
   return clientId;
+}
+
+function getGoogleClientSecret(): string {
+  const secret = process.env.GOOGLE_TASKS_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET;
+  if (!secret) {
+    throw new Error('GOOGLE_TASKS_CLIENT_SECRET or GOOGLE_CLIENT_SECRET environment variable is required');
+  }
+  return secret;
 }
 
 export function createAccount(
@@ -131,6 +139,7 @@ async function exchangeCode(
   redirectUri: string
 ): Promise<GoogleTasksTokenSet> {
   const clientId = getGoogleTasksClientId();
+  const clientSecret = getGoogleClientSecret();
 
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -138,6 +147,7 @@ async function exchangeCode(
     body: new URLSearchParams({
       code,
       client_id: clientId,
+      client_secret: clientSecret,
       redirect_uri: redirectUri,
       grant_type: 'authorization_code',
     }),
@@ -167,12 +177,14 @@ export async function refreshAccessToken(
   refreshToken: string
 ): Promise<GoogleTasksTokenSet> {
   const clientId = getGoogleTasksClientId();
+  const clientSecret = getGoogleClientSecret();
 
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       client_id: clientId,
+      client_secret: clientSecret,
       refresh_token: refreshToken,
       grant_type: 'refresh_token',
     }),
