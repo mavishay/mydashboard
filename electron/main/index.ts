@@ -129,6 +129,20 @@ function createWindow(): BrowserWindow {
     },
   });
 
+  mainWindow.loadURL(
+    `data:text/html;charset=utf-8,${encodeURIComponent(`<!DOCTYPE html>
+<html><head><style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { display: flex; justify-content: center; align-items: center; height: 100vh;
+         background: #fafafa; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+  .loader { text-align: center; }
+  .spinner { width: 32px; height: 32px; border: 3px solid #e0e0e0; border-top-color: #1976d2;
+             border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  p { color: #666; font-size: 14px; }
+</style></head><body><div class="loader"><div class="spinner"></div><p>Loading...</p></div></body></html>`)}`
+  );
+
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show();
   });
