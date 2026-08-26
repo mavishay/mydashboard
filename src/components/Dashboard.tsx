@@ -79,13 +79,13 @@ export function Dashboard() {
           </button>
         </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem', height: 'calc(100vh - 120px)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1rem', marginTop: '1rem', height: 'calc(100vh - 120px)' }}>
         <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '1rem', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ margin: '0 0 1rem 0' }}>Email</h2>
           <EmailList />
         </div>
-        <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '1rem' }}>
-          <h2>Tasks</h2>
+        <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '1rem', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <h2 style={{ margin: '0 0 1rem 0' }}>Tasks</h2>
           <TaskList />
         </div>
       </div>
