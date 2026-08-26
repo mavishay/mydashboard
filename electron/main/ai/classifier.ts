@@ -250,7 +250,7 @@ export function getClassifiedEmails(
   receivedAt: string | null;
   classification: Classification;
 }> {
-  const conditions: string[] = ['classification IS NOT NULL'];
+  const conditions: string[] = [];
   const params: unknown[] = [];
 
   if (options.accountId) {
@@ -265,17 +265,20 @@ export function getClassifiedEmails(
   const limit = options.limit ?? 50;
   const offset = options.offset ?? 0;
 
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
   const query = `
     SELECT id, account_id as accountId, subject, snippet, from_address as fromAddress,
            received_at as receivedAt, classification
     FROM emails
-    WHERE ${conditions.join(' AND ')}
+    ${whereClause}
     ORDER BY
-      CASE classification
-        WHEN 'urgent' THEN 1
-        WHEN 'action' THEN 2
-        WHEN 'fyi' THEN 3
-        WHEN 'noise' THEN 4
+      CASE
+        WHEN classification = 'urgent' THEN 1
+        WHEN classification = 'action' THEN 2
+        WHEN classification = 'fyi' THEN 3
+        WHEN classification = 'noise' THEN 4
+        ELSE 5
       END,
       received_at DESC
     LIMIT ? OFFSET ?

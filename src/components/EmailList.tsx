@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-type Classification = 'urgent' | 'action' | 'fyi' | 'noise';
+type Classification = 'urgent' | 'action' | 'fyi' | 'noise' | null;
 
 interface Email {
   id: string;
@@ -18,11 +18,12 @@ interface Account {
   displayName: string;
 }
 
-const CLASSIFICATION_COLORS: Record<Classification, { bg: string; text: string; label: string }> = {
+const CLASSIFICATION_COLORS: Record<string, { bg: string; text: string; label: string }> = {
   urgent: { bg: '#ffebee', text: '#c62828', label: 'Urgent' },
   action: { bg: '#fff3e0', text: '#e65100', label: 'Action' },
   fyi: { bg: '#e8f5e9', text: '#2e7d32', label: 'FYI' },
   noise: { bg: '#f5f5f5', text: '#757575', label: 'Noise' },
+  unclassified: { bg: '#e3f2fd', text: '#1565c0', label: 'Unclassified' },
 };
 
 function formatDate(dateStr: string | null): string {
@@ -47,7 +48,8 @@ function extractDisplayName(from: string | null): string {
 }
 
 function ClassificationBadge({ classification }: { classification: Classification }) {
-  const colors = CLASSIFICATION_COLORS[classification];
+  const key = classification ?? 'unclassified';
+  const colors = CLASSIFICATION_COLORS[key];
   return (
     <span
       style={{

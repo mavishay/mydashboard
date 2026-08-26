@@ -18,6 +18,8 @@ import { TickTickAdapter } from './sync/ticktick-adapter';
 import { getAccessToken as getTickTickAccessToken } from './auth/ticktick';
 import { recordTelemetryEvent } from './telemetry';
 
+app.disableHardwareAcceleration();
+
 let mainWindow: BrowserWindow | null = null;
 let db: Database.Database | null = null;
 let healthPoller: NodeJS.Timeout | null = null;
@@ -178,10 +180,10 @@ app.whenReady().then(async () => {
     console.error('Failed to start LAN server:', err);
   }
 
+  createWindow();
+
   await startGoogleTasksSyncers(db);
   await startTickTickSyncers(db);
-
-  createWindow();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
