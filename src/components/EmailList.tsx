@@ -49,7 +49,7 @@ function extractDisplayName(from: string | null): string {
 
 function ClassificationBadge({ classification }: { classification: Classification }) {
   const key = classification ?? 'unclassified';
-  const colors = CLASSIFICATION_COLORS[key];
+  const colors = CLASSIFICATION_COLORS[key] ?? CLASSIFICATION_COLORS.unclassified;
   return (
     <span
       style={{
@@ -252,7 +252,7 @@ export function EmailList() {
                   padding: '0.75rem 1rem',
                   border: '1px solid #e0e0e0',
                   borderRadius: '8px',
-                  background: CLASSIFICATION_COLORS[email.classification].bg + '20',
+                  background: (CLASSIFICATION_COLORS[email.classification ?? 'unclassified']?.bg ?? '#e3f2fd') + '20',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
