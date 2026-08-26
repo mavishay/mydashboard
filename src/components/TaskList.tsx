@@ -55,6 +55,7 @@ function TaskListInner() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCompleted, setShowCompleted] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -152,28 +153,42 @@ function TaskListInner() {
     );
   }
 
+  const activeTasks = tasks.filter((t) => t.status === 'needsAction');
+  const completedTasks = tasks.filter((t) => t.status === 'completed');
+  const visibleTasks = showCompleted ? tasks : activeTasks;
+
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexShrink: 0 }}>
         <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
           {syncStatus?.lastSyncAt
             ? `Last sync: ${new Date(syncStatus.lastSyncAt).toLocaleTimeString()}`
             : 'Not yet synced'}
           {syncStatus?.status === 'syncing' && ' (syncing...)'}
         </span>
-        <button
-          onClick={handleSync}
-          disabled={syncStatus?.status === 'syncing'}
-          style={{ ...buttonStyle, fontSize: '0.75rem', opacity: syncStatus?.status === 'syncing' ? 0.5 : 1 }}
-        >
-          Sync
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          {completedTasks.length > 0 && (
+            <button
+              onClick={() => setShowCompleted(!showCompleted)}
+              style={{ ...buttonStyle, fontSize: '0.75rem' }}
+            >
+              {showCompleted ? 'Hide' : 'Show'} Done ({completedTasks.length})
+            </button>
+          )}
+          <button
+            onClick={handleSync}
+            disabled={syncStatus?.status === 'syncing'}
+            style={{ ...buttonStyle, fontSize: '0.75rem', opacity: syncStatus?.status === 'syncing' ? 0.5 : 1 }}
+          >
+            Sync
+          </button>
+        </div>
       </div>
-      {tasks.length === 0 ? (
-        <p>No tasks found</p>
+      {visibleTasks.length === 0 ? (
+        <p>{tasks.length === 0 ? 'No tasks found' : 'All tasks completed!'}</p>
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-          {tasks.map((task) => (
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, overflow: 'auto', flex: 1 }}>
+          {visibleTasks.map((task) => (
             <li
               key={task.id}
               style={{
