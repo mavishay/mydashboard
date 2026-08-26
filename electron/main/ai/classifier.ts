@@ -89,6 +89,7 @@ async function callOpenAI(
       temperature: 0.1,
       max_tokens: 200,
     }),
+    signal: AbortSignal.timeout(15000),
   });
 
   if (!response.ok) {
@@ -123,6 +124,7 @@ async function callAnthropic(
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.1,
     }),
+    signal: AbortSignal.timeout(15000),
   });
 
   if (!response.ok) {
@@ -194,11 +196,16 @@ export async function classifyEmail(
   return result;
 }
 
+export interface BatchClassificationResult {
+  classified: ClassificationResult[];
+  errors: number;
+}
+
 export async function classifyUnclassifiedEmails(
   db: Database.Database,
   accountId?: string,
   limit: number = 20
-): Promise<ClassificationResult[]> {
+): Promise<BatchClassificationResult> {
   const whereClause = accountId
     ? 'WHERE classification IS NULL AND account_id = ?'
     : 'WHERE classification IS NULL';
@@ -208,19 +215,22 @@ export async function classifyUnclassifiedEmails(
 
   const emails = db.prepare(query).all(...params) as { id: string }[];
 
-  const results: ClassificationResult[] = [];
+  const classified: ClassificationResult[] = [];
+  let errors = 0;
+
   for (const email of emails) {
     try {
       const result = await classifyEmail(db, email.id);
       if (result) {
-        results.push(result);
+        classified.push(result);
       }
     } catch (err) {
       console.error(`Failed to classify email ${email.id}:`, err);
+      errors++;
     }
   }
 
-  return results;
+  return { classified, errors };
 }
 
 export function getClassifiedEmails(

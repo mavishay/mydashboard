@@ -5,7 +5,6 @@ import {
   classifyEmail,
   classifyUnclassifiedEmails,
   getClassifiedEmails,
-  type Classification,
 } from '../ai/classifier';
 import { fetchEmailsForAccount, fetchEmailsForAllAccounts } from '../gmail/fetcher';
 
@@ -34,16 +33,6 @@ type ClassifyEmailPayload = z.infer<typeof ClassifyEmailSchema>;
 type ClassifyAccountPayload = z.infer<typeof ClassifyAccountSchema>;
 type FetchEmailsPayload = z.infer<typeof FetchEmailsSchema>;
 type GetEmailsPayload = z.infer<typeof GetEmailsSchema>;
-
-export interface EmailResponse {
-  id: string;
-  accountId: string;
-  subject: string | null;
-  snippet: string | null;
-  fromAddress: string | null;
-  receivedAt: string | null;
-  classification: Classification;
-}
 
 export function registerClassificationHandlers(
   ipcMain: IpcMain,
@@ -74,15 +63,16 @@ export function registerClassificationHandlers(
         throw new Error(`Invalid payload: ${parsed.error.message}`);
       }
 
-      const results = await classifyUnclassifiedEmails(
+      const result = await classifyUnclassifiedEmails(
         db,
         parsed.data.accountId,
         parsed.data.limit
       );
 
       return {
-        classified: results.length,
-        results,
+        classified: result.classified.length,
+        errors: result.errors,
+        results: result.classified,
       };
     }
   );

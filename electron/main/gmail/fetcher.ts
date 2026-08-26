@@ -28,6 +28,17 @@ function createOAuth2Client(
   return client;
 }
 
+function parseDateSafe(dateStr: string | null): string | null {
+  if (!dateStr) return null;
+  try {
+    const parsed = new Date(dateStr);
+    if (isNaN(parsed.getTime())) return null;
+    return parsed.toISOString();
+  } catch {
+    return null;
+  }
+}
+
 function extractHeader(headers: gmail_v1.Schema$MessagePartHeader[] | undefined, name: string): string | null {
   if (!headers) return null;
   const header = headers.find((h) => h.name?.toLowerCase() === name.toLowerCase());
@@ -54,7 +65,7 @@ function parseMessage(
     snippet: msg.snippet ?? null,
     fromAddress: from,
     toAddresses: to,
-    receivedAt: date ? new Date(date).toISOString() : null,
+    receivedAt: parseDateSafe(date),
   };
 }
 

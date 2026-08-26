@@ -73,9 +73,11 @@ export function EmailList() {
   const [syncing, setSyncing] = useState(false);
   const [classifying, setClassifying] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const loadEmails = useCallback(async () => {
     try {
+      setError(null);
       const result = await window.electronAPI.classification.getEmails({
         accountId: selectedAccount || undefined,
         classification: selectedClassification || undefined,
@@ -84,6 +86,7 @@ export function EmailList() {
       setEmails(result);
     } catch (err) {
       console.error('Failed to load emails:', err);
+      setError('Failed to load emails. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -91,10 +94,12 @@ export function EmailList() {
 
   const loadAccounts = useCallback(async () => {
     try {
+      setError(null);
       const list = await window.electronAPI.gmail.listAccounts();
       setAccounts(list);
     } catch (err) {
       console.error('Failed to load accounts:', err);
+      setError('Failed to load accounts. Please try again.');
     }
   }, []);
 
@@ -108,6 +113,7 @@ export function EmailList() {
 
   const handleSync = async () => {
     setSyncing(true);
+    setError(null);
     try {
       if (selectedAccount) {
         await window.electronAPI.gmail.sync(selectedAccount);
@@ -117,6 +123,7 @@ export function EmailList() {
       await loadEmails();
     } catch (err) {
       console.error('Failed to sync emails:', err);
+      setError('Failed to sync emails. Please try again.');
     } finally {
       setSyncing(false);
     }
@@ -124,6 +131,7 @@ export function EmailList() {
 
   const handleClassify = async () => {
     setClassifying(true);
+    setError(null);
     try {
       if (selectedAccount) {
         await window.electronAPI.classification.classifyAccount(selectedAccount);
@@ -135,6 +143,7 @@ export function EmailList() {
       await loadEmails();
     } catch (err) {
       console.error('Failed to classify emails:', err);
+      setError('Failed to classify emails. Please try again.');
     } finally {
       setClassifying(false);
     }
@@ -200,6 +209,23 @@ export function EmailList() {
           {classifying ? 'Classifying...' : 'AI Classify'}
         </button>
       </div>
+
+      {error && (
+        <div style={{
+          padding: '0.75rem 1rem',
+          marginBottom: '1rem',
+          borderRadius: '8px',
+          background: '#ffebee',
+          color: '#c62828',
+          fontSize: '0.875rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+        }}>
+          <span style={{ fontSize: '1.25rem' }}>⚠</span>
+          {error}
+        </div>
+      )}
 
       <div style={{ flex: 1, overflow: 'auto' }}>
         {loading ? (
