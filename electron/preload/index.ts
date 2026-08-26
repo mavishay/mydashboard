@@ -16,6 +16,7 @@ const ALLOWED_INVOKE = new Set([
   'n8n:status',
   'n8n:start',
   'n8n:stop',
+  'n8n:docker-status',
   'lan:start',
   'lan:stop',
   'lan:status',
@@ -109,6 +110,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     status: () => gatedInvoke('n8n:status') as Promise<{ status: string }>,
     start: () => gatedInvoke('n8n:start') as Promise<{ success: boolean; error?: string }>,
     stop: () => gatedInvoke('n8n:stop') as Promise<{ success: boolean; error?: string }>,
+    dockerStatus: () => gatedInvoke('n8n:docker-status') as Promise<{ available: boolean; error?: string }>,
     onHealth: (callback: (status: string) => void) => gatedOn('n8n:health', callback),
   },
   lan: {

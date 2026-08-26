@@ -99,6 +99,7 @@ declare global {
       status: () => Promise<{ status: string }>;
       start: () => Promise<{ success: boolean; error?: string }>;
       stop: () => Promise<{ success: boolean; error?: string }>;
+      dockerStatus: () => Promise<{ available: boolean; error?: string }>;
       onHealth: (callback: (status: string) => void) => void;
     };
     lan: {
