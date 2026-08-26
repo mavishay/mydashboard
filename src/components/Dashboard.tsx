@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Settings } from './Settings';
 import { TaskList } from './TaskList';
 import { TelemetryStats } from './TelemetryStats';
+import { EmailList } from './EmailList';
 import { StatusBar } from './StatusBar';
 import { HealthCheckWizard } from './HealthCheckWizard';
 
@@ -78,11 +79,10 @@ export function Dashboard() {
           </button>
         </div>
       </div>
-      <p>Phase 1: App shell with SQLite storage</p>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
-        <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '1rem' }}>
-          <h2>Email</h2>
-          <p>No accounts connected</p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem', height: 'calc(100vh - 120px)' }}>
+        <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '1rem', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <h2 style={{ margin: '0 0 1rem 0' }}>Email</h2>
+          <EmailList />
         </div>
         <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '1rem' }}>
           <h2>Tasks</h2>
