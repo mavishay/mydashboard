@@ -1,12 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Settings } from './Settings';
 import { TaskList } from './TaskList';
 import { TelemetryStats } from './TelemetryStats';
+import { StatusBar } from './StatusBar';
+import { HealthCheckWizard } from './HealthCheckWizard';
 
 type Page = 'dashboard' | 'settings' | 'telemetry-stats';
 
 export function Dashboard() {
   const [page, setPage] = useState<Page>('dashboard');
+  const [n8nStatus, setN8nStatus] = useState<string>('unknown');
+  const [showWizard, setShowWizard] = useState(false);
+  const [restarting, setRestarting] = useState(false);
+
+  useEffect(() => {
+    window.electronAPI.n8n.status().then((result) => {
+      setN8nStatus(result.status);
+    });
+
+    const cleanup = window.electronAPI.n8n.onHealth((status: string) => {
+      setN8nStatus(status);
+    });
+
+    return () => {
+      if (typeof cleanup === 'function') cleanup();
+    };
+  }, []);
+
+  const handleRestart = useCallback(async () => {
+    setRestarting(true);
+    try {
+      await window.electronAPI.n8n.start();
+    } finally {
+      setRestarting(false);
+    }
+  }, []);
 
   if (page === 'settings') {
     return <Settings onBack={() => setPage('dashboard')} />;
@@ -20,7 +48,8 @@ export function Dashboard() {
     <div style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h1 style={{ margin: 0 }}>Unified Productivity Dashboard</h1>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <StatusBar status={n8nStatus} onClick={() => setShowWizard(true)} />
           <button
             onClick={() => setPage('telemetry-stats')}
             style={{
@@ -60,6 +89,15 @@ export function Dashboard() {
           <TaskList />
         </div>
       </div>
+
+      {showWizard && (
+        <HealthCheckWizard
+          status={n8nStatus}
+          onClose={() => setShowWizard(false)}
+          onRestart={handleRestart}
+          restarting={restarting}
+        />
+      )}
     </div>
   );
 }
