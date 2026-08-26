@@ -10,6 +10,9 @@ const ALLOWED_INVOKE = new Set([
   'gmail:disconnect',
   'gmail:listAccounts',
   'gmail:getToken',
+  'gmail:sync',
+  'gmail:syncAll',
+  'gmail:syncStatus',
   'n8n:status',
   'n8n:start',
   'n8n:stop',
@@ -45,6 +48,11 @@ const ALLOWED_INVOKE = new Set([
   'telemetry:setOptIn',
   'telemetry:getEvents',
   'telemetry:clearEvents',
+  'classification:classify',
+  'classification:classifyAccount',
+  'classification:fetchEmails',
+  'classification:fetchEmailsAll',
+  'classification:getEmails',
 ] as const);
 
 const ALLOWED_ON = new Set([
@@ -54,6 +62,7 @@ const ALLOWED_ON = new Set([
   'lan:deviceDisconnected',
   'google-tasks:sync-health',
   'ticktick:sync-health',
+  'gmail:sync-health',
 ] as const);
 
 function gatedInvoke(channel: string, ...args: unknown[]): Promise<unknown> {
@@ -88,6 +97,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     listAccounts: () => gatedInvoke('gmail:listAccounts'),
     getToken: (accountId: string) =>
       gatedInvoke('gmail:getToken', accountId),
+    sync: (accountId: string, maxResults?: number) =>
+      gatedInvoke('gmail:sync', { accountId, maxResults }) as Promise<{ accountId: string; status: string; fetched: number; classified: number; error?: string }>,
+    syncAll: () =>
+      gatedInvoke('gmail:syncAll') as Promise<Array<{ accountId: string; status: string; fetched: number; classified: number; error?: string }>>,
+    syncStatus: () =>
+      gatedInvoke('gmail:syncStatus') as Promise<Array<{ accountId: string; status: string; lastSyncAt: string | null; error: string | null }>>,
+    onSyncHealth: (callback: (status: unknown) => void) => gatedOn('gmail:sync-health', callback),
   },
   n8n: {
     status: () => gatedInvoke('n8n:status') as Promise<{ status: string }>,
@@ -168,5 +184,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
       gatedInvoke('telemetry:getEvents', { limit }) as Promise<TelemetryEvent[]>,
     clearEvents: () =>
       gatedInvoke('telemetry:clearEvents'),
+  },
+  classification: {
+    classify: (emailId: string) =>
+      gatedInvoke('classification:classify', { emailId }) as Promise<{ emailId: string; classification: string; confidence: number; reasoning: string }>,
+    classifyAccount: (accountId: string, limit?: number) =>
+      gatedInvoke('classification:classifyAccount', { accountId, limit }) as Promise<{ classified: number; results: Array<{ emailId: string; classification: string; confidence: number; reasoning: string }> }>,
+    fetchEmails: (accountId: string, maxResults?: number) =>
+      gatedInvoke('classification:fetchEmails', { accountId, maxResults }) as Promise<{ accountId: string; fetched: number; inserted: number; skipped: number }>,
+    fetchEmailsAll: () =>
+      gatedInvoke('classification:fetchEmailsAll') as Promise<Array<{ accountId: string; fetched: number; inserted: number; skipped: number }>>,
+    getEmails: (options?: { accountId?: string; classification?: string; limit?: number; offset?: number }) =>
+      gatedInvoke('classification:getEmails', options ?? {}) as Promise<Array<{ id: string; accountId: string; subject: string | null; snippet: string | null; fromAddress: string | null; receivedAt: string | null; classification: string }>>,
   },
 });

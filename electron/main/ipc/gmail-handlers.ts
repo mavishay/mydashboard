@@ -13,6 +13,7 @@ import {
 } from '../auth/gmail';
 import { createOAuthServer, buildAuthUrl } from '../auth/oauth-server';
 import { recordTelemetryEvent } from '../telemetry';
+import { GmailSyncManager } from '../gmail/sync';
 
 const GMAIL_SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
@@ -27,6 +28,11 @@ const GetTokenSchema = z.object({
   accountId: z.string().min(1),
 });
 
+const SyncSchema = z.object({
+  accountId: z.string().min(1),
+  maxResults: z.number().int().min(1).max(100).optional(),
+});
+
 interface AccountResponse {
   id: string;
   email: string;
@@ -35,8 +41,10 @@ interface AccountResponse {
 
 export function registerGmailHandlers(
   ipcMain: typeof import('electron').ipcMain,
-  db: Database.Database
+  db: Database.Database,
+  getWindow?: () => import('electron').BrowserWindow | null
 ): void {
+  const syncManager = new GmailSyncManager(db, getWindow ?? (() => null));
   ipcMain.handle('gmail:connect', async (): Promise<AccountResponse> => {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -144,4 +152,47 @@ export function registerGmailHandlers(
       return { accessToken: tokens.access_token };
     }
   );
+
+  ipcMain.handle(
+    'gmail:sync',
+    async (_event, rawPayload: { accountId: string; maxResults?: number }) => {
+      const parsed = SyncSchema.safeParse(rawPayload);
+      if (!parsed.success) {
+        throw new Error(`Invalid payload: ${parsed.error.message}`);
+      }
+
+      const status = await syncManager.syncAccount(
+        parsed.data.accountId,
+        parsed.data.maxResults
+      );
+
+      return {
+        accountId: status.accountId,
+        status: status.status,
+        fetched: status.fetched,
+        classified: status.classified,
+        error: status.error ?? undefined,
+      };
+    }
+  );
+
+  ipcMain.handle('gmail:syncAll', async () => {
+    const statuses = await syncManager.syncAll();
+    return statuses.map((s) => ({
+      accountId: s.accountId,
+      status: s.status,
+      fetched: s.fetched,
+      classified: s.classified,
+      error: s.error ?? undefined,
+    }));
+  });
+
+  ipcMain.handle('gmail:syncStatus', async () => {
+    return syncManager.getStatuses().map((s) => ({
+      accountId: s.accountId,
+      status: s.status,
+      lastSyncAt: s.lastSyncAt,
+      error: s.error,
+    }));
+  });
 }

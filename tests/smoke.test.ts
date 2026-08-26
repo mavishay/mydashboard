@@ -48,7 +48,15 @@ describe('app smoke test', () => {
     expect(registeredChannels).toContain('gmail:disconnect');
     expect(registeredChannels).toContain('gmail:listAccounts');
     expect(registeredChannels).toContain('gmail:getToken');
-  });
+    expect(registeredChannels).toContain('gmail:sync');
+    expect(registeredChannels).toContain('gmail:syncAll');
+    expect(registeredChannels).toContain('gmail:syncStatus');
+    expect(registeredChannels).toContain('classification:classify');
+    expect(registeredChannels).toContain('classification:classifyAccount');
+    expect(registeredChannels).toContain('classification:fetchEmails');
+    expect(registeredChannels).toContain('classification:fetchEmailsAll');
+    expect(registeredChannels).toContain('classification:getEmails');
+  }, 10000);
 
   it('preload exposes electronAPI with window methods', async () => {
     const { contextBridge } = await import('electron');
@@ -63,6 +71,23 @@ describe('app smoke test', () => {
           maximize: expect.any(Function),
           close: expect.any(Function),
           isMaximized: expect.any(Function),
+        }),
+        gmail: expect.objectContaining({
+          connect: expect.any(Function),
+          disconnect: expect.any(Function),
+          listAccounts: expect.any(Function),
+          getToken: expect.any(Function),
+          sync: expect.any(Function),
+          syncAll: expect.any(Function),
+          syncStatus: expect.any(Function),
+          onSyncHealth: expect.any(Function),
+        }),
+        classification: expect.objectContaining({
+          classify: expect.any(Function),
+          classifyAccount: expect.any(Function),
+          fetchEmails: expect.any(Function),
+          fetchEmailsAll: expect.any(Function),
+          getEmails: expect.any(Function),
         }),
       })
     );

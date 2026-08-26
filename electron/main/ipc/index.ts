@@ -10,6 +10,7 @@ import { registerApiKeyHandlers } from './api-key-handlers';
 import { registerGoogleTasksHandlers } from './google-tasks-handlers';
 import { registerTickTickHandlers } from './ticktick-handlers';
 import { registerTelemetryHandlers } from './telemetry-handlers';
+import { registerClassificationHandlers } from './classification-handlers';
 
 export function registerIpcHandlers(
   db: Database.Database,
@@ -19,7 +20,7 @@ export function registerIpcHandlers(
   lanServer?: LanServerInstance
 ): void {
   registerWindowHandlers(ipcMain, getWindow, quit);
-  registerGmailHandlers(ipcMain, db);
+  registerGmailHandlers(ipcMain, db, getWindow);
   registerN8nHandlers(ipcMain, composeDir);
   registerApiKeyHandlers(ipcMain, db);
   if (lanServer) {
@@ -28,4 +29,5 @@ export function registerIpcHandlers(
   registerGoogleTasksHandlers(ipcMain, db);
   registerTickTickHandlers(ipcMain, db);
   registerTelemetryHandlers(ipcMain, db);
+  registerClassificationHandlers(ipcMain, db);
 }
