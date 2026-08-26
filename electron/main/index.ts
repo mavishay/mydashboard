@@ -132,17 +132,10 @@ function createWindow(): BrowserWindow {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show();
-    if (is.dev) {
-      mainWindow?.webContents.openDevTools({ mode: 'detach' });
-    }
   });
 
   mainWindow.webContents.on('did-fail-load', (_e, code, desc) => {
     console.error(`[Renderer] Failed to load: ${code} ${desc}`);
-  });
-
-  mainWindow.webContents.on('console-message', (_e, level, msg) => {
-    console.log(`[Renderer console ${level}] ${msg}`);
   });
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
