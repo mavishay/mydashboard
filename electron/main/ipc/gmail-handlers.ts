@@ -177,6 +177,7 @@ export function registerGmailHandlers(
   ipcMain.handle(
     'gmail:sync',
     async (_event, rawPayload: { accountId: string; maxResults?: number }) => {
+      console.log('[IPC] gmail:sync called with payload:', rawPayload);
       const parsed = SyncSchema.safeParse(rawPayload);
       if (!parsed.success) {
         throw new Error(`Invalid payload: ${parsed.error.message}`);
@@ -198,7 +199,9 @@ export function registerGmailHandlers(
   );
 
   ipcMain.handle('gmail:syncAll', async () => {
+    console.log('[IPC] gmail:syncAll called');
     const statuses = await syncManager.syncAll();
+    console.log('[IPC] gmail:syncAll completed with', statuses.length, 'accounts');
     return statuses.map((s) => ({
       accountId: s.accountId,
       status: s.status,

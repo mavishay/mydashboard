@@ -118,6 +118,8 @@ export async function fetchEmailsForAccount(
   accountId: string,
   maxResults: number = 50
 ): Promise<FetchResult> {
+  console.log(`[Fetcher] Fetching emails for account ${accountId} (max: ${maxResults})`);
+
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
@@ -132,12 +134,14 @@ export async function fetchEmailsForAccount(
   const oauth2Client = createOAuth2Client(clientId, clientSecret, tokens);
   const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
+  console.log(`[Fetcher] Calling Gmail API...`);
   const listResponse = await gmail.users.messages.list({
     userId: 'me',
     maxResults,
   });
 
   const messages = listResponse.data.messages ?? [];
+  console.log(`[Fetcher] Gmail API returned ${messages.length} message references`);
 
   const emails: FetchedEmail[] = [];
   for (const msgRef of messages) {
@@ -154,7 +158,10 @@ export async function fetchEmailsForAccount(
     }
   }
 
+  console.log(`[Fetcher] Parsed ${emails.length} emails from Gmail`);
+
   const { inserted, skipped } = storeEmails(db, accountId, emails);
+  console.log(`[Fetcher] Stored: ${inserted} new, ${skipped} duplicates`);
 
   return {
     accountId,

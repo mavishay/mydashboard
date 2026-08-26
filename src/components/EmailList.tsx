@@ -114,16 +114,21 @@ export function EmailList() {
   const handleSync = async () => {
     setSyncing(true);
     setError(null);
+    console.log('[EmailList] Starting sync...');
     try {
+      let result;
       if (selectedAccount) {
-        await window.electronAPI.gmail.sync(selectedAccount);
+        console.log(`[EmailList] Syncing account: ${selectedAccount}`);
+        result = await window.electronAPI.gmail.sync(selectedAccount);
       } else {
-        await window.electronAPI.gmail.syncAll();
+        console.log('[EmailList] Syncing all accounts');
+        result = await window.electronAPI.gmail.syncAll();
       }
+      console.log('[EmailList] Sync result:', result);
       await loadEmails();
     } catch (err) {
-      console.error('Failed to sync emails:', err);
-      setError('Failed to sync emails. Please try again.');
+      console.error('[EmailList] Failed to sync emails:', err);
+      setError(`Failed to sync emails: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setSyncing(false);
     }

@@ -51,11 +51,13 @@ export class GmailSync {
 
   async sync(maxResults: number = 50): Promise<SyncStatus> {
     if (this.syncing) {
+      console.log(`[GmailSync] Account ${this.accountId} already syncing, skipping`);
       return this.lastStatus;
     }
 
     this.syncing = true;
     this.updateStatus({ status: 'syncing', error: null });
+    console.log(`[GmailSync] Starting sync for account ${this.accountId}`);
 
     try {
       const fetchResult = await fetchEmailsForAccount(
@@ -63,15 +65,18 @@ export class GmailSync {
         this.accountId,
         maxResults
       );
+      console.log(`[GmailSync] Fetched ${fetchResult.fetched} emails (${fetchResult.inserted} new, ${fetchResult.skipped} skipped)`);
 
       let classified = 0;
       if (fetchResult.inserted > 0) {
+        console.log(`[GmailSync] Classifying ${fetchResult.inserted} new emails...`);
         const classificationResults = await classifyUnclassifiedEmails(
           this.db,
           this.accountId,
           fetchResult.inserted
         );
         classified = classificationResults.length;
+        console.log(`[GmailSync] Classified ${classified} emails`);
       }
 
       const now = new Date().toISOString();
@@ -81,10 +86,12 @@ export class GmailSync {
         fetched: fetchResult.fetched,
         classified,
       });
+      console.log(`[GmailSync] Sync complete for account ${this.accountId}`);
 
       return this.lastStatus;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
+      console.error(`[GmailSync] Sync failed for account ${this.accountId}:`, message);
       this.updateStatus({
         status: 'error',
         error: message,
