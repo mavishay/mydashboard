@@ -10,6 +10,12 @@ interface ApiKeyMeta {
   createdAt: string;
 }
 
+interface GmailAccount {
+  id: string;
+  email: string;
+  displayName: string;
+}
+
 interface TelemetrySettings {
   optedIn: boolean;
   consentedAt: string | null;
@@ -27,6 +33,8 @@ function maskKey(label: string, provider: string): string {
 
 export function Settings({ onBack }: { onBack: () => void }) {
   const [keys, setKeys] = useState<ApiKeyMeta[]>([]);
+  const [gmailAccounts, setGmailAccounts] = useState<GmailAccount[]>([]);
+  const [connecting, setConnecting] = useState(false);
   const [provider, setProvider] = useState<Provider>('openai');
   const [label, setLabel] = useState('');
   const [apiKey, setApiKey] = useState('');
@@ -47,6 +55,15 @@ export function Settings({ onBack }: { onBack: () => void }) {
     }
   }, []);
 
+  const loadGmailAccounts = useCallback(async () => {
+    try {
+      const list = await window.electronAPI.gmail.listAccounts();
+      setGmailAccounts(list);
+    } catch (err) {
+      console.error('Failed to load Gmail accounts:', err);
+    }
+  }, []);
+
   const loadTelemetrySettings = useCallback(async () => {
     try {
       const settings = await window.electronAPI.telemetry.getSettings();
@@ -58,8 +75,9 @@ export function Settings({ onBack }: { onBack: () => void }) {
 
   useEffect(() => {
     loadKeys();
+    loadGmailAccounts();
     loadTelemetrySettings();
-  }, [loadKeys, loadTelemetrySettings]);
+  }, [loadKeys, loadGmailAccounts, loadTelemetrySettings]);
 
   const handleSave = async () => {
     setError(null);
@@ -95,6 +113,28 @@ export function Settings({ onBack }: { onBack: () => void }) {
     }
   };
 
+  const handleConnectGmail = async () => {
+    setConnecting(true);
+    setError(null);
+    try {
+      await window.electronAPI.gmail.connect();
+      await loadGmailAccounts();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to connect Gmail account');
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const handleDisconnectGmail = async (accountId: string) => {
+    try {
+      await window.electronAPI.gmail.disconnect(accountId);
+      await loadGmailAccounts();
+    } catch (err) {
+      console.error('Failed to disconnect Gmail account:', err);
+    }
+  };
+
   const handleTelemetryToggle = async () => {
     if (!telemetrySettings) return;
     setTelemetrySaving(true);
@@ -125,6 +165,76 @@ export function Settings({ onBack }: { onBack: () => void }) {
         </button>
         <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Settings</h1>
       </div>
+
+      <section style={{ marginBottom: '2rem' }}>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Gmail Accounts</h2>
+        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '1rem' }}>
+          Connect your Gmail accounts to sync and classify emails.
+        </p>
+
+        {gmailAccounts.length === 0 ? (
+          <p style={{ color: '#999', fontSize: '0.875rem', marginBottom: '1rem' }}>
+            No accounts connected.
+          </p>
+        ) : (
+          <div style={{ marginBottom: '1rem' }}>
+            {gmailAccounts.map((account) => (
+              <div
+                key={account.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.75rem 1rem',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>
+                    {account.displayName}
+                  </div>
+                  <div style={{ color: '#666', fontSize: '0.75rem' }}>
+                    {account.email}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDisconnectGmail(account.id)}
+                  style={{
+                    background: 'none',
+                    border: '1px solid #d32f2f',
+                    color: '#d32f2f',
+                    borderRadius: '4px',
+                    padding: '0.25rem 0.5rem',
+                    cursor: 'pointer',
+                    fontSize: '0.75rem',
+                  }}
+                >
+                  Disconnect
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <button
+          onClick={handleConnectGmail}
+          disabled={connecting}
+          style={{
+            padding: '0.625rem 1.25rem',
+            borderRadius: '4px',
+            border: 'none',
+            background: connecting ? '#ccc' : '#1976d2',
+            color: '#fff',
+            cursor: connecting ? 'not-allowed' : 'pointer',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+          }}
+        >
+          {connecting ? 'Connecting...' : 'Connect Gmail Account'}
+        </button>
+      </section>
 
       <section style={{ marginBottom: '2rem' }}>
         <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Add API Key</h2>
