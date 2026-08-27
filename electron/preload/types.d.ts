@@ -168,6 +168,10 @@ declare global {
       getEvents: (limit?: number) => Promise<TelemetryEvent[]>;
       clearEvents: () => Promise<void>;
     };
+    aiConsent: {
+      getSettings: () => Promise<{ consented: boolean; consentedAt: string | null }>;
+      setConsent: (consented: boolean) => Promise<void>;
+    };
   }
 
   interface Window {

@@ -1,5 +1,6 @@
 import type Database from 'better-sqlite3';
 import { getDecryptedKey, type LlmProvider } from '../auth/api-keys';
+import { hasAiConsent } from './consent';
 
 export type Classification = 'urgent' | 'action' | 'fyi' | 'noise';
 
@@ -159,6 +160,10 @@ export async function classifyEmail(
   db: Database.Database,
   emailId: string
 ): Promise<ClassificationResult | null> {
+  if (!hasAiConsent(db)) {
+    throw new Error('AI consent required. Enable AI features in Settings.');
+  }
+
   const email = db
     .prepare('SELECT id, subject, snippet, from_address FROM emails WHERE id = ?')
     .get(emailId) as EmailRow | undefined;

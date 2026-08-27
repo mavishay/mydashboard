@@ -11,6 +11,7 @@ import { registerGoogleTasksHandlers } from './google-tasks-handlers';
 import { registerTickTickHandlers } from './ticktick-handlers';
 import { registerTelemetryHandlers } from './telemetry-handlers';
 import { registerClassificationHandlers } from './classification-handlers';
+import { registerAiConsentHandlers } from './ai-consent-handlers';
 
 export function registerIpcHandlers(
   db: Database.Database,
@@ -30,4 +31,5 @@ export function registerIpcHandlers(
   registerTickTickHandlers(ipcMain, db);
   registerTelemetryHandlers(ipcMain, db);
   registerClassificationHandlers(ipcMain, db);
+  registerAiConsentHandlers(ipcMain, db);
 }

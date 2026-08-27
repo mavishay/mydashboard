@@ -21,6 +21,11 @@ interface TelemetrySettings {
   consentedAt: string | null;
 }
 
+interface AiConsentSettings {
+  consented: boolean;
+  consentedAt: string | null;
+}
+
 const PROVIDER_LABELS: Record<Provider, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic',
@@ -45,6 +50,8 @@ export function Settings({ onBack }: { onBack: () => void }) {
   const [success, setSuccess] = useState(false);
   const [telemetrySettings, setTelemetrySettings] = useState<TelemetrySettings | null>(null);
   const [telemetrySaving, setTelemetrySaving] = useState(false);
+  const [aiConsentSettings, setAiConsentSettings] = useState<AiConsentSettings | null>(null);
+  const [aiConsentSaving, setAiConsentSaving] = useState(false);
 
   const loadKeys = useCallback(async () => {
     try {
@@ -73,11 +80,21 @@ export function Settings({ onBack }: { onBack: () => void }) {
     }
   }, []);
 
+  const loadAiConsentSettings = useCallback(async () => {
+    try {
+      const settings = await window.electronAPI.aiConsent.getSettings();
+      setAiConsentSettings(settings);
+    } catch (err) {
+      console.error('Failed to load AI consent settings:', err);
+    }
+  }, []);
+
   useEffect(() => {
     loadKeys();
     loadGmailAccounts();
     loadTelemetrySettings();
-  }, [loadKeys, loadGmailAccounts, loadTelemetrySettings]);
+    loadAiConsentSettings();
+  }, [loadKeys, loadGmailAccounts, loadTelemetrySettings, loadAiConsentSettings]);
 
   const handleSave = async () => {
     setError(null);
@@ -145,6 +162,19 @@ export function Settings({ onBack }: { onBack: () => void }) {
       console.error('Failed to update telemetry settings:', err);
     } finally {
       setTelemetrySaving(false);
+    }
+  };
+
+  const handleAiConsentToggle = async () => {
+    if (!aiConsentSettings) return;
+    setAiConsentSaving(true);
+    try {
+      await window.electronAPI.aiConsent.setConsent(!aiConsentSettings.consented);
+      await loadAiConsentSettings();
+    } catch (err) {
+      console.error('Failed to update AI consent settings:', err);
+    } finally {
+      setAiConsentSaving(false);
     }
   };
 
@@ -404,6 +434,36 @@ export function Settings({ onBack }: { onBack: () => void }) {
             {telemetrySettings.consentedAt && (
               <span style={{ color: '#999', fontSize: '0.75rem' }}>
                 Since: {new Date(telemetrySettings.consentedAt).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+        ) : (
+          <p style={{ color: '#999', fontSize: '0.875rem' }}>Loading...</p>
+        )}
+      </section>
+
+      <section style={{ marginTop: '2rem', borderTop: '1px solid #eee', paddingTop: '2rem' }}>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>AI Features</h2>
+        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '1rem' }}>
+          AI features classify your emails and send full email content to external LLM providers (OpenAI/Anthropic). You provide your own API keys.
+        </p>
+        {aiConsentSettings ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={aiConsentSettings.consented}
+                onChange={handleAiConsentToggle}
+                disabled={aiConsentSaving}
+                style={{ width: '1.25rem', height: '1.25rem' }}
+              />
+              <span style={{ fontSize: '0.875rem' }}>
+                {aiConsentSettings.consented ? 'AI features enabled' : 'AI features disabled'}
+              </span>
+            </label>
+            {aiConsentSettings.consentedAt && (
+              <span style={{ color: '#999', fontSize: '0.75rem' }}>
+                Since: {new Date(aiConsentSettings.consentedAt).toLocaleDateString()}
               </span>
             )}
           </div>

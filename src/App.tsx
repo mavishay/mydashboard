@@ -7,15 +7,18 @@ type AppPage = 'onboarding' | 'dashboard';
 export function App() {
   const [page, setPage] = useState<AppPage>('onboarding');
   const [checkingConsent, setCheckingConsent] = useState(true);
+  const [aiConsented, setAiConsented] = useState(false);
 
   const checkExistingConsent = useCallback(async () => {
     try {
       const settings = await window.electronAPI.telemetry.getSettings();
       if (settings.consentedAt) {
+        const aiSettings = await window.electronAPI.aiConsent.getSettings();
+        setAiConsented(aiSettings.consented);
         setPage('dashboard');
       }
     } catch (err) {
-      console.error('Failed to check telemetry settings:', err);
+      console.error('Failed to check consent settings:', err);
     } finally {
       setCheckingConsent(false);
     }
@@ -40,7 +43,7 @@ export function App() {
   }
 
   if (page === 'onboarding') {
-    return <Onboarding onComplete={() => setPage('dashboard')} />;
+    return <Onboarding onComplete={() => { setAiConsented(true); setPage('dashboard'); }} />;
   }
 
   return <Dashboard />;

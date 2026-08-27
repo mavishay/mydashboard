@@ -54,6 +54,8 @@ const ALLOWED_INVOKE = new Set([
   'classification:fetchEmails',
   'classification:fetchEmailsAll',
   'classification:getEmails',
+  'ai-consent:getSettings',
+  'ai-consent:setConsent',
 ] as const);
 
 const ALLOWED_ON = new Set([
@@ -198,5 +200,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
       gatedInvoke('classification:fetchEmailsAll') as Promise<Array<{ accountId: string; fetched: number; inserted: number; skipped: number }>>,
     getEmails: (options?: { accountId?: string; classification?: string; limit?: number; offset?: number }) =>
       gatedInvoke('classification:getEmails', options ?? {}) as Promise<Array<{ id: string; accountId: string; subject: string | null; snippet: string | null; fromAddress: string | null; receivedAt: string | null; classification: string }>>,
+  },
+  aiConsent: {
+    getSettings: () =>
+      gatedInvoke('ai-consent:getSettings') as Promise<{ consented: boolean; consentedAt: string | null }>,
+    setConsent: (consented: boolean) =>
+      gatedInvoke('ai-consent:setConsent', { consented }),
   },
 });
