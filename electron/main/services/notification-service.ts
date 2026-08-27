@@ -1,7 +1,6 @@
 import { Notification, BrowserWindow } from 'electron';
 import type Database from 'better-sqlite3';
 import { QuietHoursService } from './quiet-hours-service';
-import { FeedbackService } from './feedback-service';
 
 export interface QueuedNotification {
   emailId: string;
@@ -22,7 +21,6 @@ export class NotificationService {
   constructor(
     private db: Database.Database,
     private quietHoursService: QuietHoursService,
-    private _feedbackService: FeedbackService,
     getWindow: () => BrowserWindow | null = () => null,
   ) {
     this.getWindow = getWindow;

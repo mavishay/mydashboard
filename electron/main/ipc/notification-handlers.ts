@@ -34,7 +34,7 @@ export function registerNotificationHandlers(
 ): { notificationService: NotificationService } {
   const quietHoursService = new QuietHoursService(db);
   const feedbackService = new FeedbackService(db);
-  const notificationService = new NotificationService(db, quietHoursService, feedbackService, getWindow);
+  const notificationService = new NotificationService(db, quietHoursService, getWindow);
 
   ipcMain.handle('notification:get-quiet-hours', async () => {
     return quietHoursService.getSettings();

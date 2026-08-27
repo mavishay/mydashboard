@@ -35,6 +35,19 @@ type ClassifyAccountPayload = z.infer<typeof ClassifyAccountSchema>;
 type FetchEmailsPayload = z.infer<typeof FetchEmailsSchema>;
 type GetEmailsPayload = z.infer<typeof GetEmailsSchema>;
 
+function getEmailForNotification(
+  db: Database.Database,
+  emailId: string,
+): { subject: string; sender: string } {
+  const email = db
+    .prepare('SELECT subject, from_address FROM emails WHERE id = ?')
+    .get(emailId) as { subject: string | null; from_address: string | null } | undefined;
+  return {
+    subject: email?.subject ?? '(no subject)',
+    sender: email?.from_address ?? 'unknown',
+  };
+}
+
 export function registerClassificationHandlers(
   ipcMain: IpcMain,
   db: Database.Database,
@@ -55,13 +68,11 @@ export function registerClassificationHandlers(
 
       if (result.classification === 'urgent') {
         if (notificationService) {
-          const email = db
-            .prepare('SELECT subject, from_address FROM emails WHERE id = ?')
-            .get(parsed.data.emailId) as { subject: string | null; from_address: string | null } | undefined;
+          const { subject, sender } = getEmailForNotification(db, parsed.data.emailId);
           notificationService.send({
             emailId: parsed.data.emailId,
-            subject: email?.subject ?? '(no subject)',
-            sender: email?.from_address ?? 'unknown',
+            subject,
+            sender,
             classification: 'urgent',
           });
         } else {
@@ -90,13 +101,11 @@ export function registerClassificationHandlers(
       if (notificationService) {
         for (const classified of result.classified) {
           if (classified.classification === 'urgent') {
-            const email = db
-              .prepare('SELECT subject, from_address FROM emails WHERE id = ?')
-              .get(classified.emailId) as { subject: string | null; from_address: string | null } | undefined;
+            const { subject, sender } = getEmailForNotification(db, classified.emailId);
             notificationService.send({
               emailId: classified.emailId,
-              subject: email?.subject ?? '(no subject)',
-              sender: email?.from_address ?? 'unknown',
+              subject,
+              sender,
               classification: 'urgent',
             });
           }

@@ -1,7 +1,7 @@
 interface StatusBarProps {
   status: string;
   onClick: () => void;
-  dndEnabled?: boolean;
+  dndEnabled: boolean;
 }
 
 const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
