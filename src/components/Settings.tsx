@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { NotificationPreferences } from './notifications/NotificationPreferences';
 
 type Provider = 'openai' | 'anthropic' | 'litellm';
 
@@ -495,6 +496,9 @@ export function Settings({ onBack }: { onBack: () => void }) {
         ) : (
           <p style={{ color: '#999', fontSize: '0.875rem' }}>Loading...</p>
         )}
+        <div style={{ marginTop: '2rem' }}>
+          <NotificationPreferences />
+        </div>
       </section>
     </div>
   );

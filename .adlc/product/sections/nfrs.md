@@ -1,4 +1,4 @@
-# Non-Functional Requirements: AI-Powered Unified Productivity Dashboard
+# Non-Functional Requirements: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-002, PDR-003
 

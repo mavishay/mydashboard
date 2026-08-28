@@ -32,7 +32,12 @@ describe('app smoke test', () => {
   it('registers all expected IPC channels via registerIpcHandlers', async () => {
     const { registerIpcHandlers } = await import('../electron/main/ipc');
     const { ipcMain } = await import('electron');
-    const db = {} as any;
+    const db = {
+      prepare: vi.fn().mockReturnValue({
+        get: vi.fn().mockReturnValue(undefined),
+        run: vi.fn(),
+      }),
+    } as any;
 
     registerIpcHandlers(db, () => null, vi.fn());
 

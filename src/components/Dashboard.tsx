@@ -13,10 +13,15 @@ export function Dashboard() {
   const [n8nStatus, setN8nStatus] = useState<string>('unknown');
   const [showWizard, setShowWizard] = useState(false);
   const [restarting, setRestarting] = useState(false);
+  const [dndEnabled, setDndEnabled] = useState(false);
 
   useEffect(() => {
     window.electronAPI.n8n.status().then((result) => {
       setN8nStatus(result.status);
+    });
+
+    window.electronAPI.notification.getDndStatus().then((result) => {
+      setDndEnabled(result.enabled);
     });
 
     const cleanup = window.electronAPI.n8n.onHealth((status: string) => {
@@ -48,9 +53,9 @@ export function Dashboard() {
   return (
     <div style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h1 style={{ margin: 0 }}>Unified Productivity Dashboard</h1>
+        <h1 style={{ margin: 0 }}>Focus Board</h1>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <StatusBar status={n8nStatus} onClick={() => setShowWizard(true)} />
+          <StatusBar status={n8nStatus} onClick={() => setShowWizard(true)} dndEnabled={dndEnabled} />
           <button
             onClick={() => setPage('telemetry-stats')}
             style={{

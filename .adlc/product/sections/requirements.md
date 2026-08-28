@@ -1,4 +1,4 @@
-# Functional Requirements: AI-Powered Unified Productivity Dashboard
+# Functional Requirements: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-002, PDR-003, PDR-005, PDR-007
 

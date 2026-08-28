@@ -1,6 +1,7 @@
 interface StatusBarProps {
   status: string;
   onClick: () => void;
+  dndEnabled: boolean;
 }
 
 const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
@@ -10,7 +11,7 @@ const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
   unknown: { color: '#9ca3af', label: 'n8n: Unknown' },
 };
 
-export function StatusBar({ status, onClick }: StatusBarProps) {
+export function StatusBar({ status, onClick, dndEnabled }: StatusBarProps) {
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.unknown;
 
   return (
@@ -30,6 +31,19 @@ export function StatusBar({ status, onClick }: StatusBarProps) {
         color: '#374151',
       }}
     >
+      {dndEnabled && (
+        <span
+          title="Do Not Disturb"
+          style={{
+            fontSize: '0.625rem',
+            color: '#f59e0b',
+            fontWeight: 600,
+            marginRight: '0.25rem',
+          }}
+        >
+          DND
+        </span>
+      )}
       <span
         style={{
           width: '8px',

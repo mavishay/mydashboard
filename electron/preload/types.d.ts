@@ -172,6 +172,15 @@ declare global {
       getSettings: () => Promise<{ consented: boolean; policyVersion: string; consentedAt: string | null; revokedAt: string | null }>;
       setConsent: (consented: boolean) => Promise<void>;
     };
+    notification: {
+      getQuietHours: () => Promise<{ enabled: boolean; startHour: number; startMinute: number; endHour: number; endMinute: number }>;
+      setQuietHours: (data: { enabled: boolean; startHour: number; startMinute: number; endHour: number; endMinute: number }) => Promise<{ success: boolean }>;
+      getDndStatus: () => Promise<{ enabled: boolean }>;
+      setDnd: (data: { enabled: boolean }) => Promise<{ success: boolean }>;
+      getPreferences: () => Promise<{ notificationTimeoutMs: number; maxConcurrent: number }>;
+      feedback: (data: { notificationId: string; emailId: string; classification: 'urgent'; feedback: 'thumbs_up' | 'thumbs_down' }) => Promise<{ success: boolean }>;
+      onFocusEmail: (callback: (data: { emailId: string }) => void) => void;
+    };
   }
 
   interface Window {

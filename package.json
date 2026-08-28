@@ -1,8 +1,8 @@
 {
-  "name": "unified-productivity-dashboard",
+  "name": "focus-board",
   "version": "0.1.0",
   "private": true,
-  "description": "AI-Powered Unified Productivity Dashboard",
+  "description": "AI-Powered Focus Board",
   "main": "out/main/index.js",
   "type": "module",
   "scripts": {

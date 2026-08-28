@@ -1,4 +1,4 @@
-# Out of Scope: AI-Powered Unified Productivity Dashboard
+# Out of Scope: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-002, PDR-004, PDR-005, PDR-007
 
