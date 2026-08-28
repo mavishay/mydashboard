@@ -7,6 +7,7 @@ import {
   getClassifiedEmails,
 } from '../ai/classifier';
 import { fetchEmailsForAccount, fetchEmailsForAllAccounts } from '../gmail/fetcher';
+import type { NotificationService } from '../services/notification-service';
 
 const ClassifyEmailSchema = z.object({
   emailId: z.string().min(1),
@@ -34,9 +35,23 @@ type ClassifyAccountPayload = z.infer<typeof ClassifyAccountSchema>;
 type FetchEmailsPayload = z.infer<typeof FetchEmailsSchema>;
 type GetEmailsPayload = z.infer<typeof GetEmailsSchema>;
 
+function getEmailForNotification(
+  db: Database.Database,
+  emailId: string,
+): { subject: string; sender: string } {
+  const email = db
+    .prepare('SELECT subject, from_address FROM emails WHERE id = ?')
+    .get(emailId) as { subject: string | null; from_address: string | null } | undefined;
+  return {
+    subject: email?.subject ?? '(no subject)',
+    sender: email?.from_address ?? 'unknown',
+  };
+}
+
 export function registerClassificationHandlers(
   ipcMain: IpcMain,
-  db: Database.Database
+  db: Database.Database,
+  notificationService?: NotificationService
 ): void {
   ipcMain.handle(
     'classification:classify',
@@ -49,6 +64,20 @@ export function registerClassificationHandlers(
       const result = await classifyEmail(db, parsed.data.emailId);
       if (!result) {
         throw new Error('Email not found');
+      }
+
+      if (result.classification === 'urgent') {
+        if (notificationService) {
+          const { subject, sender } = getEmailForNotification(db, parsed.data.emailId);
+          notificationService.send({
+            emailId: parsed.data.emailId,
+            subject,
+            sender,
+            classification: 'urgent',
+          });
+        } else {
+          console.warn('[classification] notificationService not available — urgent email notification skipped');
+        }
       }
 
       return result;
@@ -68,6 +97,22 @@ export function registerClassificationHandlers(
         parsed.data.accountId,
         parsed.data.limit
       );
+
+      if (notificationService) {
+        for (const classified of result.classified) {
+          if (classified.classification === 'urgent') {
+            const { subject, sender } = getEmailForNotification(db, classified.emailId);
+            notificationService.send({
+              emailId: classified.emailId,
+              subject,
+              sender,
+              classification: 'urgent',
+            });
+          }
+        }
+      } else if (result.classified.some(c => c.classification === 'urgent')) {
+        console.warn('[classification] notificationService not available — urgent email notifications skipped');
+      }
 
       return {
         classified: result.classified.length,
