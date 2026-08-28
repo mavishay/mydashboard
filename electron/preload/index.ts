@@ -66,6 +66,11 @@ const ALLOWED_INVOKE = new Set([
   'notification:set-dnd',
   'notification:get-preferences',
   'notification:feedback',
+  'cron:start',
+  'cron:stop',
+  'cron:status',
+  'cron:update-config',
+  'cron:run-now',
 ] as const);
 
 const ALLOWED_ON = new Set([
@@ -77,6 +82,7 @@ const ALLOWED_ON = new Set([
   'ticktick:sync-health',
   'gmail:sync-health',
   'notification:focus-email',
+  'cron:status-update',
 ] as const);
 
 function gatedInvoke(channel: string, ...args: unknown[]): Promise<unknown> {
@@ -242,5 +248,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
     feedback: (data: { notificationId: string; emailId: string; classification: 'urgent'; feedback: 'thumbs_up' | 'thumbs_down' }) =>
       gatedInvoke('notification:feedback', data) as Promise<{ success: boolean }>,
     onFocusEmail: (callback: (data: { emailId: string }) => void) => gatedOn('notification:focus-email', callback),
+  },
+  cron: {
+    start: () => gatedInvoke('cron:start') as Promise<import('../main/cron/cron-scheduler').CronStatus>,
+    stop: () => gatedInvoke('cron:stop') as Promise<import('../main/cron/cron-scheduler').CronStatus>,
+    status: () => gatedInvoke('cron:status') as Promise<import('../main/cron/cron-scheduler').CronStatus>,
+    updateConfig: (data: Partial<import('../main/cron/cron-scheduler').CronConfig>) =>
+      gatedInvoke('cron:update-config', data) as Promise<import('../main/cron/cron-scheduler').CronStatus>,
+    runNow: () => gatedInvoke('cron:run-now') as Promise<import('../main/cron/cron-scheduler').CronStatus>,
+    onStatusUpdate: (callback: (status: import('../main/cron/cron-scheduler').CronStatus) => void) =>
+      gatedOn('cron:status-update', callback),
   },
 });
