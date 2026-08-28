@@ -10,6 +10,7 @@ export function App() {
 
   const checkExistingConsent = useCallback(async () => {
     try {
+<<<<<<< HEAD
       const settings = await window.electronAPI.telemetry.getSettings();
       if (settings.consentedAt) {
         const aiSettings = await window.electronAPI.aiConsent.getSettings();
@@ -22,6 +23,20 @@ export function App() {
       }
     } catch (err) {
       console.error('Failed to check consent settings:', err);
+=======
+      const status = await window.electronAPI.onboarding.getStatus();
+      if (
+        status.dockerCheckComplete &&
+        status.n8nHealthComplete &&
+        status.apiKeyComplete &&
+        status.accountConnected
+      ) {
+        setPage('dashboard');
+        return;
+      }
+    } catch (err) {
+      console.error('Failed to check onboarding status:', err);
+>>>>>>> origin/main
     } finally {
       setCheckingConsent(false);
     }

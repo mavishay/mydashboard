@@ -1,26 +1,39 @@
 import { useState, useEffect } from 'react';
 import { AiConsentOnboarding } from './AiConsentOnboarding';
+import { SetupWizard } from './SetupWizard/SetupWizard';
 
 interface OnboardingProps {
   onComplete: () => void;
 }
 
 export function Onboarding({ onComplete }: OnboardingProps) {
-  const [step, setStep] = useState<'welcome' | 'ai-consent' | 'telemetry'>('welcome');
+  const [step, setStep] = useState<'welcome' | 'ai-consent' | 'telemetry' | 'wizard'>('welcome');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const checkExistingConsent = async () => {
       try {
+        const status = await window.electronAPI.onboarding.getStatus();
+        if (
+          status.dockerCheckComplete &&
+          status.n8nHealthComplete &&
+          status.apiKeyComplete &&
+          status.accountConnected
+        ) {
+          onComplete();
+          return;
+        }
         const settings = await window.electronAPI.telemetry.getSettings();
         if (settings.consentedAt) {
-        const aiSettings = await window.electronAPI.aiConsent.getSettings();
-        if (aiSettings.consented) {
-          onComplete();
-        }
+          const aiSettings = await window.electronAPI.aiConsent.getSettings();
+          if (aiSettings.consented) {
+            onComplete();
+            return;
+          }
+          setStep('wizard');
         }
       } catch (err) {
-        console.error('Failed to check existing consent:', err);
+        console.error('Failed to check onboarding status:', err);
       }
     };
     checkExistingConsent();
@@ -42,13 +55,17 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     setSaving(true);
     try {
       await window.electronAPI.telemetry.setOptIn(optedIn);
-      onComplete();
+      setStep('wizard');
     } catch (err) {
       console.error('Failed to save telemetry settings:', err);
     } finally {
       setSaving(false);
     }
   };
+
+  if (step === 'wizard') {
+    return <SetupWizard onComplete={onComplete} />;
+  }
 
   if (step === 'welcome') {
     return (

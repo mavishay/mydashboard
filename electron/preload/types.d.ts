@@ -172,6 +172,12 @@ declare global {
       getSettings: () => Promise<{ consented: boolean; policyVersion: string; consentedAt: string | null; revokedAt: string | null }>;
       setConsent: (consented: boolean) => Promise<void>;
     };
+    onboarding: {
+      getStatus: () => Promise<{ dockerCheckComplete: boolean; n8nHealthComplete: boolean; apiKeyComplete: boolean; accountConnected: boolean; setupCompletedAt: string | null }>;
+      setStepComplete: (stepId: string) => Promise<void>;
+      recordSetupEvent: (eventType: string, stepId?: string, metadata?: Record<string, unknown>) => Promise<void>;
+      startTracking: () => Promise<void>;
+    };
     notification: {
       getQuietHours: () => Promise<{ enabled: boolean; startHour: number; startMinute: number; endHour: number; endMinute: number }>;
       setQuietHours: (data: { enabled: boolean; startHour: number; startMinute: number; endHour: number; endMinute: number }) => Promise<{ success: boolean }>;

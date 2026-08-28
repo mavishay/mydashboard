@@ -49,6 +49,10 @@ const ALLOWED_INVOKE = new Set([
   'telemetry:setOptIn',
   'telemetry:getEvents',
   'telemetry:clearEvents',
+  'onboarding:getStatus',
+  'onboarding:setStepComplete',
+  'onboarding:recordSetupEvent',
+  'onboarding:startTracking',
   'classification:classify',
   'classification:classifyAccount',
   'classification:fetchEmails',
@@ -213,6 +217,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
       gatedInvoke('ai-consent:getSettings') as Promise<{ consented: boolean; policyVersion: string; consentedAt: string | null; revokedAt: string | null }>,
     setConsent: (consented: boolean) =>
       gatedInvoke('ai-consent:setConsent', { consented }),
+  },
+  onboarding: {
+    getStatus: () =>
+      gatedInvoke('onboarding:getStatus') as Promise<{ dockerCheckComplete: boolean; n8nHealthComplete: boolean; apiKeyComplete: boolean; accountConnected: boolean; setupCompletedAt: string | null }>,
+    setStepComplete: (stepId: string) =>
+      gatedInvoke('onboarding:setStepComplete', { stepId }),
+    recordSetupEvent: (eventType: string, stepId?: string, metadata?: Record<string, unknown>) =>
+      gatedInvoke('onboarding:recordSetupEvent', { eventType, stepId, metadata }),
+    startTracking: () =>
+      gatedInvoke('onboarding:startTracking'),
   },
   notification: {
     getQuietHours: () =>
