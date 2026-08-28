@@ -44,7 +44,7 @@ export function AiConsentOnboarding({ onAccept, onDecline, saving = false }: AiC
           Important: Full Email Payloads Sent to Cloud
         </h3>
         <p style={{ color: '#666', fontSize: '0.875rem', margin: 0 }}>
-          To classify your emails, <strong>full email content</strong> (subject, sender, preview) is sent to external LLM providers (OpenAI or Anthropic). You must provide your own API keys (BYOK). Email content is processed by these providers but is <strong>not stored</strong> by them.
+          To classify your emails, <strong>email metadata</strong> (subject line, sender address, and preview snippet) is sent to external LLM providers (OpenAI or Anthropic). You must provide your own API keys (BYOK). Email content is processed by these providers but is <strong>not stored</strong> by them.
         </p>
       </div>
 
@@ -58,7 +58,7 @@ export function AiConsentOnboarding({ onAccept, onDecline, saving = false }: AiC
         <ul style={{ color: '#666', fontSize: '0.875rem', margin: 0, paddingLeft: '1.5rem' }}>
           <li>You provide your own API keys — no third party has access</li>
           <li>You can disable AI features at any time in Settings</li>
-          <li>No personal information is shared beyond email content for classification</li>
+          <li>No personal information is shared beyond email metadata for classification</li>
         </ul>
       </div>
 

@@ -14,7 +14,7 @@ Display a full payload policy and BYOK consent screen during onboarding before a
 2. Consent screen clearly explains that email subject, sender address, and preview snippet are sent to the LLM provider for classification
 3. Consent screen explains that the user provides their own API key (BYOK) and data goes directly to the provider they configure
 4. User must explicitly click "I Understand & Consent" to proceed; no silent acceptance
-5. Consent is persisted in SQLite (`ai_consent` table) with timestamp and version
+5. Consent is persisted in SQLite (`ai_consent_settings` table) with timestamp and version
 6. AI classification is blocked until consent is recorded — `classifyEmail` checks consent before calling LLM
 7. Existing users who have already configured API keys are shown the consent screen on next launch (migration path)
 8. Consent can be revoked from Settings, which disables AI features until re-consented
@@ -141,7 +141,7 @@ export async function classifyEmail(
 ): Promise<ClassificationResult | null> {
   // Check consent first
   const consent = db
-    .prepare('SELECT consented FROM ai_consent WHERE id = 1')
+    .prepare('SELECT consented FROM ai_consent_settings WHERE id = 1')
     .get() as { consented: number } | undefined;
 
   if (!consent || consent.consented !== 1) {
@@ -168,8 +168,8 @@ Add an AI Consent section to `Settings.tsx` between Telemetry and existing secti
 
 When the migration runs:
 1. Check if `api_keys` table has any rows (user had BYOK configured)
-2. If yes: insert `ai_consent` row with `consented=0` (requires explicit consent)
-3. If no: insert `ai_consent` row with `consented=0`
+2. If yes: insert `ai_consent_settings` row with `consented=0` (requires explicit consent)
+3. If no: insert `ai_consent_settings` row with `consented=0`
 4. On next app launch, `App.tsx` checks both telemetry consent AND AI consent
 5. If AI consent is missing or `consented=0`, user sees the consent screen
 
@@ -196,8 +196,8 @@ const checkExistingConsent = useCallback(async () => {
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `electron/main/db/migrations/012-ai-consent.sql` | Create | New `ai_consent` table |
-| `electron/main/db/index.ts` | Modify | Add migration 012, bump `CURRENT_SCHEMA_VERSION` to 12 |
+| `electron/main/db/migrations/014-ai-consent-settings.sql` | Create | New `ai_consent_settings` table |
+| `electron/main/db/index.ts` | Modify | Add migration 014, bump `CURRENT_SCHEMA_VERSION` to 14 |
 | `electron/main/ipc/ai-consent-handlers.ts` | Create | IPC handlers for consent get/set |
 | `electron/main/ipc/index.ts` | Modify | Register `aiConsentHandlers` |
 | `electron/preload/types.d.ts` | Modify | Add `aiConsent` to `ElectronAPI` interface |

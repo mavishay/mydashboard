@@ -211,6 +211,10 @@ export async function classifyUnclassifiedEmails(
   accountId?: string,
   limit: number = 20
 ): Promise<BatchClassificationResult> {
+  if (!hasAiConsent(db)) {
+    throw new Error('AI consent not granted');
+  }
+
   const whereClause = accountId
     ? 'WHERE classification IS NULL AND account_id = ?'
     : 'WHERE classification IS NULL';
