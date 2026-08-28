@@ -203,7 +203,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   aiConsent: {
     getSettings: () =>
-      gatedInvoke('ai-consent:getSettings') as Promise<{ consented: boolean; consentedAt: string | null }>,
+      gatedInvoke('ai-consent:getSettings') as Promise<{ consented: boolean; policyVersion: string; consentedAt: string | null; revokedAt: string | null }>,
     setConsent: (consented: boolean) =>
       gatedInvoke('ai-consent:setConsent', { consented }),
   },

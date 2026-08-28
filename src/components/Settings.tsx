@@ -23,7 +23,9 @@ interface TelemetrySettings {
 
 interface AiConsentSettings {
   consented: boolean;
+  policyVersion: string;
   consentedAt: string | null;
+  revokedAt: string | null;
 }
 
 const PROVIDER_LABELS: Record<Provider, string> = {
@@ -468,7 +470,7 @@ export function Settings({ onBack }: { onBack: () => void }) {
       <section style={{ marginTop: '2rem', borderTop: '1px solid #eee', paddingTop: '2rem' }}>
         <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>AI Features</h2>
         <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '1rem' }}>
-          AI features classify your emails and send full email content to external LLM providers (OpenAI/Anthropic). You provide your own API keys.
+          AI features classify your emails and send email subject, sender address, and preview snippet to external LLM providers (OpenAI/Anthropic). You provide your own API keys.
         </p>
         {aiConsentSettings ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
