@@ -98,12 +98,9 @@ describe('QuietHoursService', () => {
       endMinute: 0,
     });
 
-    // Mock time to be during quiet hours (23:00 = 1380 minutes)
-    const mockDate = new Date();
-    mockDate.getHours = () => 23;
-    mockDate.getMinutes = () => 0;
+    // Mock time to be during quiet hours (23:00)
     vi.useFakeTimers({ shouldAdvanceTime: false });
-    vi.setSystemTime(mockDate);
+    vi.setSystemTime(new Date(2026, 0, 1, 23, 0, 0));
 
     expect(svc.isQuietHours()).toBe(true);
 
@@ -126,12 +123,9 @@ describe('QuietHoursService', () => {
       endMinute: 0,
     });
 
-    // Mock time to be outside quiet hours (12:00 = 720 minutes)
-    const mockDate = new Date();
-    mockDate.getHours = () => 12;
-    mockDate.getMinutes = () => 0;
+    // Mock time to be outside quiet hours (12:00)
     vi.useFakeTimers({ shouldAdvanceTime: false });
-    vi.setSystemTime(mockDate);
+    vi.setSystemTime(new Date(2026, 0, 1, 12, 0, 0));
 
     expect(svc.isQuietHours()).toBe(false);
 
@@ -154,12 +148,9 @@ describe('QuietHoursService', () => {
       endMinute: 0,
     });
 
-    // Mock time to be during quiet hours (14:00 = 840 minutes)
-    const mockDate = new Date();
-    mockDate.getHours = () => 14;
-    mockDate.getMinutes = () => 0;
+    // Mock time to be during quiet hours (14:00)
     vi.useFakeTimers({ shouldAdvanceTime: false });
-    vi.setSystemTime(mockDate);
+    vi.setSystemTime(new Date(2026, 0, 1, 14, 0, 0));
 
     expect(svc.isQuietHours()).toBe(true);
 

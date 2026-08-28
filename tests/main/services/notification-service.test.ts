@@ -40,12 +40,10 @@ describe('NotificationService', () => {
     const { initializeDatabase } = await import('../../../electron/main/db');
     const db = initializeDatabase(dbPath);
     const { QuietHoursService } = await import('../../../electron/main/services/quiet-hours-service');
-    const { FeedbackService } = await import('../../../electron/main/services/feedback-service');
     const { NotificationService } = await import('../../../electron/main/services/notification-service');
     const quietHoursService = new QuietHoursService(db);
-    const feedbackService = new FeedbackService(db);
-    const service = new NotificationService(db, quietHoursService, feedbackService, getWindow ?? (() => null));
-    return { service, db };
+    const service = new NotificationService(db, quietHoursService, getWindow ?? (() => null));
+    return { service, db, quietHoursService };
   }
 
   it('sends notification for urgent classification', async () => {
@@ -95,17 +93,18 @@ describe('NotificationService', () => {
   });
 
   it('suppresses notification during quiet hours', async () => {
-    const { service, db } = await createService();
-    // Quiet hours are enabled by default after updating settings
-    const { QuietHoursService } = await import('../../../electron/main/services/quiet-hours-service');
-    const qhs = new QuietHoursService(db);
-    qhs.updateSettings({
+    const { service, db, quietHoursService } = await createService();
+    quietHoursService.updateSettings({
       enabled: true,
       startHour: 0,
       startMinute: 0,
       endHour: 23,
       endMinute: 59,
     });
+
+    // Mock time to be during quiet hours (14:00)
+    vi.useFakeTimers({ shouldAdvanceTime: false });
+    vi.setSystemTime(new Date(2026, 0, 1, 14, 0, 0));
 
     const result = await service.send({
       emailId: 'email-1',
@@ -121,6 +120,7 @@ describe('NotificationService', () => {
     ).get('email-1') as { quiet_hours_suppressed: number };
     expect(logRow.quiet_hours_suppressed).toBe(1);
 
+    vi.useRealTimers();
     db.close();
     cleanupDb(dbPath);
   });
@@ -131,11 +131,9 @@ describe('NotificationService', () => {
 
     // Create a new service instance to test loading
     const { QuietHoursService } = await import('../../../electron/main/services/quiet-hours-service');
-    const { FeedbackService } = await import('../../../electron/main/services/feedback-service');
     const { NotificationService } = await import('../../../electron/main/services/notification-service');
     const qhs = new QuietHoursService(db);
-    const fs = new FeedbackService(db);
-    const service2 = new NotificationService(db, qhs, fs, () => null);
+    const service2 = new NotificationService(db, qhs, () => null);
 
     expect(service2.getDndStatus()).toBe(true);
 
