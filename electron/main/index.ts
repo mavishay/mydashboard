@@ -17,6 +17,7 @@ import { TickTickSync } from './sync/ticktick-sync';
 import { TickTickAdapter } from './sync/ticktick-adapter';
 import { getAccessToken as getTickTickAccessToken } from './auth/ticktick';
 import { recordTelemetryEvent } from './telemetry';
+import { recordSetupEvent, hasSetupStarted } from './onboarding/setup-tracker';
 
 app.disableHardwareAcceleration();
 
@@ -161,6 +162,10 @@ app.whenReady().then(async () => {
     arch: process.arch,
     electronVersion: process.versions.electron,
   });
+
+  if (!hasSetupStarted(db)) {
+    recordSetupEvent(db, { eventType: 'setup_started' });
+  }
 
   lanServer = createLanServerInstance(
     db,

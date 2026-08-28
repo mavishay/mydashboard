@@ -168,6 +168,12 @@ declare global {
       getEvents: (limit?: number) => Promise<TelemetryEvent[]>;
       clearEvents: () => Promise<void>;
     };
+    onboarding: {
+      getStatus: () => Promise<{ dockerCheckComplete: boolean; n8nHealthComplete: boolean; apiKeyComplete: boolean; accountConnected: boolean; setupCompletedAt: string | null }>;
+      setStepComplete: (stepId: string) => Promise<void>;
+      recordSetupEvent: (eventType: string, stepId?: string, metadata?: Record<string, unknown>) => Promise<void>;
+      startTracking: () => Promise<void>;
+    };
   }
 
   interface Window {
