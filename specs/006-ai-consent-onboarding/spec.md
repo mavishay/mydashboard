@@ -21,10 +21,10 @@ Display a full payload policy and BYOK consent screen during onboarding before a
 
 ## Data Model
 
-### Database Table: `ai_consent`
+### Database Table: `ai_consent_settings`
 
 ```sql
-CREATE TABLE ai_consent (
+CREATE TABLE ai_consent_settings (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   consented INTEGER NOT NULL DEFAULT 0,
   policy_version TEXT NOT NULL DEFAULT '1.0',
@@ -56,7 +56,7 @@ const SetAiConsentSchema = z.object({
 
 | Channel | Direction | Payload | Response |
 |---------|-----------|---------|----------|
-| `ai-consent:getStatus` | renderer→main | none | `{ consented: boolean, policyVersion: string, consentedAt: string \| null }` |
+| `ai-consent:getSettings` | renderer→main | none | `{ consented: boolean, policyVersion: string, consentedAt: string \| null, revokedAt: string \| null }` |
 | `ai-consent:setConsent` | renderer→main | `{ consented: boolean }` | `{ success: boolean }` |
 
 ### Response Type
@@ -66,6 +66,7 @@ interface AiConsentStatus {
   consented: boolean;
   policyVersion: string;
   consentedAt: string | null;
+  revokedAt: string | null;
 }
 ```
 

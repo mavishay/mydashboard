@@ -14,10 +14,10 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       try {
         const settings = await window.electronAPI.telemetry.getSettings();
         if (settings.consentedAt) {
-          const aiSettings = await window.electronAPI.aiConsent.getSettings();
-          if (aiSettings.consentedAt) {
-            onComplete();
-          }
+        const aiSettings = await window.electronAPI.aiConsent.getSettings();
+        if (aiSettings.consented) {
+          onComplete();
+        }
         }
       } catch (err) {
         console.error('Failed to check existing consent:', err);

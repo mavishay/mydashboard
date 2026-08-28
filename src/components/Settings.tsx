@@ -180,6 +180,15 @@ export function Settings({ onBack }: { onBack: () => void }) {
         'Do you accept these terms and want to enable AI features?'
       );
       if (!confirmed) return;
+    } else {
+      // Confirm revocation
+      const confirmed = window.confirm(
+        'Disable AI Classification\n\n' +
+        'Disabling AI features will stop email classification and urgent notifications. ' +
+        'You can re-enable AI features at any time in Settings.\n\n' +
+        'Do you want to disable AI features?'
+      );
+      if (!confirmed) return;
     }
     setAiConsentSaving(true);
     try {
