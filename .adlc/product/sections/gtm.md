@@ -1,4 +1,4 @@
-# Go-to-Market Strategy: AI-Powered Unified Productivity Dashboard
+# Go-to-Market Strategy: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-004, PDR-005, PDR-007
 

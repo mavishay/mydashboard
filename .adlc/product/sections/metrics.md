@@ -1,4 +1,4 @@
-# Success Metrics: AI-Powered Unified Productivity Dashboard
+# Success Metrics: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-006, PDR-004
 

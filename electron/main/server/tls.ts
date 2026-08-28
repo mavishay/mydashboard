@@ -15,7 +15,7 @@ export interface SelfSignedOptions {
 }
 
 const DEFAULT_OPTIONS: Required<SelfSignedOptions> = {
-  commonName: 'Unified Productivity Dashboard',
+  commonName: 'Focus Board',
   organization: 'LAN Dashboard',
   altNames: ['localhost', '127.0.0.1', '*'],
   validityDays: 3650,

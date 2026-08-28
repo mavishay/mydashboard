@@ -1,4 +1,4 @@
-# Investment and Resources: AI-Powered Unified Productivity Dashboard
+# Investment and Resources: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-003, PDR-004, PDR-006
 

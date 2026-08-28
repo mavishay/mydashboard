@@ -1,0 +1,103 @@
+{
+  "feature": "setup-optimization",
+  "phase": "complete",
+  "generated": "2026-08-27T00:00:00Z",
+  "brief": {
+    "goal": "Optimize onboarding so user completes setup in under 15 minutes with Docker compose one-command start, guided onboarding wizard, time tracking, and clear error recovery at each step.",
+    "constraints": [
+      "Electron 33 + React 19 + TypeScript 5.7 stack",
+      "Existing docker-compose.yml for n8n sidecar",
+      "Existing minimal 2-step onboarding (Welcome + Telemetry consent)",
+      "Existing HealthCheckWizard as diagnostic tool",
+      "Existing telemetry event system (no time tracking yet)",
+      "Zod validation on all IPC payloads",
+      "contextBridge allowlist security model",
+      "Inline styles only (no CSS framework)",
+      "Vitest 3 for testing",
+      "p65 requirements: REQ-007 from PDR-006"
+    ],
+    "nonGoals": [
+      "Do NOT change the Docker compose service definition (n8n config is stable)",
+      "Do NOT add new third-party dependencies for the wizard UI",
+      "Do NOT modify the existing telemetry consent flow (extend, don't replace)",
+      "Do NOT implement email/task connectors (separate issues)"
+    ],
+    "successCriteria": [
+      "User can start the full stack with a single command (docker compose up + electron app launch)",
+      "Guided onboarding wizard walks user through: Docker check → n8n health → API key setup → first account connection",
+      "Setup duration is tracked from first launch to first triaged email",
+      "Each onboarding step has clear error messages and recovery actions",
+      "Total setup time target: under 15 minutes for a new user",
+      "Existing tests continue to pass"
+    ]
+  },
+  "route": "change",
+  "steps": [
+    {
+      "id": "specify",
+      "phase": "specify",
+      "tier": "strong",
+      "prompt": "Write a feature specification for the setup optimization goal below. Include requirements, constraints, and measurable success criteria. Follow the spec pattern from specs/001-electron-shell-sqlite/spec.md.",
+      "status": "completed"
+    },
+    {
+      "id": "plan",
+      "phase": "plan",
+      "tier": "strong",
+      "prompt": "Break down the specification into an implementation plan with ordered, verifiable tasks. Include source reference analysis of existing code.",
+      "status": "completed"
+    },
+    {
+      "id": "tasks",
+      "phase": "tasks",
+      "tier": "fast",
+      "prompt": "Generate the detailed task list from the plan — each task must have exact file paths and verification steps.",
+      "status": "completed"
+    },
+    {
+      "id": "implement",
+      "phase": "implement",
+      "tier": "strong",
+      "prompt": "Implement the next pending task from the plan. Follow test-driven practices.",
+      "status": "completed"
+    },
+    {
+      "id": "converge",
+      "phase": "converge",
+      "tier": "fast",
+      "prompt": "Review the implementation against the specification and success criteria. Verify independently — you are the checker, not the maker.",
+      "status": "completed"
+    }
+  ],
+  "completed_steps": ["specify", "plan", "tasks", "implement", "converge"],
+  "step_results": {
+    "specify": {
+      "output": "Created specs/006-setup-optimization/spec.md (354 lines) with 7 core requirements, 5 wizard step requirements, 4 time tracking requirements, 4 security requirements, 3 database requirements, error recovery matrix, and 13 DoD items.",
+      "confidence": "HIGH"
+    },
+    "plan": {
+      "output": "Created specs/006-setup-optimization/plan.md (341 lines) with Source Reference Analysis of 12 files, 7 implementation phases, 20 tasks, risk assessment, and testing strategy.",
+      "confidence": "HIGH"
+    },
+    "tasks": {
+      "output": "Generated specs/006-setup-optimization/tasks.md (334 lines) with 24 tasks across 7 phases, each with exact file paths, specific changes, verification steps, dependencies, and complexity estimates.",
+      "confidence": "HIGH"
+    },
+    "implement": {
+      "output": "Implemented all 24 tasks across 7 phases: database migration, setup tracker, IPC handlers, preload allowlist, 6 wizard UI components, app routing, error recovery, and 41 new tests. All 247 tests pass, lint and typecheck clean.",
+      "confidence": "HIGH"
+    },
+    "converge": {
+      "output": "All 23 requirements verified against spec. 247 tests pass. No Non-Goals violations. Docker compose unchanged. Telemetry consent preserved. Type safety fix applied to ApiKeyStep.tsx.",
+      "confidence": "HIGH"
+    }
+  },
+  "discovered": {
+    "skills_dirs": [],
+    "commands_dirs": [],
+    "local_skills": []
+  },
+  "spec_corrections": 0,
+  "consecutive_tasks_appended": 0,
+  "consecutive_score_regressions": 0
+}

@@ -10,7 +10,7 @@
 
 ## 1. Overview
 
-Set up the Electron desktop application shell with an embedded SQLite database, enforcing contextBridge/IPC security rules and basic window management. This is the foundational infrastructure for the AI-Powered Unified Productivity Dashboard.
+Set up the Electron desktop application shell with an embedded SQLite database, enforcing contextBridge/IPC security rules and basic window management. This is the foundational infrastructure for the AI-Powered Focus Board.
 
 **Demo Sentence:** User can launch the Electron app, see a dashboard UI, and the SQLite database is initialized on first run with WAL mode enabled.
 

@@ -1,14 +1,14 @@
-# Product Requirements Document: AI-Powered Unified Productivity Dashboard
+# Product Requirements Document: AI-Powered Focus Board
 
 ---
 
-# Document Information: AI-Powered Unified Productivity Dashboard
+# Document Information: AI-Powered Focus Board
 
 ---
 
 ## 1. Document Information
 
-**Title:** AI-Powered Unified Productivity Dashboard — Product Requirements Document
+**Title:** AI-Powered Focus Board — Product Requirements Document
 
 **Version:** 1.0
 
@@ -58,7 +58,7 @@
 
 ---
 
-# Executive Summary: AI-Powered Unified Productivity Dashboard
+# Executive Summary: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-002, PDR-003, PDR-004, PDR-005, PDR-006, PDR-007
 
@@ -139,7 +139,7 @@ A self-hosted Electron desktop app that unifies email (Gmail, M365) and task man
 
 ---
 
-# Overview: AI-Powered Unified Productivity Dashboard
+# Overview: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-002, PDR-003, PDR-004, PDR-005
 
@@ -296,7 +296,7 @@ flowchart TB
 
 ---
 
-# Problem: AI-Powered Unified Productivity Dashboard
+# Problem: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-002, PDR-005, PDR-007
 
@@ -357,7 +357,7 @@ Freelancers and consultants managing 3+ email accounts across multiple providers
 
 ---
 
-# Market Opportunity: AI-Powered Unified Productivity Dashboard
+# Market Opportunity: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-002, PDR-004, PDR-005
 
@@ -410,7 +410,7 @@ Freelancers and consultants managing 3+ email accounts across multiple providers
 
 ### 3.5.5 Positioning Statement
 
-**For** freelancers and consultants **who** manage 3+ email accounts and waste hours on fragmented triage, **AI-Powered Unified Productivity Dashboard** is a self-hosted desktop app **that** unifies email and task management with AI-powered prioritization. **Unlike** Superhuman, **our product** supports multiple accounts, consolidates tasks across platforms, and keeps all data local with BYOK AI keys.
+**For** freelancers and consultants **who** manage 3+ email accounts and waste hours on fragmented triage, **AI-Powered Focus Board** is a self-hosted desktop app **that** unifies email and task management with AI-powered prioritization. **Unlike** Superhuman, **our product** supports multiple accounts, consolidates tasks across platforms, and keeps all data local with BYOK AI keys.
 
 ---
 
@@ -425,7 +425,7 @@ Freelancers and consultants managing 3+ email accounts across multiple providers
 
 ---
 
-# Goals/Objectives: AI-Powered Unified Productivity Dashboard
+# Goals/Objectives: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-002, PDR-003, PDR-004, PDR-005, PDR-006, PDR-007
 
@@ -486,7 +486,7 @@ Release as MIT-licensed open source to build community trust and adoption, targe
 
 ---
 
-# Success Metrics: AI-Powered Unified Productivity Dashboard
+# Success Metrics: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-006, PDR-004
 
@@ -562,7 +562,7 @@ Release as MIT-licensed open source to build community trust and adoption, targe
 
 ---
 
-# Personas: AI-Powered Unified Productivity Dashboard
+# Personas: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-005
 
@@ -651,7 +651,7 @@ journey
 
 ---
 
-# Functional Requirements: AI-Powered Unified Productivity Dashboard
+# Functional Requirements: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-002, PDR-003, PDR-005, PDR-007
 
@@ -894,7 +894,7 @@ flowchart LR
 
 ---
 
-# Non-Functional Requirements: AI-Powered Unified Productivity Dashboard
+# Non-Functional Requirements: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-002, PDR-003
 
@@ -969,7 +969,7 @@ flowchart LR
 
 ---
 
-# Out of Scope: AI-Powered Unified Productivity Dashboard
+# Out of Scope: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-002, PDR-004, PDR-005, PDR-007
 
@@ -1036,7 +1036,7 @@ flowchart LR
 
 ---
 
-# Risks and Mitigation: AI-Powered Unified Productivity Dashboard
+# Risks and Mitigation: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-002, PDR-003, PDR-004, PDR-006, PDR-007
 
@@ -1185,7 +1185,7 @@ Impact
 
 ---
 
-# Investment and Resources: AI-Powered Unified Productivity Dashboard
+# Investment and Resources: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-003, PDR-004, PDR-006
 
@@ -1253,7 +1253,7 @@ Impact
 
 ---
 
-# Roadmap and Milestones: AI-Powered Unified Productivity Dashboard
+# Roadmap and Milestones: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-007, PDR-006, PDR-005
 
@@ -1395,7 +1395,7 @@ gantt
 
 ---
 
-# Go-to-Market Strategy: AI-Powered Unified Productivity Dashboard
+# Go-to-Market Strategy: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-004, PDR-005, PDR-007
 
@@ -1483,7 +1483,7 @@ No paid tier in v1. Community-driven; sponsorship optional.
 
 ---
 
-# PDR Summary: AI-Powered Unified Productivity Dashboard
+# PDR Summary: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-002, PDR-003, PDR-004, PDR-005, PDR-006, PDR-007
 

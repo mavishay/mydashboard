@@ -11,6 +11,7 @@ import { registerGoogleTasksHandlers } from './google-tasks-handlers';
 import { registerTickTickHandlers } from './ticktick-handlers';
 import { registerTelemetryHandlers } from './telemetry-handlers';
 import { registerClassificationHandlers } from './classification-handlers';
+import { registerNotificationHandlers } from './notification-handlers';
 import { registerSetupHandlers } from './setup-handlers';
 
 export function registerIpcHandlers(
@@ -19,7 +20,7 @@ export function registerIpcHandlers(
   quit: () => void = () => {},
   composeDir: string = process.cwd(),
   lanServer?: LanServerInstance
-): void {
+): { notificationService?: import('../services/notification-service').NotificationService } {
   registerWindowHandlers(ipcMain, getWindow, quit);
   registerGmailHandlers(ipcMain, db, getWindow);
   registerN8nHandlers(ipcMain, composeDir);
@@ -30,6 +31,8 @@ export function registerIpcHandlers(
   registerGoogleTasksHandlers(ipcMain, db);
   registerTickTickHandlers(ipcMain, db);
   registerTelemetryHandlers(ipcMain, db);
+  const { notificationService } = registerNotificationHandlers(ipcMain, db, getWindow);
+  registerClassificationHandlers(ipcMain, db, notificationService);
   registerSetupHandlers(ipcMain, db);
-  registerClassificationHandlers(ipcMain, db);
+  return { notificationService };
 }

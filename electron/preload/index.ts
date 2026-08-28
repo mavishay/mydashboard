@@ -58,6 +58,12 @@ const ALLOWED_INVOKE = new Set([
   'classification:fetchEmails',
   'classification:fetchEmailsAll',
   'classification:getEmails',
+  'notification:get-quiet-hours',
+  'notification:set-quiet-hours',
+  'notification:get-dnd-status',
+  'notification:set-dnd',
+  'notification:get-preferences',
+  'notification:feedback',
 ] as const);
 
 const ALLOWED_ON = new Set([
@@ -68,6 +74,7 @@ const ALLOWED_ON = new Set([
   'google-tasks:sync-health',
   'ticktick:sync-health',
   'gmail:sync-health',
+  'notification:focus-email',
 ] as const);
 
 function gatedInvoke(channel: string, ...args: unknown[]): Promise<unknown> {
@@ -212,5 +219,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
       gatedInvoke('onboarding:recordSetupEvent', { eventType, stepId, metadata }),
     startTracking: () =>
       gatedInvoke('onboarding:startTracking'),
+  },
+  notification: {
+    getQuietHours: () =>
+      gatedInvoke('notification:get-quiet-hours') as Promise<{ enabled: boolean; startHour: number; startMinute: number; endHour: number; endMinute: number }>,
+    setQuietHours: (data: { enabled: boolean; startHour: number; startMinute: number; endHour: number; endMinute: number }) =>
+      gatedInvoke('notification:set-quiet-hours', data) as Promise<{ success: boolean }>,
+    getDndStatus: () =>
+      gatedInvoke('notification:get-dnd-status') as Promise<{ enabled: boolean }>,
+    setDnd: (data: { enabled: boolean }) =>
+      gatedInvoke('notification:set-dnd', data) as Promise<{ success: boolean }>,
+    getPreferences: () =>
+      gatedInvoke('notification:get-preferences') as Promise<{ notificationTimeoutMs: number; maxConcurrent: number }>,
+    feedback: (data: { notificationId: string; emailId: string; classification: 'urgent'; feedback: 'thumbs_up' | 'thumbs_down' }) =>
+      gatedInvoke('notification:feedback', data) as Promise<{ success: boolean }>,
+    onFocusEmail: (callback: (data: { emailId: string }) => void) => gatedOn('notification:focus-email', callback),
   },
 });
