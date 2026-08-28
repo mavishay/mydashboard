@@ -1,3 +1,5 @@
+# mission-brief — workflow configuration
+
 workflow:
   execution: sync
   supervision: gated

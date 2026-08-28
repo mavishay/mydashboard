@@ -10,12 +10,18 @@ export function App() {
 
   const checkExistingConsent = useCallback(async () => {
     try {
-      const settings = await window.electronAPI.telemetry.getSettings();
-      if (settings.consentedAt) {
+      const status = await window.electronAPI.onboarding.getStatus();
+      if (
+        status.dockerCheckComplete &&
+        status.n8nHealthComplete &&
+        status.apiKeyComplete &&
+        status.accountConnected
+      ) {
         setPage('dashboard');
+        return;
       }
     } catch (err) {
-      console.error('Failed to check telemetry settings:', err);
+      console.error('Failed to check onboarding status:', err);
     } finally {
       setCheckingConsent(false);
     }

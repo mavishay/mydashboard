@@ -2,7 +2,7 @@ import Database, { Database as DatabaseType } from 'better-sqlite3';
 import { app } from 'electron';
 import { join } from 'path';
 
-const CURRENT_SCHEMA_VERSION = 12;
+const CURRENT_SCHEMA_VERSION = 13;
 
 import migration001 from './migrations/001-initial.sql?raw';
 import migration002 from './migrations/002-gmail-oauth.sql?raw';
@@ -16,6 +16,7 @@ import migration009 from './migrations/009-google-tasks-account-type.sql?raw';
 import migration010 from './migrations/010-telemetry-settings.sql?raw';
 import migration011 from './migrations/011-ticktick.sql?raw';
 import migration012 from './migrations/012-notifications.sql?raw';
+import migration013 from './migrations/013-setup-tracking.sql?raw';
 
 const MIGRATIONS: Record<number, string> = {
   1: migration001,
@@ -30,6 +31,7 @@ const MIGRATIONS: Record<number, string> = {
   10: migration010,
   11: migration011,
   12: migration012,
+  13: migration013,
 };
 
 export function initializeDatabase(

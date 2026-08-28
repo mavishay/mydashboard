@@ -49,6 +49,10 @@ const ALLOWED_INVOKE = new Set([
   'telemetry:setOptIn',
   'telemetry:getEvents',
   'telemetry:clearEvents',
+  'onboarding:getStatus',
+  'onboarding:setStepComplete',
+  'onboarding:recordSetupEvent',
+  'onboarding:startTracking',
   'classification:classify',
   'classification:classifyAccount',
   'classification:fetchEmails',
@@ -205,6 +209,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
       gatedInvoke('classification:fetchEmailsAll') as Promise<Array<{ accountId: string; fetched: number; inserted: number; skipped: number }>>,
     getEmails: (options?: { accountId?: string; classification?: string; limit?: number; offset?: number }) =>
       gatedInvoke('classification:getEmails', options ?? {}) as Promise<Array<{ id: string; accountId: string; subject: string | null; snippet: string | null; fromAddress: string | null; receivedAt: string | null; classification: string }>>,
+  },
+  onboarding: {
+    getStatus: () =>
+      gatedInvoke('onboarding:getStatus') as Promise<{ dockerCheckComplete: boolean; n8nHealthComplete: boolean; apiKeyComplete: boolean; accountConnected: boolean; setupCompletedAt: string | null }>,
+    setStepComplete: (stepId: string) =>
+      gatedInvoke('onboarding:setStepComplete', { stepId }),
+    recordSetupEvent: (eventType: string, stepId?: string, metadata?: Record<string, unknown>) =>
+      gatedInvoke('onboarding:recordSetupEvent', { eventType, stepId, metadata }),
+    startTracking: () =>
+      gatedInvoke('onboarding:startTracking'),
   },
   notification: {
     getQuietHours: () =>
