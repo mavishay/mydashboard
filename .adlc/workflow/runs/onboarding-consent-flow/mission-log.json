@@ -1,0 +1,134 @@
+{
+  "brief": {
+    "goal": "Implement onboarding consent flow that displays full payload policy and BYOK consent before enabling AI features, as per issue #13.",
+    "constraints": "Electron desktop app (React + Node.js), BYOK cloud AI (OpenAI/Anthropic), n8n Docker sidecar, SQLite storage, existing onboarding flow (if any). Must integrate with current onboarding UI and settings persistence.",
+    "non_goals": [
+      "Not modifying AI classification logic or LLM provider integrations.",
+      "Not adding new LLM providers or changing existing BYOK key storage.",
+      "Not altering notification system or task consolidation features.",
+      "Not adding mobile native apps or web SaaS deployment."
+    ],
+    "success_criteria": [
+      "Consent screen appears before AI activation.",
+      "Clear explanation that full email payloads will be sent to LLM.",
+      "User must explicitly accept before proceeding.",
+      "Consent recorded in settings (SQLite).",
+      "No AI features enabled until consent given."
+    ]
+  },
+  "feature": "onboarding-consent-flow",
+  "route": "spec",
+  "execution": "sync",
+  "supervision": "gated",
+  "max_iterations": 5,
+  "max_spec_corrections": 2,
+  "circuit_breaker": 3,
+  "quality_threshold": null,
+  "discovered": {
+    "skills_dirs": [],
+    "commands_dirs": [],
+    "local_skills": []
+  },
+  "steps": [
+    {
+      "id": "specify",
+      "phase": "specify",
+      "tier": "strong",
+      "prompt": "Write a feature specification for the goal below. Include requirements, constraints, and measurable success criteria.\n\nGoal: Implement onboarding consent flow that displays full payload policy and BYOK consent before enabling AI features, as per issue #13.\nConstraints: Electron desktop app (React + Node.js), BYOK cloud AI (OpenAI/Anthropic), n8n Docker sidecar, SQLite storage, existing onboarding flow (if any). Must integrate with current onboarding UI and settings persistence.\nNon-Goals: Not modifying AI classification logic or LLM provider integrations. Not adding new LLM providers or changing existing BYOK key storage. Not altering notification system or task consolidation features. Not adding mobile native apps or web SaaS deployment.\nSuccess Criteria: Consent screen appears before AI activation. Clear explanation that full email payloads will be sent to LLM. User must explicitly accept before proceeding. Consent recorded in settings (SQLite). No AI features enabled until consent given.",
+      "status": "completed"
+    },
+    {
+      "id": "plan",
+      "phase": "plan",
+      "tier": "strong",
+      "prompt": "Break down the specification into an implementation plan with ordered, verifiable tasks.\n\nGoal: Implement onboarding consent flow that displays full payload policy and BYOK consent before enabling AI features, as per issue #13.\nConstraints: Electron desktop app (React + Node.js), BYOK cloud AI (OpenAI/Anthropic), n8n Docker sidecar, SQLite storage, existing onboarding flow (if any). Must integrate with current onboarding UI and settings persistence.\nNon-Goals: Not modifying AI classification logic or LLM provider integrations. Not adding new LLM providers or changing existing BYOK key storage. Not altering notification system or task consolidation features. Not adding mobile native apps or web SaaS deployment.\nSuccess Criteria: Consent screen appears before AI activation. Clear explanation that full email payloads will be sent to LLM. User must explicitly accept before proceeding. Consent recorded in settings (SQLite). No AI features enabled until consent given.",
+      "status": "completed"
+    },
+    {
+      "id": "tasks",
+      "phase": "tasks",
+      "tier": "fast",
+      "prompt": "Generate the detailed task list from the plan — each task must have exact file paths and verification steps.\n\nGoal: Implement onboarding consent flow that displays full payload policy and BYOK consent before enabling AI features, as per issue #13.\nConstraints: Electron desktop app (React + Node.js), BYOK cloud AI (OpenAI/Anthropic), n8n Docker sidecar, SQLite storage, existing onboarding flow (if any). Must integrate with current onboarding UI and settings persistence.\nNon-Goals: Not modifying AI classification logic or LLM provider integrations. Not adding new LLM providers or changing existing BYOK key storage. Not altering notification system or task consolidation features. Not adding mobile native apps or web SaaS deployment.\nSuccess Criteria: Consent screen appears before AI activation. Clear explanation that full email payloads will be sent to LLM. User must explicitly accept before proceeding. Consent recorded in settings (SQLite). No AI features enabled until consent given.",
+      "status": "completed"
+    },
+    {
+      "id": "analyze",
+      "phase": "analyze",
+      "tier": "fast",
+      "prompt": "Adversarially review the plan before implementation. Challenge every non-trivial decision.\n\nGoal: Implement onboarding consent flow that displays full payload policy and BYOK consent before enabling AI features, as per issue #13.\nConstraints: Electron desktop app (React + Node.js), BYOK cloud AI (OpenAI/Anthropic), n8n Docker sidecar, SQLite storage, existing onboarding flow (if any). Must integrate with current onboarding UI and settings persistence.\nNon-Goals: Not modifying AI classification logic or LLM provider integrations. Not adding new LLM providers or changing existing BYOK key storage. Not altering notification system or task consolidation features. Not adding mobile native apps or web SaaS deployment.\nSuccess Criteria: Consent screen appears before AI activation. Clear explanation that full email payloads will be sent to LLM. User must explicitly accept before proceeding. Consent recorded in settings (SQLite). No AI features enabled until consent given.",
+      "status": "completed"
+    },
+    {
+      "id": "implement",
+      "phase": "implement",
+      "tier": "strong",
+      "prompt": "Implement the next pending task from the plan. Follow test-driven practices.\n\nGoal: Implement onboarding consent flow that displays full payload policy and BYOK consent before enabling AI features, as per issue #13.\nConstraints: Electron desktop app (React + Node.js), BYOK cloud AI (OpenAI/Anthropic), n8n Docker sidecar, SQLite storage, existing onboarding flow (if any). Must integrate with current onboarding UI and settings persistence.\nNon-Goals: Not modifying AI classification logic or LLM provider integrations. Not adding new LLM providers or changing existing BYOK key storage. Not altering notification system or task consolidation features. Not adding mobile native apps or web SaaS deployment.\nSuccess Criteria: Consent screen appears before AI activation. Clear explanation that full email payloads will be sent to LLM. User must explicitly accept before proceeding. Consent recorded in settings (SQLite). No AI features enabled until consent given.",
+      "status": "completed"
+    },
+    {
+      "id": "converge",
+      "phase": "converge",
+      "tier": "fast",
+      "prompt": "Review the implementation against the specification and success criteria. Verify independently — you are the checker, not the maker.\n\nGoal: Implement onboarding consent flow that displays full payload policy and BYOK consent before enabling AI features, as per issue #13.\nConstraints: Electron desktop app (React + Node.js), BYOK cloud AI (OpenAI/Anthropic), n8n Docker sidecar, SQLite storage, existing onboarding flow (if any). Must integrate with current onboarding UI and settings persistence.\nNon-Goals: Not modifying AI classification logic or LLM provider integrations. Not adding new LLM providers or changing existing BYOK key storage. Not altering notification system or task consolidation features. Not adding mobile native apps or web SaaS deployment.\nSuccess Criteria: Consent screen appears before AI activation. Clear explanation that full email payloads will be sent to LLM. User must explicitly accept before proceeding. Consent recorded in settings (SQLite). No AI features enabled until consent given.",
+      "status": "completed"
+    }
+  ],
+  "completed_steps": [
+    "specify",
+    "plan",
+    "tasks",
+    "analyze",
+    "loop_0_implement",
+    "loop_0_converge"
+  ],
+  "step_results": {
+    "specify": {
+      "output": "Feature specification written with data model, IPC channels, UI layout, classification guard, settings integration, migration path, and file manifest.",
+      "confidence": "HIGH",
+      "unresolved": null
+    },
+    "specify_gate": {
+      "output": {
+        "choice": "proceed"
+      }
+    },
+    "plan": {
+      "output": "Implementation plan created with 12 ordered tasks covering database migration, IPC handlers, UI components, and tests.",
+      "confidence": "HIGH",
+      "unresolved": null
+    },
+    "tasks": {
+      "output": "Generated detailed task list for AI consent onboarding flow covering database migration, backend module, IPC handlers, preload API, UI components, onboarding flow, app guards, settings UI, classification guards, tests, and documentation.",
+      "confidence": "HIGH",
+      "unresolved": null
+    },
+    "analyze": {
+      "output": "Adversarial review identified 5 critical issues (migration version, onboarding flow logic, App.tsx guard, no re-enable path, revocation handling), 5 design concerns, and 3 minor issues. Recommend addressing critical issues before implementation.",
+      "confidence": "MEDIUM",
+      "unresolved": "Critical issues #1-5 need resolution before implementation; consent text accuracy and versioning need plan updates."
+    },
+    "implement": {
+      "output": "Implemented all tasks: database migration, backend module, IPC handlers, preload API, UI components, onboarding flow, App.tsx guard, Settings toggle, classification guard, tests. 8 modified, 5 new files. 11/11 tests pass.",
+      "confidence": "HIGH",
+      "unresolved": null,
+      "iteration": 0
+    },
+    "implement_gate": {
+      "output": {
+        "choice": "yes"
+      }
+    },
+    "converge": {
+      "output": "Verified implementation against spec. All 5 success criteria pass. All 6 non-goals verified clean. 11 tests pass, TypeScript compiles with 0 errors.",
+      "confidence": "HIGH",
+      "unresolved": null,
+      "iteration": 0,
+      "quality_score": "5/5 (100%)",
+      "gate_summary": "5 passed, 0 failed"
+    }
+  },
+  "consecutive_tasks_appended": 0,
+  "consecutive_score_regressions": 0,
+  "spec_corrections": 0,
+  "iteration": 1
+}

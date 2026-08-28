@@ -1,0 +1,44 @@
+[
+  {
+    "id": "specify",
+    "phase": "specify",
+    "tier": "strong",
+    "prompt": "Write a feature specification for the goal below. Include requirements, constraints, and measurable success criteria.\n\nGoal: Implement onboarding consent flow that displays full payload policy and BYOK consent before enabling AI features, as per issue #13.\nConstraints: Electron desktop app (React + Node.js), BYOK cloud AI (OpenAI/Anthropic), n8n Docker sidecar, SQLite storage, existing onboarding flow (if any). Must integrate with current onboarding UI and settings persistence.\nNon-Goals: Not modifying AI classification logic or LLM provider integrations. Not adding new LLM providers or changing existing BYOK key storage. Not altering notification system or task consolidation features. Not adding mobile native apps or web SaaS deployment.\nSuccess Criteria: Consent screen appears before AI activation. Clear explanation that full email payloads will be sent to LLM. User must explicitly accept before proceeding. Consent recorded in settings (SQLite). No AI features enabled until consent given.",
+    "status": "pending"
+  },
+  {
+    "id": "plan",
+    "phase": "plan",
+    "tier": "strong",
+    "prompt": "Break down the specification into an implementation plan with ordered, verifiable tasks.\n\nGoal: Implement onboarding consent flow that displays full payload policy and BYOK consent before enabling AI features, as per issue #13.\nConstraints: Electron desktop app (React + Node.js), BYOK cloud AI (OpenAI/Anthropic), n8n Docker sidecar, SQLite storage, existing onboarding flow (if any). Must integrate with current onboarding UI and settings persistence.\nNon-Goals: Not modifying AI classification logic or LLM provider integrations. Not adding new LLM providers or changing existing BYOK key storage. Not altering notification system or task consolidation features. Not adding mobile native apps or web SaaS deployment.\nSuccess Criteria: Consent screen appears before AI activation. Clear explanation that full email payloads will be sent to LLM. User must explicitly accept before proceeding. Consent recorded in settings (SQLite). No AI features enabled until consent given.",
+    "status": "pending"
+  },
+  {
+    "id": "tasks",
+    "phase": "tasks",
+    "tier": "fast",
+    "prompt": "Generate the detailed task list from the plan — each task must have exact file paths and verification steps.\n\nGoal: Implement onboarding consent flow that displays full payload policy and BYOK consent before enabling AI features, as per issue #13.\nConstraints: Electron desktop app (React + Node.js), BYOK cloud AI (OpenAI/Anthropic), n8n Docker sidecar, SQLite storage, existing onboarding flow (if any). Must integrate with current onboarding UI and settings persistence.\nNon-Goals: Not modifying AI classification logic or LLM provider integrations. Not adding new LLM providers or changing existing BYOK key storage. Not altering notification system or task consolidation features. Not adding mobile native apps or web SaaS deployment.\nSuccess Criteria: Consent screen appears before AI activation. Clear explanation that full email payloads will be sent to LLM. User must explicitly accept before proceeding. Consent recorded in settings (SQLite). No AI features enabled until consent given.",
+    "status": "pending"
+  },
+  {
+    "id": "analyze",
+    "phase": "analyze",
+    "tier": "fast",
+    "prompt": "Adversarially review the plan before implementation. Challenge every non-trivial decision.\n\nGoal: Implement onboarding consent flow that displays full payload policy and BYOK consent before enabling AI features, as per issue #13.\nConstraints: Electron desktop app (React + Node.js), BYOK cloud AI (OpenAI/Anthropic), n8n Docker sidecar, SQLite storage, existing onboarding flow (if any). Must integrate with current onboarding UI and settings persistence.\nNon-Goals: Not modifying AI classification logic or LLM provider integrations. Not adding new LLM providers or changing existing BYOK key storage. Not altering notification system or task consolidation features. Not adding mobile native apps or web SaaS deployment.\nSuccess Criteria: Consent screen appears before AI activation. Clear explanation that full email payloads will be sent to LLM. User must explicitly accept before proceeding. Consent recorded in settings (SQLite). No AI features enabled until consent given.",
+    "status": "pending"
+  },
+  {
+    "id": "implement",
+    "phase": "implement",
+    "tier": "strong",
+    "prompt": "Implement the next pending task from the plan. Follow test-driven practices.\n\nGoal: Implement onboarding consent flow that displays full payload policy and BYOK consent before enabling AI features, as per issue #13.\nConstraints: Electron desktop app (React + Node.js), BYOK cloud AI (OpenAI/Anthropic), n8n Docker sidecar, SQLite storage, existing onboarding flow (if any). Must integrate with current onboarding UI and settings persistence.\nNon-Goals: Not modifying AI classification logic or LLM provider integrations. Not adding new LLM providers or changing existing BYOK key storage. Not altering notification system or task consolidation features. Not adding mobile native apps or web SaaS deployment.\nSuccess Criteria: Consent screen appears before AI activation. Clear explanation that full email payloads will be sent to LLM. User must explicitly accept before proceeding. Consent recorded in settings (SQLite). No AI features enabled until consent given.",
+    "status": "pending"
+  },
+  {
+    "id": "converge",
+    "phase": "converge",
+    "tier": "fast",
+    "prompt": "Review the implementation against the specification and success criteria. Verify independently — you are the checker, not the maker.\n\nGoal: Implement onboarding consent flow that displays full payload policy and BYOK consent before enabling AI features, as per issue #13.\nConstraints: Electron desktop app (React + Node.js), BYOK cloud AI (OpenAI/Anthropic), n8n Docker sidecar, SQLite storage, existing onboarding flow (if any). Must integrate with current onboarding UI and settings persistence.\nNon-Goals: Not modifying AI classification logic or LLM provider integrations. Not adding new LLM providers or changing existing BYOK key storage. Not altering notification system or task consolidation features. Not adding mobile native apps or web SaaS deployment.\nSuccess Criteria: Consent screen appears before AI activation. Clear explanation that full email payloads will be sent to LLM. User must explicitly accept before proceeding. Consent recorded in settings (SQLite). No AI features enabled until consent given.",
+    "status": "pending"
+  }
+]

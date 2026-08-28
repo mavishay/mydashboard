@@ -168,6 +168,10 @@ declare global {
       getEvents: (limit?: number) => Promise<TelemetryEvent[]>;
       clearEvents: () => Promise<void>;
     };
+    aiConsent: {
+      getSettings: () => Promise<{ consented: boolean; policyVersion: string; consentedAt: string | null; revokedAt: string | null }>;
+      setConsent: (consented: boolean) => Promise<void>;
+    };
     onboarding: {
       getStatus: () => Promise<{ dockerCheckComplete: boolean; n8nHealthComplete: boolean; apiKeyComplete: boolean; accountConnected: boolean; setupCompletedAt: string | null }>;
       setStepComplete: (stepId: string) => Promise<void>;

@@ -11,6 +11,7 @@ import { registerGoogleTasksHandlers } from './google-tasks-handlers';
 import { registerTickTickHandlers } from './ticktick-handlers';
 import { registerTelemetryHandlers } from './telemetry-handlers';
 import { registerClassificationHandlers } from './classification-handlers';
+import { registerAiConsentHandlers } from './ai-consent-handlers';
 import { registerNotificationHandlers } from './notification-handlers';
 import { registerSetupHandlers } from './setup-handlers';
 
@@ -33,6 +34,7 @@ export function registerIpcHandlers(
   registerTelemetryHandlers(ipcMain, db);
   const { notificationService } = registerNotificationHandlers(ipcMain, db, getWindow);
   registerClassificationHandlers(ipcMain, db, notificationService);
+  registerAiConsentHandlers(ipcMain, db);
   registerSetupHandlers(ipcMain, db);
   return { notificationService };
 }

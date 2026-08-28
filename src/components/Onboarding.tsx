@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { AiConsentOnboarding } from './AiConsentOnboarding';
 import { SetupWizard } from './SetupWizard/SetupWizard';
 
 interface OnboardingProps {
@@ -6,7 +7,7 @@ interface OnboardingProps {
 }
 
 export function Onboarding({ onComplete }: OnboardingProps) {
-  const [step, setStep] = useState<'welcome' | 'telemetry' | 'wizard'>('welcome');
+  const [step, setStep] = useState<'welcome' | 'ai-consent' | 'telemetry' | 'wizard'>('welcome');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -24,6 +25,11 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         }
         const settings = await window.electronAPI.telemetry.getSettings();
         if (settings.consentedAt) {
+          const aiSettings = await window.electronAPI.aiConsent.getSettings();
+          if (aiSettings.consented) {
+            onComplete();
+            return;
+          }
           setStep('wizard');
         }
       } catch (err) {
@@ -32,6 +38,18 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     };
     checkExistingConsent();
   }, [onComplete]);
+
+  const handleAiConsentChoice = async (consented: boolean) => {
+    setSaving(true);
+    try {
+      await window.electronAPI.aiConsent.setConsent(consented);
+      setStep('telemetry');
+    } catch (err) {
+      console.error('Failed to save AI consent:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleTelemetryChoice = async (optedIn: boolean) => {
     setSaving(true);
@@ -65,7 +83,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           One dashboard for all your email accounts. AI-powered triage that only pings you when it matters.
         </p>
         <button
-          onClick={() => setStep('telemetry')}
+          onClick={() => setStep('ai-consent')}
           style={{
             padding: '0.75rem 1.5rem',
             borderRadius: '4px',
@@ -83,6 +101,17 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     );
   }
 
+  if (step === 'ai-consent') {
+    return (
+      <AiConsentOnboarding
+        onAccept={() => handleAiConsentChoice(true)}
+        onDecline={() => handleAiConsentChoice(false)}
+        saving={saving}
+      />
+    );
+  }
+
+  // step === 'telemetry'
   return (
     <div style={{
       padding: '3rem',

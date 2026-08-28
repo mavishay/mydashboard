@@ -24,11 +24,18 @@ function cleanupDb(path: string): void {
   try { rmSync(path + '-shm'); } catch {}
 }
 
+function grantAiConsent(db: any): void {
+  db.prepare(
+    "INSERT OR IGNORE INTO ai_consent_settings (id, consented, consented_at) VALUES (1, 1, datetime('now'))"
+  ).run();
+}
+
 describe('classifier', () => {
   it('returns null for non-existent email', async () => {
     const dbPath = testDbPath();
     const { initializeDatabase } = await import('../../../electron/main/db');
     const db = initializeDatabase(dbPath);
+    grantAiConsent(db);
 
     const { classifyEmail } = await import('../../../electron/main/ai/classifier');
     const result = await classifyEmail(db, 'non-existent-id');
@@ -42,6 +49,7 @@ describe('classifier', () => {
     const dbPath = testDbPath();
     const { initializeDatabase } = await import('../../../electron/main/db');
     const db = initializeDatabase(dbPath);
+    grantAiConsent(db);
 
     db.prepare(
       "INSERT INTO accounts (id, type, email, display_name) VALUES ('acc1', 'gmail', 'test@example.com', 'Test')"
@@ -64,6 +72,7 @@ describe('classifier', () => {
     const dbPath = testDbPath();
     const { initializeDatabase } = await import('../../../electron/main/db');
     const db = initializeDatabase(dbPath);
+    grantAiConsent(db);
 
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
