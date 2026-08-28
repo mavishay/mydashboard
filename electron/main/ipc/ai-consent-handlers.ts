@@ -28,6 +28,7 @@ export function registerAiConsentHandlers(
         throw new Error(`Invalid payload: ${parsed.error.message}`);
       }
       setAiConsent(db, parsed.data.consented);
+      return { success: true };
     }
   );
 }

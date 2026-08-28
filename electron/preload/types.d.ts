@@ -170,7 +170,7 @@ declare global {
     };
     aiConsent: {
       getSettings: () => Promise<{ consented: boolean; policyVersion: string; consentedAt: string | null; revokedAt: string | null }>;
-      setConsent: (consented: boolean) => Promise<void>;
+      setConsent: (consented: boolean) => Promise<{ success: boolean }>;
     };
     onboarding: {
       getStatus: () => Promise<{ dockerCheckComplete: boolean; n8nHealthComplete: boolean; apiKeyComplete: boolean; accountConnected: boolean; setupCompletedAt: string | null }>;
