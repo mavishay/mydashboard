@@ -167,9 +167,23 @@ export function Settings({ onBack }: { onBack: () => void }) {
 
   const handleAiConsentToggle = async () => {
     if (!aiConsentSettings) return;
+    const newConsented = !aiConsentSettings.consented;
+    // If enabling AI features, require explicit re-acknowledgment of policy
+    if (newConsented) {
+      const confirmed = window.confirm(
+        'AI Classification Consent\n\n' +
+        'To enable AI features, you must acknowledge that:\n\n' +
+        '• Email subject, sender address, and preview snippet will be sent to external LLM providers (OpenAI/Anthropic)\n' +
+        '• You provide your own API keys (BYOK)\n' +
+        '• Data is processed directly by the provider you configure\n' +
+        '• You can revoke consent at any time in Settings\n\n' +
+        'Do you accept these terms and want to enable AI features?'
+      );
+      if (!confirmed) return;
+    }
     setAiConsentSaving(true);
     try {
-      await window.electronAPI.aiConsent.setConsent(!aiConsentSettings.consented);
+      await window.electronAPI.aiConsent.setConsent(newConsented);
       await loadAiConsentSettings();
     } catch (err) {
       console.error('Failed to update AI consent settings:', err);

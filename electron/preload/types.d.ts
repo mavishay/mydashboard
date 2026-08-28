@@ -169,7 +169,7 @@ declare global {
       clearEvents: () => Promise<void>;
     };
     aiConsent: {
-      getSettings: () => Promise<{ consented: boolean; consentedAt: string | null }>;
+      getSettings: () => Promise<{ consented: boolean; policyVersion: string; consentedAt: string | null; revokedAt: string | null }>;
       setConsent: (consented: boolean) => Promise<void>;
     };
   }

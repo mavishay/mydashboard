@@ -6,7 +6,7 @@ import {
   hasAiConsent,
 } from '../../../electron/main/ai/consent';
 import { registerAiConsentHandlers } from '../../../electron/main/ipc/ai-consent-handlers';
-import { hasAiConsent as checkHasConsent } from '../../../electron/main/ai/consent';
+
 
 describe('AI Consent Module', () => {
   let db: Database.Database;
@@ -18,7 +18,9 @@ describe('AI Consent Module', () => {
       CREATE TABLE IF NOT EXISTS ai_consent_settings (
         id INTEGER PRIMARY KEY CHECK (id = 1),
         consented INTEGER NOT NULL DEFAULT 0,
+        policy_version TEXT NOT NULL DEFAULT '1.0',
         consented_at TEXT,
+        revoked_at TEXT,
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       )
     `);
@@ -32,14 +34,18 @@ describe('AI Consent Module', () => {
     it('returns default settings when no row exists', () => {
       const settings = getAiConsentSettings(db);
       expect(settings.consented).toBe(false);
+      expect(settings.policyVersion).toBe('1.0');
       expect(settings.consentedAt).toBeNull();
+      expect(settings.revokedAt).toBeNull();
     });
 
     it('returns settings after consent', () => {
       setAiConsent(db, true);
       const settings = getAiConsentSettings(db);
       expect(settings.consented).toBe(true);
+      expect(settings.policyVersion).toBe('1.0');
       expect(settings.consentedAt).not.toBeNull();
+      expect(settings.revokedAt).toBeNull();
     });
   });
 
@@ -61,6 +67,15 @@ describe('AI Consent Module', () => {
       setAiConsent(db, true);
       const settings = getAiConsentSettings(db);
       expect(settings.consentedAt).not.toBeNull();
+    });
+
+    it('sets revoked_at when revoking consent', () => {
+      setAiConsent(db, true); // First consent
+      setAiConsent(db, false); // Then revoke
+      const settings = getAiConsentSettings(db);
+      expect(settings.consented).toBe(false);
+      expect(settings.revokedAt).not.toBeNull();
+      expect(settings.consentedAt).not.toBeNull(); // Should retain original consent timestamp
     });
   });
 
@@ -93,7 +108,9 @@ describe('AI Consent IPC Handlers', () => {
       CREATE TABLE IF NOT EXISTS ai_consent_settings (
         id INTEGER PRIMARY KEY CHECK (id = 1),
         consented INTEGER NOT NULL DEFAULT 0,
+        policy_version TEXT NOT NULL DEFAULT '1.0',
         consented_at TEXT,
+        revoked_at TEXT,
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       )
     `);
@@ -114,13 +131,13 @@ describe('AI Consent IPC Handlers', () => {
 
   it('getSettings returns default settings', async () => {
     const result = await handlers['ai-consent:getSettings']();
-    expect(result).toEqual({ consented: false, consentedAt: null });
+    expect(result).toEqual({ consented: false, policyVersion: '1.0', consentedAt: null, revokedAt: null });
   });
 
   it('setConsent updates settings', async () => {
     await handlers['ai-consent:setConsent'](null, { consented: true });
     const result = await handlers['ai-consent:getSettings']();
-    expect(result).toEqual({ consented: true, consentedAt: expect.any(String) });
+    expect(result).toEqual({ consented: true, policyVersion: '1.0', consentedAt: expect.any(String), revokedAt: null });
   });
 
   it('setConsent rejects invalid payload', async () => {

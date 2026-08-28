@@ -1,9 +1,10 @@
 interface AiConsentOnboardingProps {
   onAccept: () => void;
   onDecline: () => void;
+  saving?: boolean;
 }
 
-export function AiConsentOnboarding({ onAccept, onDecline }: AiConsentOnboardingProps) {
+export function AiConsentOnboarding({ onAccept, onDecline, saving = false }: AiConsentOnboardingProps) {
   return (
     <div style={{
       padding: '3rem',
@@ -64,31 +65,33 @@ export function AiConsentOnboarding({ onAccept, onDecline }: AiConsentOnboarding
       <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
         <button
           onClick={onDecline}
+          disabled={saving}
           style={{
             padding: '0.75rem 1.5rem',
             borderRadius: '4px',
             border: '1px solid #ccc',
             background: '#fff',
-            cursor: 'pointer',
+            cursor: saving ? 'not-allowed' : 'pointer',
             fontSize: '0.875rem',
           }}
         >
-          Skip AI Features
+          {saving ? 'Saving...' : 'Skip AI Features'}
         </button>
         <button
           onClick={onAccept}
+          disabled={saving}
           style={{
             padding: '0.75rem 1.5rem',
             borderRadius: '4px',
             border: 'none',
-            background: '#1976d2',
+            background: saving ? '#ccc' : '#1976d2',
             color: '#fff',
-            cursor: 'pointer',
+            cursor: saving ? 'not-allowed' : 'pointer',
             fontSize: '0.875rem',
             fontWeight: 600,
           }}
         >
-          I Understand and Accept
+          {saving ? 'Saving...' : 'I Understand and Accept'}
         </button>
       </div>
     </div>
