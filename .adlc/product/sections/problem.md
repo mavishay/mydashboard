@@ -1,4 +1,4 @@
-# Problem: AI-Powered Unified Productivity Dashboard
+# Problem: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-002, PDR-005, PDR-007
 

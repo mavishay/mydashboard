@@ -1,4 +1,4 @@
-# Personas: AI-Powered Unified Productivity Dashboard
+# Personas: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-005
 

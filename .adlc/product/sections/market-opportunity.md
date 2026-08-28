@@ -1,4 +1,4 @@
-# Market Opportunity: AI-Powered Unified Productivity Dashboard
+# Market Opportunity: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-002, PDR-004, PDR-005
 
@@ -51,7 +51,7 @@
 
 ### 3.5.5 Positioning Statement
 
-**For** freelancers and consultants **who** manage 3+ email accounts and waste hours on fragmented triage, **AI-Powered Unified Productivity Dashboard** is a self-hosted desktop app **that** unifies email and task management with AI-powered prioritization. **Unlike** Superhuman, **our product** supports multiple accounts, consolidates tasks across platforms, and keeps all data local with BYOK AI keys.
+**For** freelancers and consultants **who** manage 3+ email accounts and waste hours on fragmented triage, **AI-Powered Focus Board** is a self-hosted desktop app **that** unifies email and task management with AI-powered prioritization. **Unlike** Superhuman, **our product** supports multiple accounts, consolidates tasks across platforms, and keeps all data local with BYOK AI keys.
 
 ---
 

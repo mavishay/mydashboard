@@ -44,7 +44,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         textAlign: 'center',
       }}>
         <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
-          Welcome to Unified Productivity Dashboard
+          Welcome to Focus Board
         </h1>
         <p style={{ color: '#666', fontSize: '1.1rem', marginBottom: '2rem' }}>
           One dashboard for all your email accounts. AI-powered triage that only pings you when it matters.

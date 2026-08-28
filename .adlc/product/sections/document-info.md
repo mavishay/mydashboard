@@ -1,10 +1,10 @@
-# Document Information: AI-Powered Unified Productivity Dashboard
+# Document Information: AI-Powered Focus Board
 
 ---
 
 ## 1. Document Information
 
-**Title:** AI-Powered Unified Productivity Dashboard — Product Requirements Document
+**Title:** AI-Powered Focus Board — Product Requirements Document
 
 **Version:** 1.0
 

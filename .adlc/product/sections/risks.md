@@ -1,4 +1,4 @@
-# Risks and Mitigation: AI-Powered Unified Productivity Dashboard
+# Risks and Mitigation: AI-Powered Focus Board
 
 **PDRs Referenced**: PDR-001, PDR-002, PDR-003, PDR-004, PDR-006, PDR-007
 

@@ -63,10 +63,10 @@ alpha/
 
 ```json
 {
-  "name": "unified-productivity-dashboard",
+  "name": "focus-board",
   "version": "0.1.0",
   "private": true,
-  "description": "AI-Powered Unified Productivity Dashboard",
+  "description": "AI-Powered Focus Board",
   "main": "dist-electron/main/index.js",
   "type": "module",
   "scripts": {
@@ -898,7 +898,7 @@ git commit -m "feat: add preload script with contextBridge allowlist"
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Unified Productivity Dashboard</title>
+    <title>Focus Board</title>
   </head>
   <body>
     <div id="root"></div>
@@ -937,7 +937,7 @@ export function App() {
 export function Dashboard() {
   return (
     <div style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
-      <h1>Unified Productivity Dashboard</h1>
+      <h1>Focus Board</h1>
       <p>Phase 1: App shell with SQLite storage</p>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
         <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '1rem' }}>
