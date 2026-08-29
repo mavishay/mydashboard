@@ -15,7 +15,23 @@ interface GmailAccount {
   id: string;
   email: string;
   displayName: string;
+  color?: string | null;
 }
+
+const PRESET_COLORS = [
+  '#1976d2', // Blue
+  '#388e3c', // Green
+  '#f57c00', // Orange
+  '#7b1fa2', // Purple
+  '#c62828', // Red
+  '#00838f', // Teal
+  '#455a64', // Blue Grey
+  '#ad1457', // Pink
+  '#558b2f', // Light Green
+  '#ef6c00', // Amber
+] as const;
+
+const DEFAULT_COLOR = '#9e9e9e';
 
 interface TelemetrySettings {
   optedIn: boolean;
@@ -69,6 +85,11 @@ export function Settings({ onBack }: { onBack: () => void }) {
   } | null>(null);
   const [cronSaving, setCronSaving] = useState(false);
   const cronConfigTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
+  const [editingColor, setEditingColor] = useState<string>(DEFAULT_COLOR);
+  const [hexInput, setHexInput] = useState('');
+  const [hexError, setHexError] = useState<string | null>(null);
+  const [colorSaving, setColorSaving] = useState(false);
 
   const loadKeys = useCallback(async () => {
     try {
@@ -277,6 +298,32 @@ export function Settings({ onBack }: { onBack: () => void }) {
     };
   }, []);
 
+  const handleApplyColor = async (accountId: string) => {
+    setColorSaving(true);
+    try {
+      await window.electronAPI.accounts.updateColor(accountId, editingColor);
+      await loadGmailAccounts();
+      setEditingAccountId(null);
+    } catch (err) {
+      console.error('Failed to update account color:', err);
+    } finally {
+      setColorSaving(false);
+    }
+  };
+
+  const handleResetColor = async (accountId: string) => {
+    setColorSaving(true);
+    try {
+      await window.electronAPI.accounts.updateColor(accountId, null);
+      await loadGmailAccounts();
+      setEditingAccountId(null);
+    } catch (err) {
+      console.error('Failed to reset account color:', err);
+    } finally {
+      setColorSaving(false);
+    }
+  };
+
   return (
     <div style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif', maxWidth: '640px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -472,6 +519,192 @@ export function Settings({ onBack }: { onBack: () => void }) {
           </div>
         ) : (
           <p style={{ color: '#999', fontSize: '0.875rem' }}>Loading...</p>
+        )}
+      </section>
+
+      <section style={{ marginBottom: '2rem' }}>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Account Colors</h2>
+        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '1rem' }}>
+          Customize colors to identify accounts.
+        </p>
+
+        {gmailAccounts.length === 0 ? (
+          <p style={{ color: '#999', fontSize: '0.875rem', marginBottom: '1rem' }}>
+            Connect an account to customize colors.
+          </p>
+        ) : (
+          <div style={{ marginBottom: '1rem' }}>
+            {gmailAccounts.map((account) => {
+              const accountColor = account.color || DEFAULT_COLOR;
+              const isEditing = editingAccountId === account.id;
+
+              return (
+                <div
+                  key={account.id}
+                  style={{
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '8px',
+                    marginBottom: '0.5rem',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.75rem 1rem',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div
+                        style={{
+                          width: '16px',
+                          height: '16px',
+                          borderRadius: '50%',
+                          backgroundColor: accountColor,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>
+                        {account.email}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (isEditing) {
+                          setEditingAccountId(null);
+                        } else {
+                          setEditingAccountId(account.id);
+                          setEditingColor(accountColor);
+                          setHexInput('');
+                          setHexError(null);
+                        }
+                      }}
+                      style={{
+                        background: 'none',
+                        border: '1px solid #1976d2',
+                        color: '#1976d2',
+                        borderRadius: '4px',
+                        padding: '0.25rem 0.5rem',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                      }}
+                    >
+                      {isEditing ? 'Cancel' : 'Edit'}
+                    </button>
+                  </div>
+
+                  {isEditing && (
+                    <div style={{ padding: '0 1rem 1rem', borderTop: '1px solid #eee' }}>
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(5, 1fr)',
+                          gap: '0.5rem',
+                          marginBottom: '1rem',
+                          marginTop: '0.75rem',
+                        }}
+                      >
+                        {PRESET_COLORS.map((color) => (
+                          <button
+                            key={color}
+                            aria-label={`Select color ${color}`}
+                            onClick={() => {
+                              setEditingColor(color);
+                              setHexInput('');
+                              setHexError(null);
+                            }}
+                            style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '50%',
+                              backgroundColor: color,
+                              border: editingColor === color ? '3px solid #333' : '2px solid transparent',
+                              cursor: 'pointer',
+                              justifySelf: 'center',
+                            }}
+                            title={color}
+                          />
+                        ))}
+                      </div>
+
+                      <div style={{ marginBottom: '0.75rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                          Custom Color
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="#RRGGBB"
+                          value={hexInput}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setHexInput(val);
+                            if (val === '') {
+                              setHexError(null);
+                              return;
+                            }
+                            if (/^#[0-9a-f]{6}$/i.test(val)) {
+                              setEditingColor(val.toLowerCase());
+                              setHexError(null);
+                            } else {
+                              setHexError('Enter a valid hex color (e.g. #ff0000)');
+                            }
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            borderRadius: '4px',
+                            border: '1px solid #ccc',
+                            fontFamily: 'monospace',
+                          }}
+                        />
+                        {hexError && (
+                          <div style={{ color: '#d32f2f', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                            {hexError}
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <button
+                          onClick={() => handleApplyColor(account.id)}
+                          disabled={colorSaving || hexError !== null}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            borderRadius: '4px',
+                            border: 'none',
+                            background: colorSaving || hexError ? '#ccc' : '#1976d2',
+                            color: '#fff',
+                            cursor: colorSaving || hexError ? 'not-allowed' : 'pointer',
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {colorSaving ? 'Saving...' : 'Apply'}
+                        </button>
+                        <button
+                          onClick={() => handleResetColor(account.id)}
+                          disabled={colorSaving}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            borderRadius: '4px',
+                            border: '1px solid #999',
+                            background: 'none',
+                            color: '#666',
+                            cursor: colorSaving ? 'not-allowed' : 'pointer',
+                            fontSize: '0.875rem',
+                          }}
+                        >
+                          Reset to Default
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </section>
 

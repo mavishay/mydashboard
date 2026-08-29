@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 type Classification = 'urgent' | 'action' | 'fyi' | 'noise' | null;
 
@@ -16,6 +16,7 @@ interface Account {
   id: string;
   email: string;
   displayName: string;
+  color: string | null;
 }
 
 const CLASSIFICATION_COLORS: Record<string, { bg: string; text: string; label: string }> = {
@@ -76,6 +77,9 @@ export function EmailList() {
   const [classifying, setClassifying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [accountsColorMap, setAccountsColorMap] = useState<Record<string, string>>({});
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const loadEmails = useCallback(async () => {
     try {
@@ -99,6 +103,13 @@ export function EmailList() {
       setError(null);
       const list = await window.electronAPI.gmail.listAccounts();
       setAccounts(list);
+      const colorMap: Record<string, string> = {};
+      for (const a of list) {
+        if (a.color) {
+          colorMap[a.id] = a.color;
+        }
+      }
+      setAccountsColorMap(colorMap);
     } catch (err) {
       console.error('Failed to load accounts:', err);
       setError('Failed to load accounts. Please try again.');
@@ -108,6 +119,18 @@ export function EmailList() {
   useEffect(() => {
     loadAccounts();
   }, [loadAccounts]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [dropdownOpen]);
 
   useEffect(() => {
     loadEmails();
@@ -159,16 +182,115 @@ export function EmailList() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <select
-          value={selectedAccount}
-          onChange={(e) => setSelectedAccount(e.target.value)}
-          style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.875rem' }}
-        >
-          <option value="">All Accounts</option>
-          {accounts.map((a) => (
-            <option key={a.id} value={a.id}>{a.email}</option>
-          ))}
-        </select>
+        <div ref={dropdownRef} style={{ position: 'relative' }}>
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            aria-label="Account filter"
+            aria-haspopup="listbox"
+            aria-expanded={dropdownOpen}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.5rem 0.75rem',
+              borderRadius: '4px',
+              border: '1px solid #ccc',
+              background: '#fff',
+              fontSize: '0.875rem',
+              cursor: 'pointer',
+              minWidth: '160px',
+              textAlign: 'left',
+            }}
+          >
+            {!selectedAccount ? (
+              'All Accounts'
+            ) : (
+              <>
+                <span
+                  style={{
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '50%',
+                    background: accountsColorMap[selectedAccount] ?? '#9e9e9e',
+                    flexShrink: 0,
+                  }}
+                />
+                {accounts.find((a) => a.id === selectedAccount)?.email ?? selectedAccount}
+              </>
+            )}
+          </button>
+          {dropdownOpen && (
+            <div
+              role="listbox"
+              aria-label="Select account"
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                marginTop: '4px',
+                background: '#fff',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                zIndex: 10,
+                minWidth: '200px',
+                maxHeight: '240px',
+                overflowY: 'auto',
+              }}
+            >
+              <button
+                role="option"
+                aria-selected={!selectedAccount}
+                onClick={() => { setSelectedAccount(''); setDropdownOpen(false); }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  width: '100%',
+                  padding: '0.5rem 0.75rem',
+                  border: 'none',
+                  background: !selectedAccount ? '#e3f2fd' : 'transparent',
+                  fontSize: '0.875rem',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                All Accounts
+              </button>
+              {accounts.map((a) => (
+                <button
+                  key={a.id}
+                  role="option"
+                  aria-selected={selectedAccount === a.id}
+                  onClick={() => { setSelectedAccount(a.id); setDropdownOpen(false); }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    width: '100%',
+                    padding: '0.5rem 0.75rem',
+                    border: 'none',
+                    background: selectedAccount === a.id ? '#e3f2fd' : 'transparent',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                >
+                  <span
+                    style={{
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      background: accountsColorMap[a.id] ?? '#9e9e9e',
+                      flexShrink: 0,
+                    }}
+                  />
+                  {a.email}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         <select
           value={selectedClassification}
@@ -251,6 +373,7 @@ export function EmailList() {
                 style={{
                   padding: '0.75rem 1rem',
                   border: '1px solid #e0e0e0',
+                  borderLeft: `3px solid ${accountsColorMap[email.accountId] ?? '#9e9e9e'}`,
                   borderRadius: '8px',
                   background: (CLASSIFICATION_COLORS[email.classification ?? 'unclassified']?.bg ?? '#e3f2fd') + '20',
                 }}
