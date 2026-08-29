@@ -98,4 +98,37 @@ describe('preload contextBridge', () => {
     api.n8n.dockerStatus();
     expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('n8n:docker-status');
   });
+
+  it('googleTasks.listLists calls correct channel', () => {
+    mockIpcRenderer.invoke.mockClear();
+    const api = mockContextBridge.exposeInMainWorld.mock.calls[0][1];
+    api.googleTasks.listLists('account123');
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('google-tasks:listLists', { accountId: 'account123' });
+  });
+
+  it('ticktick.listProjects calls correct channel', () => {
+    mockIpcRenderer.invoke.mockClear();
+    const api = mockContextBridge.exposeInMainWorld.mock.calls[0][1];
+    api.ticktick.listProjects('account456');
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('ticktick:listProjects', { accountId: 'account456' });
+  });
+
+  it('tasks.createFromEmail calls correct channel', () => {
+    mockIpcRenderer.invoke.mockClear();
+    const api = mockContextBridge.exposeInMainWorld.mock.calls[0][1];
+    api.tasks.createFromEmail({
+      listType: 'google-tasks',
+      accountId: 'account123',
+      listId: 'list1',
+      title: 'Test task',
+      description: 'desc',
+    });
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('tasks:createFromEmail', {
+      listType: 'google-tasks',
+      accountId: 'account123',
+      listId: 'list1',
+      title: 'Test task',
+      description: 'desc',
+    });
+  });
 });

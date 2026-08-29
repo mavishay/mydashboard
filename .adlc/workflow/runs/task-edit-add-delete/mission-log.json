@@ -1,0 +1,83 @@
+{
+  "feature": "task-edit-add-delete",
+  "phase": "complete",
+  "generated": "2026-08-29T00:00:00Z",
+  "brief": {
+    "goal": "Add full CRUD capabilities to the task list UI: inline editing, add task, delete with confirmation, TickTick integration display, and email-to-task conversion.",
+    "constraints": [
+      "Electron 33 + React 19 + TypeScript 5.7 stack",
+      "Task adapter pattern already exists (GoogleTasksApi, TickTickAdapter implement TaskAdapter)",
+      "IPC handlers for create/update/delete already exist for both Google Tasks and TickTick",
+      "Preload already exposes googleTasks and ticktick CRUD methods",
+      "Inline styles only (no CSS framework)",
+      "Zod validation on all IPC payloads",
+      "Vitest 3 for testing",
+      "Existing soft-delete pattern (is_deleted = 1) in google-tasks-sync.ts",
+      "Issue #31 acceptance criteria: add/edit/delete tasks, show both Google+TickTick, email-to-task, optimistic UI, error toasts"
+    ],
+    "nonGoals": [
+      "Do NOT implement the TickTick adapter itself (issue #11 already done)",
+      "Do NOT implement the Google Tasks adapter itself (issue #8 already done)",
+      "Do NOT change the backend sync logic",
+      "Do NOT add new database tables"
+    ],
+    "successCriteria": [
+      "User can add a new task via '+' button with title, optional due date, and list selector",
+      "User can edit task title inline (click to edit) and save/cancel",
+      "User can toggle task complete/incomplete",
+      "User can delete task with confirmation dialog",
+      "Both Google Tasks and TickTick tasks are displayed (unified or sectioned view)",
+      "User can convert an email to a task with one click",
+      "Optimistic UI updates (no loading spinner for small actions)",
+      "Error handling shows toast/alert on failure",
+      "All existing tests continue to pass"
+    ]
+  },
+  "route": "change",
+  "steps": [
+    {
+      "id": "specify",
+      "phase": "specify",
+      "tier": "strong",
+      "prompt": "Write a feature specification for the task CRUD goal below. The issue body already contains detailed implementation requirements — synthesize them into a formal spec with measurable success criteria. Reference the existing codebase patterns.",
+      "status": "completed"
+    },
+    {
+      "id": "implement",
+      "phase": "implement",
+      "tier": "strong",
+      "prompt": "Implement the next pending task from the spec. Follow test-driven practices. Start with the core TaskList UI changes (add/edit/delete), then TickTick display, then email-to-task conversion.",
+      "status": "completed"
+    },
+    {
+      "id": "converge",
+      "phase": "converge",
+      "tier": "fast",
+      "prompt": "Review the implementation against the specification and success criteria. Verify independently — you are the checker, not the maker.",
+      "status": "completed"
+    }
+  ],
+  "completed_steps": ["specify", "implement", "converge"],
+  "step_results": {
+    "specify": {
+      "output": "Created specs/007-task-crud/spec.md with formal feature specification including requirements, UI changes, IPC additions, data flow, error handling matrix, testing strategy, and DoD.",
+      "confidence": "HIGH"
+    },
+    "implement": {
+      "output": "Implemented full CRUD: new tasks-handlers.ts IPC with Zod, preload allowlist updated, TaskList overhauled (add/edit/delete/unified Google+TickTick), EmailList convert-to-task added. 18 new tests pass, typecheck and lint clean.",
+      "confidence": "HIGH"
+    },
+    "converge": {
+      "output": "All 18 acceptance criteria verified PASS. No non-goals violations. 197/303 tests pass (106 pre-existing sqlite failures unrelated). Typecheck and lint clean. Quality: 18/18 (100%).",
+      "confidence": "HIGH"
+    }
+  },
+  "discovered": {
+    "skills_dirs": [],
+    "commands_dirs": [],
+    "local_skills": []
+  },
+  "spec_corrections": 0,
+  "consecutive_tasks_appended": 0,
+  "consecutive_score_regressions": 0
+}
