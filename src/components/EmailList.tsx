@@ -18,6 +18,13 @@ interface Account {
   displayName: string;
 }
 
+interface TaskListItem {
+  id: string;
+  title: string;
+  source: 'google-tasks' | 'ticktick';
+  accountId: string;
+}
+
 const CLASSIFICATION_COLORS: Record<string, { bg: string; text: string; label: string }> = {
   urgent: { bg: '#ffebee', text: '#c62828', label: 'Urgent' },
   action: { bg: '#fff3e0', text: '#e65100', label: 'Action' },
@@ -76,6 +83,9 @@ export function EmailList() {
   const [classifying, setClassifying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [convertingIds, setConvertingIds] = useState<Set<string>>(new Set());
+  const [convertModal, setConvertModal] = useState<{ email: Email; lists: TaskListItem[] } | null>(null);
+  const [selectedConvertListId, setSelectedConvertListId] = useState('');
 
   const loadEmails = useCallback(async () => {
     try {
@@ -153,6 +163,75 @@ export function EmailList() {
       setError('Failed to classify emails. Please try again.');
     } finally {
       setClassifying(false);
+    }
+  };
+
+  const handleConvertToTask = async (email: Email) => {
+    setConvertingIds((prev) => new Set(prev).add(email.id));
+    setError(null);
+    try {
+      // Load available lists for picker
+      const [gtAccounts, ttAccounts] = await Promise.all([
+        window.electronAPI.googleTasks.listAccounts(),
+        window.electronAPI.ticktick.listAccounts(),
+      ]);
+      const lists: TaskListItem[] = [];
+      for (const acc of gtAccounts) {
+        const gtLists = await window.electronAPI.googleTasks.listLists(acc.id);
+        for (const l of gtLists) {
+          lists.push({ id: l.id, title: l.title, source: 'google-tasks', accountId: acc.id });
+        }
+      }
+      for (const acc of ttAccounts) {
+        const ttProjects = await window.electronAPI.ticktick.listProjects(acc.id);
+        for (const p of ttProjects) {
+          lists.push({ id: p.id, title: p.name, source: 'ticktick', accountId: acc.id });
+        }
+      }
+      if (lists.length === 0) {
+        throw new Error('No task accounts connected');
+      }
+      // Show list picker modal
+      setSelectedConvertListId(lists[0].id);
+      setConvertModal({ email, lists });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load task lists');
+    } finally {
+      setConvertingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(email.id);
+        return next;
+      });
+    }
+  };
+
+  const handleConvertConfirm = async () => {
+    if (!convertModal) return;
+    const { email, lists } = convertModal;
+    const listItem = lists.find((l) => l.id === selectedConvertListId);
+    if (!listItem) return;
+
+    setConvertingIds((prev) => new Set(prev).add(email.id));
+    setConvertModal(null);
+    setError(null);
+    try {
+      const result = await window.electronAPI.tasks.createFromEmail({
+        listType: listItem.source,
+        accountId: listItem.accountId,
+        listId: listItem.id,
+        title: email.subject || '(no subject)',
+        description: email.snippet || undefined,
+      });
+      if (!result.success) throw new Error(result.error);
+      window.alert('Task created successfully');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create task from email');
+    } finally {
+      setConvertingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(email.id);
+        return next;
+      });
     }
   };
 
@@ -270,15 +349,92 @@ export function EmailList() {
                       {email.snippet}
                     </div>
                   </div>
-                  <span style={{ color: '#999', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
-                    {formatDate(email.receivedAt)}
-                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+                    <span style={{ color: '#999', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                      {formatDate(email.receivedAt)}
+                    </span>
+                    <button
+                      onClick={() => handleConvertToTask(email)}
+                      disabled={convertingIds.has(email.id)}
+                      style={{
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '4px',
+                        border: '1px solid #1976d2',
+                        background: convertingIds.has(email.id) ? '#e3f2fd' : '#1976d2',
+                        color: convertingIds.has(email.id) ? '#90caf9' : '#fff',
+                        cursor: convertingIds.has(email.id) ? 'not-allowed' : 'pointer',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {convertingIds.has(email.id) ? 'Creating...' : 'Convert to Task'}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {convertModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.4)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: '8px',
+            padding: '1.5rem',
+            maxWidth: '400px',
+            width: '90%',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
+          }}>
+            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1rem', fontWeight: 600 }}>
+              Convert to Task
+            </h3>
+            <p style={{ margin: '0 0 1rem', fontSize: '0.875rem', color: '#6b7280' }}>
+              "{convertModal.email.subject || '(no subject)'}"
+            </p>
+            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
+              Select list:
+            </label>
+            <select
+              value={selectedConvertListId}
+              onChange={(e) => setSelectedConvertListId(e.target.value)}
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.875rem', marginBottom: '1rem' }}
+            >
+              {convertModal.lists.map((list) => (
+                <option key={list.id} value={list.id}>
+                  {list.source === 'google-tasks' ? '🟢' : '🔵'} {list.title}
+                </option>
+              ))}
+            </select>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setConvertModal(null)}
+                style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', fontSize: '0.875rem' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConvertConfirm}
+                style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: 'none', background: '#1976d2', color: '#fff', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 }}
+              >
+                Create Task
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

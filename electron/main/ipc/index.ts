@@ -9,6 +9,7 @@ import type { LanServerInstance } from '../server/index';
 import { registerApiKeyHandlers } from './api-key-handlers';
 import { registerGoogleTasksHandlers } from './google-tasks-handlers';
 import { registerTickTickHandlers } from './ticktick-handlers';
+import { registerTasksHandlers } from './tasks-handlers';
 import { registerTelemetryHandlers } from './telemetry-handlers';
 import { registerClassificationHandlers } from './classification-handlers';
 import { registerAiConsentHandlers } from './ai-consent-handlers';
@@ -31,6 +32,7 @@ export function registerIpcHandlers(
   }
   registerGoogleTasksHandlers(ipcMain, db);
   registerTickTickHandlers(ipcMain, db);
+  registerTasksHandlers(ipcMain, db);
   registerTelemetryHandlers(ipcMain, db);
   const { notificationService } = registerNotificationHandlers(ipcMain, db, getWindow);
   registerClassificationHandlers(ipcMain, db, notificationService);
