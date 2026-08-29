@@ -18,6 +18,7 @@ import { TickTickAdapter } from './sync/ticktick-adapter';
 import { getAccessToken as getTickTickAccessToken } from './auth/ticktick';
 import { recordTelemetryEvent } from './telemetry';
 import { recordSetupEvent, hasSetupStarted } from './onboarding/setup-tracker';
+import type { CronScheduler } from './cron/cron-scheduler';
 
 app.disableHardwareAcceleration();
 
@@ -26,6 +27,7 @@ let db: Database.Database | null = null;
 let healthPoller: NodeJS.Timeout | null = null;
 let isQuitting = false;
 let lanServer: LanServerInstance | null = null;
+let cronScheduler: CronScheduler | null = null;
 const googleTasksSyncs = new Map<string, GoogleTasksSync>();
 const ticktickSyncs = new Map<string, TickTickSync>();
 
@@ -173,7 +175,12 @@ app.whenReady().then(async () => {
     app.getPath('userData')
   );
 
-  registerIpcHandlers(db, () => mainWindow, () => app.quit(), composeDir, lanServer);
+  const { cronScheduler: cron } = registerIpcHandlers(db, () => mainWindow, () => app.quit(), composeDir, lanServer);
+  cronScheduler = cron;
+
+  if (cronScheduler.getStatus().enabled) {
+    cronScheduler.start();
+  }
 
   try {
     await composeUp(composeDir);
@@ -214,6 +221,11 @@ app.on('will-quit', (e) => {
 
   stopGoogleTasksSyncers();
   stopTickTickSyncers();
+
+  if (cronScheduler) {
+    cronScheduler.stop();
+    cronScheduler = null;
+  }
 
   if (healthPoller) {
     clearInterval(healthPoller);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { NotificationPreferences } from './notifications/NotificationPreferences';
 
 type Provider = 'openai' | 'anthropic' | 'litellm';
@@ -55,6 +55,20 @@ export function Settings({ onBack }: { onBack: () => void }) {
   const [telemetrySaving, setTelemetrySaving] = useState(false);
   const [aiConsentSettings, setAiConsentSettings] = useState<AiConsentSettings | null>(null);
   const [aiConsentSaving, setAiConsentSaving] = useState(false);
+  const [cronStatus, setCronStatus] = useState<{
+    enabled: boolean;
+    lastMode: 'work_hours' | 'off_hours' | null;
+    config: {
+      workStartHour: number;
+      workStartMinute: number;
+      workEndHour: number;
+      workEndMinute: number;
+      workIntervalSeconds: number;
+      offHoursIntervalSeconds: number;
+    };
+  } | null>(null);
+  const [cronSaving, setCronSaving] = useState(false);
+  const cronConfigTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadKeys = useCallback(async () => {
     try {
@@ -92,12 +106,22 @@ export function Settings({ onBack }: { onBack: () => void }) {
     }
   }, []);
 
+  const loadCronStatus = useCallback(async () => {
+    try {
+      const status = await window.electronAPI.cron.status();
+      setCronStatus(status);
+    } catch (err) {
+      console.error('Failed to load cron status:', err);
+    }
+  }, []);
+
   useEffect(() => {
     loadKeys();
     loadGmailAccounts();
     loadTelemetrySettings();
     loadAiConsentSettings();
-  }, [loadKeys, loadGmailAccounts, loadTelemetrySettings, loadAiConsentSettings]);
+    loadCronStatus();
+  }, [loadKeys, loadGmailAccounts, loadTelemetrySettings, loadAiConsentSettings, loadCronStatus]);
 
   const handleSave = async () => {
     setError(null);
@@ -171,7 +195,6 @@ export function Settings({ onBack }: { onBack: () => void }) {
   const handleAiConsentToggle = async () => {
     if (!aiConsentSettings) return;
     const newConsented = !aiConsentSettings.consented;
-    // If enabling AI features, require explicit re-acknowledgment of policy
     if (newConsented) {
       const confirmed = window.confirm(
         'AI Classification Consent\n\n' +
@@ -184,7 +207,6 @@ export function Settings({ onBack }: { onBack: () => void }) {
       );
       if (!confirmed) return;
     } else {
-      // Confirm revocation
       const confirmed = window.confirm(
         'Disable AI Classification\n\n' +
         'Disabling AI features will stop email classification and urgent notifications. ' +
@@ -203,6 +225,57 @@ export function Settings({ onBack }: { onBack: () => void }) {
       setAiConsentSaving(false);
     }
   };
+
+  const handleCronToggle = async () => {
+    if (!cronStatus) return;
+    setCronSaving(true);
+    try {
+      if (cronStatus.enabled) {
+        await window.electronAPI.cron.stop();
+      } else {
+        await window.electronAPI.cron.start();
+      }
+      await loadCronStatus();
+    } catch (err) {
+      console.error('Failed to toggle cron:', err);
+    } finally {
+      setCronSaving(false);
+    }
+  };
+
+  const handleCronRunNow = async () => {
+    setCronSaving(true);
+    try {
+      await window.electronAPI.cron.runNow();
+      await loadCronStatus();
+    } catch (err) {
+      console.error('Failed to run cron now:', err);
+    } finally {
+      setCronSaving(false);
+    }
+  };
+
+  const debouncedCronUpdate = useCallback((patch: Record<string, number>) => {
+    if (cronConfigTimerRef.current) {
+      clearTimeout(cronConfigTimerRef.current);
+    }
+    cronConfigTimerRef.current = setTimeout(async () => {
+      try {
+        await window.electronAPI.cron.updateConfig(patch);
+        await loadCronStatus();
+      } catch (err) {
+        console.error('Failed to update cron config:', err);
+      }
+    }, 500);
+  }, [loadCronStatus]);
+
+  useEffect(() => {
+    return () => {
+      if (cronConfigTimerRef.current) {
+        clearTimeout(cronConfigTimerRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif', maxWidth: '640px' }}>
@@ -290,6 +363,116 @@ export function Settings({ onBack }: { onBack: () => void }) {
         >
           {connecting ? 'Connecting...' : 'Connect Gmail Account'}
         </button>
+      </section>
+
+      <section style={{ marginBottom: '2rem' }}>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Auto-Fetch</h2>
+        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '1rem' }}>
+          Automatically fetch and classify emails on a schedule. During work hours, emails are fetched every 5 minutes. Outside work hours, every 60 minutes.
+        </p>
+
+        {cronStatus ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={cronStatus.enabled}
+                  onChange={handleCronToggle}
+                  disabled={cronSaving}
+                  style={{ width: '1.25rem', height: '1.25rem' }}
+                />
+                <span style={{ fontSize: '0.875rem' }}>
+                  {cronStatus.enabled ? 'Auto-fetch enabled' : 'Auto-fetch disabled'}
+                </span>
+              </label>
+              {cronStatus.enabled && (
+                <span style={{ color: '#666', fontSize: '0.75rem' }}>
+                  Mode: {cronStatus.lastMode === 'work_hours' ? 'Work Hours' : 'Off Hours'} | 
+                  Interval: {cronStatus.lastMode === 'work_hours' 
+                    ? `${cronStatus.config.workIntervalSeconds / 60}min` 
+                    : `${cronStatus.config.offHoursIntervalSeconds / 60}min`}
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+              <span style={{ color: '#666' }}>Work hours:</span>
+              <input
+                type="number"
+                min={0}
+                max={23}
+                value={cronStatus.config.workStartHour}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val)) {
+                    debouncedCronUpdate({ workStartHour: val });
+                  }
+                }}
+                style={{ width: '3rem', padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.875rem' }}
+              />
+              <span>:</span>
+              <input
+                type="number"
+                min={0}
+                max={59}
+                value={cronStatus.config.workStartMinute}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val)) {
+                    debouncedCronUpdate({ workStartMinute: val });
+                  }
+                }}
+                style={{ width: '3rem', padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.875rem' }}
+              />
+              <span style={{ color: '#666' }}>–</span>
+              <input
+                type="number"
+                min={0}
+                max={23}
+                value={cronStatus.config.workEndHour}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val)) {
+                    debouncedCronUpdate({ workEndHour: val });
+                  }
+                }}
+                style={{ width: '3rem', padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.875rem' }}
+              />
+              <span>:</span>
+              <input
+                type="number"
+                min={0}
+                max={59}
+                value={cronStatus.config.workEndMinute}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val)) {
+                    debouncedCronUpdate({ workEndMinute: val });
+                  }
+                }}
+                style={{ width: '3rem', padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.875rem' }}
+              />
+            </div>
+            <button
+              onClick={handleCronRunNow}
+              disabled={cronSaving || !cronStatus.enabled}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '4px',
+                border: '1px solid #ccc',
+                background: cronSaving || !cronStatus.enabled ? '#f5f5f5' : '#1976d2',
+                color: cronSaving || !cronStatus.enabled ? '#999' : '#fff',
+                cursor: cronSaving || !cronStatus.enabled ? 'not-allowed' : 'pointer',
+                fontSize: '0.875rem',
+                alignSelf: 'flex-start',
+              }}
+            >
+              {cronSaving ? 'Running...' : 'Run Now'}
+            </button>
+          </div>
+        ) : (
+          <p style={{ color: '#999', fontSize: '0.875rem' }}>Loading...</p>
+        )}
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
