@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 import { getDecryptedKey, type LlmProvider } from '../auth/api-keys';
 import { hasAiConsent } from './consent';
+import { evaluateRules, type EmailData } from './rules-engine';
 
 export type Classification = 'urgent' | 'action' | 'fyi' | 'noise';
 
@@ -16,6 +17,8 @@ interface EmailRow {
   subject: string | null;
   snippet: string | null;
   from_address: string | null;
+  to_addresses: string | null;
+  received_at: string | null;
 }
 
 interface ApiKeyInfo {
@@ -165,13 +168,47 @@ export async function classifyEmail(
   }
 
   const email = db
-    .prepare('SELECT id, subject, snippet, from_address FROM emails WHERE id = ?')
+    .prepare('SELECT id, subject, snippet, from_address, to_addresses, received_at FROM emails WHERE id = ?')
     .get(emailId) as EmailRow | undefined;
 
   if (!email) return null;
 
+  const emailData: EmailData = {
+    from: email.from_address,
+    to: email.to_addresses,
+    subject: email.subject,
+    body: email.snippet,
+    date: email.received_at,
+  };
+
+  const ruleResult = evaluateRules(db, emailData);
+  if (ruleResult && ruleResult.skipLlm) {
+    db.prepare(
+      'UPDATE emails SET classification = ?, classification_source = ?, classification_rule_id = ? WHERE id = ?'
+    ).run(ruleResult.classification, ruleResult.source, ruleResult.ruleId, emailId);
+
+    return {
+      emailId,
+      classification: ruleResult.classification,
+      confidence: 1.0,
+      reasoning: `Matched rule: ${ruleResult.ruleId}`,
+    };
+  }
+
   const keyInfo = getActiveApiKey(db);
   if (!keyInfo) {
+    if (ruleResult) {
+      db.prepare(
+        'UPDATE emails SET classification = ?, classification_source = ?, classification_rule_id = ? WHERE id = ?'
+      ).run(ruleResult.classification, ruleResult.source, ruleResult.ruleId, emailId);
+
+      return {
+        emailId,
+        classification: ruleResult.classification,
+        confidence: 0.8,
+        reasoning: `Rule override (no API key): ${ruleResult.ruleId}`,
+      };
+    }
     throw new Error('No API key configured. Add an OpenAI or Anthropic key in Settings.');
   }
 
@@ -186,19 +223,32 @@ export async function classifyEmail(
     throw new Error(`Unsupported provider: ${keyInfo.provider}`);
   }
 
-  const result = parseClassificationResponse(rawResponse);
-  if (!result) {
+  const llmResult = parseClassificationResponse(rawResponse);
+  if (!llmResult) {
     throw new Error('Failed to parse LLM classification response');
   }
 
-  result.emailId = emailId;
+  if (ruleResult) {
+    db.prepare(
+      'UPDATE emails SET classification = ?, classification_source = ?, classification_rule_id = ? WHERE id = ?'
+    ).run(ruleResult.classification, ruleResult.source, ruleResult.ruleId, emailId);
 
-  db.prepare('UPDATE emails SET classification = ? WHERE id = ?').run(
-    result.classification,
-    emailId
-  );
+    return {
+      emailId,
+      classification: ruleResult.classification,
+      confidence: llmResult.confidence,
+      reasoning: `Rule override: ${ruleResult.ruleId} (LLM said: ${llmResult.classification})`,
+    };
+  }
 
-  return result;
+  db.prepare(
+    'UPDATE emails SET classification = ?, classification_source = ?, classification_rule_id = NULL WHERE id = ?'
+  ).run(llmResult.classification, 'llm', emailId);
+
+  return {
+    ...llmResult,
+    emailId,
+  };
 }
 
 export interface BatchClassificationResult {

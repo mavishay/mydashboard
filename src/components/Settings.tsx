@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { NotificationPreferences } from './notifications/NotificationPreferences';
+import { ClassificationRules } from './ClassificationRules';
 
 type Provider = 'openai' | 'anthropic' | 'litellm';
 
@@ -915,6 +916,11 @@ export function Settings({ onBack }: { onBack: () => void }) {
         <div style={{ marginTop: '2rem' }}>
           <NotificationPreferences />
         </div>
+      </section>
+
+      <section style={{ marginTop: '2rem', borderTop: '1px solid #eee', paddingTop: '2rem' }}>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Classification Rules</h2>
+        <ClassificationRules />
       </section>
     </div>
   );

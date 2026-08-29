@@ -66,6 +66,11 @@ const ALLOWED_INVOKE = new Set([
   'notification:set-dnd',
   'notification:get-preferences',
   'notification:feedback',
+  'rules:getAll',
+  'rules:create',
+  'rules:update',
+  'rules:delete',
+  'rules:test',
   'cron:start',
   'cron:stop',
   'cron:status',
@@ -249,6 +254,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
     feedback: (data: { notificationId: string; emailId: string; classification: 'urgent'; feedback: 'thumbs_up' | 'thumbs_down' }) =>
       gatedInvoke('notification:feedback', data) as Promise<{ success: boolean }>,
     onFocusEmail: (callback: (data: { emailId: string }) => void) => gatedOn('notification:focus-email', callback),
+  },
+  rules: {
+    getAll: () =>
+      gatedInvoke('rules:getAll') as Promise<ClassificationRule[]>,
+    create: (rule: { name: string; enabled: boolean; priority: number; conditions: Array<{ field: string; operator: string; value: string }>; action: string; classification: string | null }) =>
+      gatedInvoke('rules:create', rule) as Promise<ClassificationRule>,
+    update: (id: string, updates: { name?: string; enabled?: boolean; priority?: number; conditions?: Array<{ field: string; operator: string; value: string }>; action?: string; classification?: string | null }) =>
+      gatedInvoke('rules:update', { id, ...updates }) as Promise<ClassificationRule>,
+    delete: (id: string) =>
+      gatedInvoke('rules:delete', { id }),
+    test: (conditions: Array<{ field: string; operator: string; value: string }>, email: { from?: string | null; to?: string | null; subject?: string | null; body?: string | null; date?: string | null }) =>
+      gatedInvoke('rules:test', { conditions, email }) as Promise<{ matched: boolean }>,
   },
   cron: {
     start: () => gatedInvoke('cron:start') as Promise<import('../main/cron/cron-scheduler').CronStatus>,
