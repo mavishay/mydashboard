@@ -14,6 +14,7 @@ export interface GmailAccount {
   id: string;
   email: string;
   display_name: string;
+  color: string | null;
 }
 
 export function generateState(): string {
@@ -104,17 +105,23 @@ export function createAccount(
   displayName: string
 ): GmailAccount {
   const id = uuidv4();
+  const presetColors = [
+    '#1976d2', '#388e3c', '#f57c00', '#7b1fa2', '#c62828',
+    '#00838f', '#455a64', '#ad1457', '#558b2f', '#ef6c00',
+  ];
+  const accountCount = db.prepare('SELECT COUNT(*) as count FROM accounts').get() as { count: number };
+  const color = presetColors[accountCount.count % presetColors.length];
   db.prepare(
-    `INSERT INTO accounts (id, type, email, display_name)
-     VALUES (?, 'gmail', ?, ?)`
-  ).run(id, email, displayName);
-  return { id, email, display_name: displayName };
+    `INSERT INTO accounts (id, type, email, display_name, color)
+     VALUES (?, 'gmail', ?, ?, ?)`
+  ).run(id, email, displayName, color);
+  return { id, email, display_name: displayName, color };
 }
 
 export function listAccounts(db: Database.Database): GmailAccount[] {
   return db
     .prepare(
-      `SELECT id, email, display_name FROM accounts WHERE type = 'gmail'`
+      `SELECT id, email, display_name, color FROM accounts WHERE type = 'gmail'`
     )
     .all() as GmailAccount[];
 }

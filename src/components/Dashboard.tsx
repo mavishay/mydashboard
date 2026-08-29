@@ -14,6 +14,11 @@ export function Dashboard() {
   const [showWizard, setShowWizard] = useState(false);
   const [restarting, setRestarting] = useState(false);
   const [dndEnabled, setDndEnabled] = useState(false);
+  const [cronStatus, setCronStatus] = useState<{
+    enabled: boolean;
+    lastMode: 'work_hours' | 'off_hours' | null;
+    config: { workIntervalSeconds: number; offHoursIntervalSeconds: number };
+  } | null>(null);
 
   useEffect(() => {
     window.electronAPI.n8n.status().then((result) => {
@@ -24,12 +29,21 @@ export function Dashboard() {
       setDndEnabled(result.enabled);
     });
 
-    const cleanup = window.electronAPI.n8n.onHealth((status: string) => {
+    window.electronAPI.cron.status().then((result) => {
+      setCronStatus(result);
+    });
+
+    const cleanupN8n = window.electronAPI.n8n.onHealth((status: string) => {
       setN8nStatus(status);
     });
 
+    const cleanupCron = window.electronAPI.cron.onStatusUpdate((status) => {
+      setCronStatus(status);
+    });
+
     return () => {
-      if (typeof cleanup === 'function') cleanup();
+      if (typeof cleanupN8n === 'function') cleanupN8n();
+      if (typeof cleanupCron === 'function') cleanupCron();
     };
   }, []);
 
@@ -55,7 +69,7 @@ export function Dashboard() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h1 style={{ margin: 0 }}>Focus Board</h1>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <StatusBar status={n8nStatus} onClick={() => setShowWizard(true)} dndEnabled={dndEnabled} />
+          <StatusBar status={n8nStatus} onClick={() => setShowWizard(true)} dndEnabled={dndEnabled} cronStatus={cronStatus} />
           <button
             onClick={() => setPage('telemetry-stats')}
             style={{

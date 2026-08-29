@@ -30,6 +30,7 @@ interface Account {
   id: string;
   email: string;
   displayName: string;
+  color: string | null;
 }
 
 interface ListItem {
@@ -64,6 +65,7 @@ function TaskListInner() {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accountsColorMap, setAccountsColorMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCompleted, setShowCompleted] = useState(false);
@@ -79,13 +81,14 @@ function TaskListInner() {
     try {
       setLoading(true);
       setError(null);
-      const [gtTasks, gtStatus, gtAccounts, ttTasks, ttStatus, ttAccounts] = await Promise.all([
+      const [gtTasks, gtStatus, gtAccounts, ttTasks, ttStatus, ttAccounts, gmailAccounts] = await Promise.all([
         window.electronAPI.googleTasks.listTasks(),
         window.electronAPI.googleTasks.status(),
         window.electronAPI.googleTasks.listAccounts(),
         window.electronAPI.ticktick.listTasks(),
         window.electronAPI.ticktick.status(),
         window.electronAPI.ticktick.listAccounts(),
+        window.electronAPI.gmail.listAccounts(),
       ]);
       // Normalize statuses to a common shape
       const normalizedGtTasks: TaskItem[] = gtTasks.map((t) => ({
@@ -126,6 +129,11 @@ function TaskListInner() {
         accountCount: gtAccounts.length + ttAccounts.length,
       });
       setAccounts([...gtAccounts.map(a => ({ ...a, source: 'google-tasks' })), ...ttAccounts.map(a => ({ ...a, source: 'ticktick' }))]);
+      const colorMap: Record<string, string> = {};
+      for (const a of gmailAccounts) {
+        if (a.color) colorMap[a.email] = a.color;
+      }
+      setAccountsColorMap(colorMap);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tasks');
     } finally {
@@ -509,7 +517,10 @@ function TaskListInner() {
         <p>{tasks.length === 0 ? 'No tasks found' : 'All tasks completed!'}</p>
       ) : (
         <ul style={{ listStyle: 'none', padding: 0, margin: 0, overflow: 'auto', flex: 1 }}>
-          {visibleTasks.map((task) => (
+          {visibleTasks.map((task) => {
+            const taskAccount = accounts.find((a) => a.id === task.source || a.email === task.source);
+            const taskColor = (taskAccount && accountsColorMap[taskAccount.email]) || GOOGLE_BLUE;
+            return (
             <li
               key={task.id}
               style={{
@@ -518,6 +529,8 @@ function TaskListInner() {
                 gap: '0.5rem',
                 padding: '0.5rem 0',
                 borderBottom: '1px solid #e5e7eb',
+                borderLeft: `3px solid ${taskColor}`,
+                paddingLeft: '0.5rem',
               }}
             >
               <span
@@ -586,7 +599,8 @@ function TaskListInner() {
                 ×
               </button>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </div>

@@ -27,6 +27,10 @@ const mockTickTick = {
   sync: vi.fn(),
 };
 
+const mockGmail = {
+  listAccounts: vi.fn(),
+};
+
 function setupDefaults() {
   mockGoogleTasks.listTasks.mockResolvedValue([]);
   mockGoogleTasks.status.mockResolvedValue({ status: 'idle', lastSyncAt: null, error: null });
@@ -34,6 +38,7 @@ function setupDefaults() {
   mockTickTick.listTasks.mockResolvedValue([]);
   mockTickTick.status.mockResolvedValue({ status: 'idle', lastSyncAt: null, error: null });
   mockTickTick.listAccounts.mockResolvedValue([]);
+  mockGmail.listAccounts.mockResolvedValue([]);
 }
 
 beforeEach(() => {
@@ -44,6 +49,7 @@ beforeEach(() => {
     electronAPI: {
       googleTasks: mockGoogleTasks,
       ticktick: mockTickTick,
+      gmail: mockGmail,
     },
     confirm: vi.fn().mockReturnValue(true),
     navigator: {

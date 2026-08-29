@@ -15,6 +15,9 @@ import { registerClassificationHandlers } from './classification-handlers';
 import { registerAiConsentHandlers } from './ai-consent-handlers';
 import { registerNotificationHandlers } from './notification-handlers';
 import { registerSetupHandlers } from './setup-handlers';
+import { registerCronHandlers } from './cron-handlers';
+import { CronScheduler } from '../cron/cron-scheduler';
+import { registerAccountColorHandlers } from './account-color-handlers';
 
 export function registerIpcHandlers(
   db: Database.Database,
@@ -22,7 +25,7 @@ export function registerIpcHandlers(
   quit: () => void = () => {},
   composeDir: string = process.cwd(),
   lanServer?: LanServerInstance
-): { notificationService?: import('../services/notification-service').NotificationService } {
+): { notificationService?: import('../services/notification-service').NotificationService; cronScheduler: CronScheduler } {
   registerWindowHandlers(ipcMain, getWindow, quit);
   registerGmailHandlers(ipcMain, db, getWindow);
   registerN8nHandlers(ipcMain, composeDir);
@@ -38,5 +41,10 @@ export function registerIpcHandlers(
   registerClassificationHandlers(ipcMain, db, notificationService);
   registerAiConsentHandlers(ipcMain, db);
   registerSetupHandlers(ipcMain, db);
-  return { notificationService };
+  registerAccountColorHandlers(ipcMain, db);
+
+  const cronScheduler = new CronScheduler(db, getWindow);
+  registerCronHandlers(ipcMain, db, cronScheduler);
+
+  return { notificationService, cronScheduler };
 }
