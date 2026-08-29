@@ -2,6 +2,11 @@ interface StatusBarProps {
   status: string;
   onClick: () => void;
   dndEnabled: boolean;
+  cronStatus?: {
+    enabled: boolean;
+    lastMode: 'work_hours' | 'off_hours' | null;
+    config: { workIntervalSeconds: number; offHoursIntervalSeconds: number };
+  } | null;
 }
 
 const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
@@ -11,8 +16,20 @@ const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
   unknown: { color: '#9ca3af', label: 'n8n: Unknown' },
 };
 
-export function StatusBar({ status, onClick, dndEnabled }: StatusBarProps) {
+function getCronLabel(cronStatus: StatusBarProps['cronStatus']): string | null {
+  if (!cronStatus?.enabled) return null;
+  const mode = cronStatus.lastMode ?? 'work_hours';
+  const intervalSeconds = mode === 'work_hours'
+    ? cronStatus.config.workIntervalSeconds
+    : cronStatus.config.offHoursIntervalSeconds;
+  const minutes = Math.round(intervalSeconds / 60);
+  const modeLabel = mode === 'work_hours' ? 'Work' : 'Off';
+  return `Cron: ${modeLabel} ${minutes < 60 ? `${minutes}m` : `${minutes / 60}h`}`;
+}
+
+export function StatusBar({ status, onClick, dndEnabled, cronStatus }: StatusBarProps) {
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.unknown;
+  const cronLabel = getCronLabel(cronStatus);
 
   return (
     <button
@@ -42,6 +59,19 @@ export function StatusBar({ status, onClick, dndEnabled }: StatusBarProps) {
           }}
         >
           DND
+        </span>
+      )}
+      {cronStatus?.enabled && (
+        <span
+          title="Auto-Fetch Active"
+          style={{
+            fontSize: '0.625rem',
+            color: '#22c55e',
+            fontWeight: 600,
+            marginRight: '0.25rem',
+          }}
+        >
+          {cronLabel}
         </span>
       )}
       <span

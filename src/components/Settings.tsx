@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { NotificationPreferences } from './notifications/NotificationPreferences';
 import { ClassificationRules } from './ClassificationRules';
 
@@ -16,7 +16,23 @@ interface GmailAccount {
   id: string;
   email: string;
   displayName: string;
+  color?: string | null;
 }
+
+const PRESET_COLORS = [
+  '#1976d2', // Blue
+  '#388e3c', // Green
+  '#f57c00', // Orange
+  '#7b1fa2', // Purple
+  '#c62828', // Red
+  '#00838f', // Teal
+  '#455a64', // Blue Grey
+  '#ad1457', // Pink
+  '#558b2f', // Light Green
+  '#ef6c00', // Amber
+] as const;
+
+const DEFAULT_COLOR = '#9e9e9e';
 
 interface TelemetrySettings {
   optedIn: boolean;
@@ -56,6 +72,25 @@ export function Settings({ onBack }: { onBack: () => void }) {
   const [telemetrySaving, setTelemetrySaving] = useState(false);
   const [aiConsentSettings, setAiConsentSettings] = useState<AiConsentSettings | null>(null);
   const [aiConsentSaving, setAiConsentSaving] = useState(false);
+  const [cronStatus, setCronStatus] = useState<{
+    enabled: boolean;
+    lastMode: 'work_hours' | 'off_hours' | null;
+    config: {
+      workStartHour: number;
+      workStartMinute: number;
+      workEndHour: number;
+      workEndMinute: number;
+      workIntervalSeconds: number;
+      offHoursIntervalSeconds: number;
+    };
+  } | null>(null);
+  const [cronSaving, setCronSaving] = useState(false);
+  const cronConfigTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
+  const [editingColor, setEditingColor] = useState<string>(DEFAULT_COLOR);
+  const [hexInput, setHexInput] = useState('');
+  const [hexError, setHexError] = useState<string | null>(null);
+  const [colorSaving, setColorSaving] = useState(false);
 
   const loadKeys = useCallback(async () => {
     try {
@@ -93,12 +128,22 @@ export function Settings({ onBack }: { onBack: () => void }) {
     }
   }, []);
 
+  const loadCronStatus = useCallback(async () => {
+    try {
+      const status = await window.electronAPI.cron.status();
+      setCronStatus(status);
+    } catch (err) {
+      console.error('Failed to load cron status:', err);
+    }
+  }, []);
+
   useEffect(() => {
     loadKeys();
     loadGmailAccounts();
     loadTelemetrySettings();
     loadAiConsentSettings();
-  }, [loadKeys, loadGmailAccounts, loadTelemetrySettings, loadAiConsentSettings]);
+    loadCronStatus();
+  }, [loadKeys, loadGmailAccounts, loadTelemetrySettings, loadAiConsentSettings, loadCronStatus]);
 
   const handleSave = async () => {
     setError(null);
@@ -172,7 +217,6 @@ export function Settings({ onBack }: { onBack: () => void }) {
   const handleAiConsentToggle = async () => {
     if (!aiConsentSettings) return;
     const newConsented = !aiConsentSettings.consented;
-    // If enabling AI features, require explicit re-acknowledgment of policy
     if (newConsented) {
       const confirmed = window.confirm(
         'AI Classification Consent\n\n' +
@@ -185,7 +229,6 @@ export function Settings({ onBack }: { onBack: () => void }) {
       );
       if (!confirmed) return;
     } else {
-      // Confirm revocation
       const confirmed = window.confirm(
         'Disable AI Classification\n\n' +
         'Disabling AI features will stop email classification and urgent notifications. ' +
@@ -202,6 +245,83 @@ export function Settings({ onBack }: { onBack: () => void }) {
       console.error('Failed to update AI consent settings:', err);
     } finally {
       setAiConsentSaving(false);
+    }
+  };
+
+  const handleCronToggle = async () => {
+    if (!cronStatus) return;
+    setCronSaving(true);
+    try {
+      if (cronStatus.enabled) {
+        await window.electronAPI.cron.stop();
+      } else {
+        await window.electronAPI.cron.start();
+      }
+      await loadCronStatus();
+    } catch (err) {
+      console.error('Failed to toggle cron:', err);
+    } finally {
+      setCronSaving(false);
+    }
+  };
+
+  const handleCronRunNow = async () => {
+    setCronSaving(true);
+    try {
+      await window.electronAPI.cron.runNow();
+      await loadCronStatus();
+    } catch (err) {
+      console.error('Failed to run cron now:', err);
+    } finally {
+      setCronSaving(false);
+    }
+  };
+
+  const debouncedCronUpdate = useCallback((patch: Record<string, number>) => {
+    if (cronConfigTimerRef.current) {
+      clearTimeout(cronConfigTimerRef.current);
+    }
+    cronConfigTimerRef.current = setTimeout(async () => {
+      try {
+        await window.electronAPI.cron.updateConfig(patch);
+        await loadCronStatus();
+      } catch (err) {
+        console.error('Failed to update cron config:', err);
+      }
+    }, 500);
+  }, [loadCronStatus]);
+
+  useEffect(() => {
+    return () => {
+      if (cronConfigTimerRef.current) {
+        clearTimeout(cronConfigTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleApplyColor = async (accountId: string) => {
+    setColorSaving(true);
+    try {
+      await window.electronAPI.accounts.updateColor(accountId, editingColor);
+      await loadGmailAccounts();
+      setEditingAccountId(null);
+    } catch (err) {
+      console.error('Failed to update account color:', err);
+    } finally {
+      setColorSaving(false);
+    }
+  };
+
+  const handleResetColor = async (accountId: string) => {
+    setColorSaving(true);
+    try {
+      await window.electronAPI.accounts.updateColor(accountId, null);
+      await loadGmailAccounts();
+      setEditingAccountId(null);
+    } catch (err) {
+      console.error('Failed to reset account color:', err);
+    } finally {
+      setColorSaving(false);
     }
   };
 
@@ -291,6 +411,302 @@ export function Settings({ onBack }: { onBack: () => void }) {
         >
           {connecting ? 'Connecting...' : 'Connect Gmail Account'}
         </button>
+      </section>
+
+      <section style={{ marginBottom: '2rem' }}>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Auto-Fetch</h2>
+        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '1rem' }}>
+          Automatically fetch and classify emails on a schedule. During work hours, emails are fetched every 5 minutes. Outside work hours, every 60 minutes.
+        </p>
+
+        {cronStatus ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={cronStatus.enabled}
+                  onChange={handleCronToggle}
+                  disabled={cronSaving}
+                  style={{ width: '1.25rem', height: '1.25rem' }}
+                />
+                <span style={{ fontSize: '0.875rem' }}>
+                  {cronStatus.enabled ? 'Auto-fetch enabled' : 'Auto-fetch disabled'}
+                </span>
+              </label>
+              {cronStatus.enabled && (
+                <span style={{ color: '#666', fontSize: '0.75rem' }}>
+                  Mode: {cronStatus.lastMode === 'work_hours' ? 'Work Hours' : 'Off Hours'} | 
+                  Interval: {cronStatus.lastMode === 'work_hours' 
+                    ? `${cronStatus.config.workIntervalSeconds / 60}min` 
+                    : `${cronStatus.config.offHoursIntervalSeconds / 60}min`}
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+              <span style={{ color: '#666' }}>Work hours:</span>
+              <input
+                type="number"
+                min={0}
+                max={23}
+                value={cronStatus.config.workStartHour}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val)) {
+                    debouncedCronUpdate({ workStartHour: val });
+                  }
+                }}
+                style={{ width: '3rem', padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.875rem' }}
+              />
+              <span>:</span>
+              <input
+                type="number"
+                min={0}
+                max={59}
+                value={cronStatus.config.workStartMinute}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val)) {
+                    debouncedCronUpdate({ workStartMinute: val });
+                  }
+                }}
+                style={{ width: '3rem', padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.875rem' }}
+              />
+              <span style={{ color: '#666' }}>–</span>
+              <input
+                type="number"
+                min={0}
+                max={23}
+                value={cronStatus.config.workEndHour}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val)) {
+                    debouncedCronUpdate({ workEndHour: val });
+                  }
+                }}
+                style={{ width: '3rem', padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.875rem' }}
+              />
+              <span>:</span>
+              <input
+                type="number"
+                min={0}
+                max={59}
+                value={cronStatus.config.workEndMinute}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val)) {
+                    debouncedCronUpdate({ workEndMinute: val });
+                  }
+                }}
+                style={{ width: '3rem', padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.875rem' }}
+              />
+            </div>
+            <button
+              onClick={handleCronRunNow}
+              disabled={cronSaving || !cronStatus.enabled}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '4px',
+                border: '1px solid #ccc',
+                background: cronSaving || !cronStatus.enabled ? '#f5f5f5' : '#1976d2',
+                color: cronSaving || !cronStatus.enabled ? '#999' : '#fff',
+                cursor: cronSaving || !cronStatus.enabled ? 'not-allowed' : 'pointer',
+                fontSize: '0.875rem',
+                alignSelf: 'flex-start',
+              }}
+            >
+              {cronSaving ? 'Running...' : 'Run Now'}
+            </button>
+          </div>
+        ) : (
+          <p style={{ color: '#999', fontSize: '0.875rem' }}>Loading...</p>
+        )}
+      </section>
+
+      <section style={{ marginBottom: '2rem' }}>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Account Colors</h2>
+        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '1rem' }}>
+          Customize colors to identify accounts.
+        </p>
+
+        {gmailAccounts.length === 0 ? (
+          <p style={{ color: '#999', fontSize: '0.875rem', marginBottom: '1rem' }}>
+            Connect an account to customize colors.
+          </p>
+        ) : (
+          <div style={{ marginBottom: '1rem' }}>
+            {gmailAccounts.map((account) => {
+              const accountColor = account.color || DEFAULT_COLOR;
+              const isEditing = editingAccountId === account.id;
+
+              return (
+                <div
+                  key={account.id}
+                  style={{
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '8px',
+                    marginBottom: '0.5rem',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.75rem 1rem',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div
+                        style={{
+                          width: '16px',
+                          height: '16px',
+                          borderRadius: '50%',
+                          backgroundColor: accountColor,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>
+                        {account.email}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (isEditing) {
+                          setEditingAccountId(null);
+                        } else {
+                          setEditingAccountId(account.id);
+                          setEditingColor(accountColor);
+                          setHexInput('');
+                          setHexError(null);
+                        }
+                      }}
+                      style={{
+                        background: 'none',
+                        border: '1px solid #1976d2',
+                        color: '#1976d2',
+                        borderRadius: '4px',
+                        padding: '0.25rem 0.5rem',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                      }}
+                    >
+                      {isEditing ? 'Cancel' : 'Edit'}
+                    </button>
+                  </div>
+
+                  {isEditing && (
+                    <div style={{ padding: '0 1rem 1rem', borderTop: '1px solid #eee' }}>
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(5, 1fr)',
+                          gap: '0.5rem',
+                          marginBottom: '1rem',
+                          marginTop: '0.75rem',
+                        }}
+                      >
+                        {PRESET_COLORS.map((color) => (
+                          <button
+                            key={color}
+                            aria-label={`Select color ${color}`}
+                            onClick={() => {
+                              setEditingColor(color);
+                              setHexInput('');
+                              setHexError(null);
+                            }}
+                            style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '50%',
+                              backgroundColor: color,
+                              border: editingColor === color ? '3px solid #333' : '2px solid transparent',
+                              cursor: 'pointer',
+                              justifySelf: 'center',
+                            }}
+                            title={color}
+                          />
+                        ))}
+                      </div>
+
+                      <div style={{ marginBottom: '0.75rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                          Custom Color
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="#RRGGBB"
+                          value={hexInput}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setHexInput(val);
+                            if (val === '') {
+                              setHexError(null);
+                              return;
+                            }
+                            if (/^#[0-9a-f]{6}$/i.test(val)) {
+                              setEditingColor(val.toLowerCase());
+                              setHexError(null);
+                            } else {
+                              setHexError('Enter a valid hex color (e.g. #ff0000)');
+                            }
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            borderRadius: '4px',
+                            border: '1px solid #ccc',
+                            fontFamily: 'monospace',
+                          }}
+                        />
+                        {hexError && (
+                          <div style={{ color: '#d32f2f', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                            {hexError}
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <button
+                          onClick={() => handleApplyColor(account.id)}
+                          disabled={colorSaving || hexError !== null}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            borderRadius: '4px',
+                            border: 'none',
+                            background: colorSaving || hexError ? '#ccc' : '#1976d2',
+                            color: '#fff',
+                            cursor: colorSaving || hexError ? 'not-allowed' : 'pointer',
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {colorSaving ? 'Saving...' : 'Apply'}
+                        </button>
+                        <button
+                          onClick={() => handleResetColor(account.id)}
+                          disabled={colorSaving}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            borderRadius: '4px',
+                            border: '1px solid #999',
+                            background: 'none',
+                            color: '#666',
+                            cursor: colorSaving ? 'not-allowed' : 'pointer',
+                            fontSize: '0.875rem',
+                          }}
+                        >
+                          Reset to Default
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section style={{ marginBottom: '2rem' }}>

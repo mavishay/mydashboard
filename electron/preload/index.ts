@@ -71,6 +71,12 @@ const ALLOWED_INVOKE = new Set([
   'rules:update',
   'rules:delete',
   'rules:test',
+  'cron:start',
+  'cron:stop',
+  'cron:status',
+  'cron:update-config',
+  'cron:run-now',
+  'accounts:updateColor',
 ] as const);
 
 const ALLOWED_ON = new Set([
@@ -82,6 +88,7 @@ const ALLOWED_ON = new Set([
   'ticktick:sync-health',
   'gmail:sync-health',
   'notification:focus-email',
+  'cron:status-update',
 ] as const);
 
 function gatedInvoke(channel: string, ...args: unknown[]): Promise<unknown> {
@@ -207,9 +214,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   classification: {
     classify: (emailId: string) =>
-      gatedInvoke('classification:classify', { emailId }) as Promise<{ emailId: string; classification: string; confidence: number; reasoning: string }>,
+      gatedInvoke('classification:classify', { emailId }) as Promise<{ emailId: string; classification: string; confidence: number; reasoning: string } | { error: string }>,
     classifyAccount: (accountId: string, limit?: number) =>
-      gatedInvoke('classification:classifyAccount', { accountId, limit }) as Promise<{ classified: number; results: Array<{ emailId: string; classification: string; confidence: number; reasoning: string }> }>,
+      gatedInvoke('classification:classifyAccount', { accountId, limit }) as Promise<{ classified: number; results: Array<{ emailId: string; classification: string; confidence: number; reasoning: string }>; error?: string }>,
     fetchEmails: (accountId: string, maxResults?: number) =>
       gatedInvoke('classification:fetchEmails', { accountId, maxResults }) as Promise<{ accountId: string; fetched: number; inserted: number; skipped: number }>,
     fetchEmailsAll: () =>
@@ -259,5 +266,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
       gatedInvoke('rules:delete', { id }),
     test: (conditions: Array<{ field: string; operator: string; value: string }>, email: { from?: string | null; to?: string | null; subject?: string | null; body?: string | null; date?: string | null }) =>
       gatedInvoke('rules:test', { conditions, email }) as Promise<{ matched: boolean }>,
+  },
+  cron: {
+    start: () => gatedInvoke('cron:start') as Promise<import('../main/cron/cron-scheduler').CronStatus>,
+    stop: () => gatedInvoke('cron:stop') as Promise<import('../main/cron/cron-scheduler').CronStatus>,
+    status: () => gatedInvoke('cron:status') as Promise<import('../main/cron/cron-scheduler').CronStatus>,
+    updateConfig: (data: Partial<import('../main/cron/cron-scheduler').CronConfig>) =>
+      gatedInvoke('cron:update-config', data) as Promise<import('../main/cron/cron-scheduler').CronStatus>,
+    runNow: () => gatedInvoke('cron:run-now') as Promise<import('../main/cron/cron-scheduler').CronStatus>,
+    onStatusUpdate: (callback: (status: import('../main/cron/cron-scheduler').CronStatus) => void) =>
+      gatedOn('cron:status-update', callback),
+  },
+  accounts: {
+    updateColor: (accountId: string, color: string | null) =>
+      gatedInvoke('accounts:updateColor', { accountId, color }) as Promise<{ success: boolean }>,
   },
 });
