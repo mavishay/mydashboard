@@ -14,6 +14,7 @@ import { registerClassificationHandlers } from './classification-handlers';
 import { registerAiConsentHandlers } from './ai-consent-handlers';
 import { registerNotificationHandlers } from './notification-handlers';
 import { registerSetupHandlers } from './setup-handlers';
+import { registerRulesHandlers } from './rules-handlers';
 
 export function registerIpcHandlers(
   db: Database.Database,
@@ -36,5 +37,6 @@ export function registerIpcHandlers(
   registerClassificationHandlers(ipcMain, db, notificationService);
   registerAiConsentHandlers(ipcMain, db);
   registerSetupHandlers(ipcMain, db);
+  registerRulesHandlers(ipcMain, db);
   return { notificationService };
 }

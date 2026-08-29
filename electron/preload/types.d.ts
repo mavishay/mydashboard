@@ -74,6 +74,24 @@ declare global {
     createdAt: string;
   }
 
+  interface ClassificationRuleCondition {
+    field: 'from' | 'to' | 'subject' | 'body' | 'domain' | 'date';
+    operator: 'contains' | 'equals' | 'starts_with' | 'ends_with' | 'matches_regex';
+    value: string;
+  }
+
+  interface ClassificationRule {
+    id: string;
+    name: string;
+    enabled: boolean;
+    priority: number;
+    conditions: ClassificationRuleCondition[];
+    action: 'classify' | 'skip_llm';
+    classification: 'urgent' | 'action' | 'fyi' | 'noise' | null;
+    createdAt: string;
+    updatedAt: string;
+  }
+
   interface ElectronAPI {
     window: {
       minimize: () => Promise<void>;
@@ -186,6 +204,13 @@ declare global {
       getPreferences: () => Promise<{ notificationTimeoutMs: number; maxConcurrent: number }>;
       feedback: (data: { notificationId: string; emailId: string; classification: 'urgent'; feedback: 'thumbs_up' | 'thumbs_down' }) => Promise<{ success: boolean }>;
       onFocusEmail: (callback: (data: { emailId: string }) => void) => void;
+    };
+    rules: {
+      getAll: () => Promise<ClassificationRule[]>;
+      create: (rule: { name: string; enabled: boolean; priority: number; conditions: ClassificationRuleCondition[]; action: string; classification: string | null }) => Promise<ClassificationRule>;
+      update: (id: string, updates: { name?: string; enabled?: boolean; priority?: number; conditions?: ClassificationRuleCondition[]; action?: string; classification?: string | null }) => Promise<ClassificationRule>;
+      delete: (id: string) => Promise<void>;
+      test: (conditions: ClassificationRuleCondition[], email: { from?: string | null; to?: string | null; subject?: string | null; body?: string | null; date?: string | null }) => Promise<{ matched: boolean }>;
     };
   }
 

@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 import { getDecryptedKey, type LlmProvider } from '../auth/api-keys';
 import { hasAiConsent } from './consent';
+import { evaluateRules, type EmailData } from './rules-engine';
 
 export type Classification = 'urgent' | 'action' | 'fyi' | 'noise';
 
@@ -16,6 +17,8 @@ interface EmailRow {
   subject: string | null;
   snippet: string | null;
   from_address: string | null;
+  to_addresses: string | null;
+  received_at: string | null;
 }
 
 interface ApiKeyInfo {
@@ -165,10 +168,32 @@ export async function classifyEmail(
   }
 
   const email = db
-    .prepare('SELECT id, subject, snippet, from_address FROM emails WHERE id = ?')
+    .prepare('SELECT id, subject, snippet, from_address, to_addresses, received_at FROM emails WHERE id = ?')
     .get(emailId) as EmailRow | undefined;
 
   if (!email) return null;
+
+  const emailData: EmailData = {
+    from: email.from_address,
+    to: email.to_addresses,
+    subject: email.subject,
+    body: email.snippet,
+    date: email.received_at,
+  };
+
+  const ruleResult = evaluateRules(db, emailData);
+  if (ruleResult) {
+    db.prepare(
+      'UPDATE emails SET classification = ?, classification_source = ?, classification_rule_id = ? WHERE id = ?'
+    ).run(ruleResult.classification, ruleResult.source, ruleResult.ruleId, emailId);
+
+    return {
+      emailId,
+      classification: ruleResult.classification,
+      confidence: 1.0,
+      reasoning: `Matched rule: ${ruleResult.ruleId}`,
+    };
+  }
 
   const keyInfo = getActiveApiKey(db);
   if (!keyInfo) {
@@ -193,10 +218,9 @@ export async function classifyEmail(
 
   result.emailId = emailId;
 
-  db.prepare('UPDATE emails SET classification = ? WHERE id = ?').run(
-    result.classification,
-    emailId
-  );
+  db.prepare(
+    'UPDATE emails SET classification = ?, classification_source = ?, classification_rule_id = NULL WHERE id = ?'
+  ).run(result.classification, 'llm', emailId);
 
   return result;
 }
