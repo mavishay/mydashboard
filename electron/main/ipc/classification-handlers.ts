@@ -61,26 +61,33 @@ export function registerClassificationHandlers(
         throw new Error(`Invalid payload: ${parsed.error.message}`);
       }
 
-      const result = await classifyEmail(db, parsed.data.emailId);
-      if (!result) {
-        throw new Error('Email not found');
-      }
-
-      if (result.classification === 'urgent') {
-        if (notificationService) {
-          const { subject, sender } = getEmailForNotification(db, parsed.data.emailId);
-          notificationService.send({
-            emailId: parsed.data.emailId,
-            subject,
-            sender,
-            classification: 'urgent',
-          });
-        } else {
-          console.warn('[classification] notificationService not available — urgent email notification skipped');
+      try {
+        const result = await classifyEmail(db, parsed.data.emailId);
+        if (!result) {
+          throw new Error('Email not found');
         }
-      }
 
-      return result;
+        if (result.classification === 'urgent') {
+          if (notificationService) {
+            const { subject, sender } = getEmailForNotification(db, parsed.data.emailId);
+            notificationService.send({
+              emailId: parsed.data.emailId,
+              subject,
+              sender,
+              classification: 'urgent',
+            });
+          } else {
+            console.warn('[classification] notificationService not available — urgent email notification skipped');
+          }
+        }
+
+        return result;
+      } catch (err) {
+        if (err instanceof Error && err.message.includes('AI consent')) {
+          return { error: 'consent_required' };
+        }
+        throw err;
+      }
     }
   );
 
@@ -92,33 +99,40 @@ export function registerClassificationHandlers(
         throw new Error(`Invalid payload: ${parsed.error.message}`);
       }
 
-      const result = await classifyUnclassifiedEmails(
-        db,
-        parsed.data.accountId,
-        parsed.data.limit
-      );
+      try {
+        const result = await classifyUnclassifiedEmails(
+          db,
+          parsed.data.accountId,
+          parsed.data.limit
+        );
 
-      if (notificationService) {
-        for (const classified of result.classified) {
-          if (classified.classification === 'urgent') {
-            const { subject, sender } = getEmailForNotification(db, classified.emailId);
-            notificationService.send({
-              emailId: classified.emailId,
-              subject,
-              sender,
-              classification: 'urgent',
-            });
+        if (notificationService) {
+          for (const classified of result.classified) {
+            if (classified.classification === 'urgent') {
+              const { subject, sender } = getEmailForNotification(db, classified.emailId);
+              notificationService.send({
+                emailId: classified.emailId,
+                subject,
+                sender,
+                classification: 'urgent',
+              });
+            }
           }
+        } else if (result.classified.some(c => c.classification === 'urgent')) {
+          console.warn('[classification] notificationService not available — urgent email notifications skipped');
         }
-      } else if (result.classified.some(c => c.classification === 'urgent')) {
-        console.warn('[classification] notificationService not available — urgent email notifications skipped');
-      }
 
-      return {
-        classified: result.classified.length,
-        errors: result.errors,
-        results: result.classified,
-      };
+        return {
+          classified: result.classified.length,
+          errors: result.errors,
+          results: result.classified,
+        };
+      } catch (err) {
+        if (err instanceof Error && err.message.includes('AI consent')) {
+          return { classified: 0, errors: 0, results: [], error: 'consent_required' };
+        }
+        throw err;
+      }
     }
   );
 

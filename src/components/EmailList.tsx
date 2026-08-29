@@ -140,6 +140,13 @@ export function EmailList() {
     setClassifying(true);
     setError(null);
     try {
+      const consent = await window.electronAPI.aiConsent.getSettings();
+      if (!consent.consented) {
+        setError('AI consent not granted. Please enable AI features in Settings to classify emails.');
+        setClassifying(false);
+        return;
+      }
+
       if (selectedAccount) {
         await window.electronAPI.classification.classifyAccount(selectedAccount);
       } else {

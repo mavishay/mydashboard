@@ -70,13 +70,21 @@ export class GmailSync {
       let classified = 0;
       if (fetchResult.inserted > 0) {
         console.log(`[GmailSync] Classifying ${fetchResult.inserted} new emails...`);
-        const classificationResults = await classifyUnclassifiedEmails(
-          this.db,
-          this.accountId,
-          fetchResult.inserted
-        );
-        classified = classificationResults.length;
-        console.log(`[GmailSync] Classified ${classified} emails`);
+        try {
+          const classificationResults = await classifyUnclassifiedEmails(
+            this.db,
+            this.accountId,
+            fetchResult.inserted
+          );
+          classified = classificationResults.length;
+          console.log(`[GmailSync] Classified ${classified} emails`);
+        } catch (classificationErr) {
+          if (classificationErr instanceof Error && classificationErr.message.includes('AI consent')) {
+            console.warn('[GmailSync] AI consent not granted — skipping classification. Emails fetched but not classified.');
+          } else {
+            throw classificationErr;
+          }
+        }
       }
 
       const now = new Date().toISOString();

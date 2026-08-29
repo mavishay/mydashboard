@@ -208,9 +208,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   classification: {
     classify: (emailId: string) =>
-      gatedInvoke('classification:classify', { emailId }) as Promise<{ emailId: string; classification: string; confidence: number; reasoning: string }>,
+      gatedInvoke('classification:classify', { emailId }) as Promise<{ emailId: string; classification: string; confidence: number; reasoning: string } | { error: string }>,
     classifyAccount: (accountId: string, limit?: number) =>
-      gatedInvoke('classification:classifyAccount', { accountId, limit }) as Promise<{ classified: number; results: Array<{ emailId: string; classification: string; confidence: number; reasoning: string }> }>,
+      gatedInvoke('classification:classifyAccount', { accountId, limit }) as Promise<{ classified: number; results: Array<{ emailId: string; classification: string; confidence: number; reasoning: string }>; error?: string }>,
     fetchEmails: (accountId: string, maxResults?: number) =>
       gatedInvoke('classification:fetchEmails', { accountId, maxResults }) as Promise<{ accountId: string; fetched: number; inserted: number; skipped: number }>,
     fetchEmailsAll: () =>
