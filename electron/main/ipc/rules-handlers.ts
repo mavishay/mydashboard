@@ -23,7 +23,7 @@ const CreateRuleSchema = z.object({
   priority: z.number().int().min(0).max(1000),
   conditions: z.array(ConditionSchema).min(1),
   action: z.enum(['classify', 'skip_llm']),
-  classification: z.enum(['urgent', 'action', 'fyi', 'noise']).nullable(),
+  classification: z.enum(['urgent', 'action', 'fyi', 'noise']),
 });
 
 const UpdateRuleSchema = z.object({
@@ -72,8 +72,8 @@ export function registerRulesHandlers(
         throw new Error(`Invalid payload: ${parsed.error.message}`);
       }
 
-      if (parsed.data.action === 'skip_llm' && !parsed.data.classification) {
-        throw new Error('Classification is required when action is skip_llm');
+      if (!parsed.data.classification) {
+        throw new Error('Classification is required');
       }
 
       return createRule(db, {
@@ -82,7 +82,7 @@ export function registerRulesHandlers(
         priority: parsed.data.priority,
         conditions: parsed.data.conditions as RuleCondition[],
         action: parsed.data.action as 'classify' | 'skip_llm',
-        classification: parsed.data.classification as Classification | null,
+        classification: parsed.data.classification as Classification,
       });
     }
   );

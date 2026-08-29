@@ -182,7 +182,7 @@ export async function classifyEmail(
   };
 
   const ruleResult = evaluateRules(db, emailData);
-  if (ruleResult) {
+  if (ruleResult && ruleResult.skipLlm) {
     db.prepare(
       'UPDATE emails SET classification = ?, classification_source = ?, classification_rule_id = ? WHERE id = ?'
     ).run(ruleResult.classification, ruleResult.source, ruleResult.ruleId, emailId);
@@ -197,6 +197,18 @@ export async function classifyEmail(
 
   const keyInfo = getActiveApiKey(db);
   if (!keyInfo) {
+    if (ruleResult) {
+      db.prepare(
+        'UPDATE emails SET classification = ?, classification_source = ?, classification_rule_id = ? WHERE id = ?'
+      ).run(ruleResult.classification, ruleResult.source, ruleResult.ruleId, emailId);
+
+      return {
+        emailId,
+        classification: ruleResult.classification,
+        confidence: 0.8,
+        reasoning: `Rule override (no API key): ${ruleResult.ruleId}`,
+      };
+    }
     throw new Error('No API key configured. Add an OpenAI or Anthropic key in Settings.');
   }
 
@@ -211,18 +223,32 @@ export async function classifyEmail(
     throw new Error(`Unsupported provider: ${keyInfo.provider}`);
   }
 
-  const result = parseClassificationResponse(rawResponse);
-  if (!result) {
+  const llmResult = parseClassificationResponse(rawResponse);
+  if (!llmResult) {
     throw new Error('Failed to parse LLM classification response');
   }
 
-  result.emailId = emailId;
+  if (ruleResult) {
+    db.prepare(
+      'UPDATE emails SET classification = ?, classification_source = ?, classification_rule_id = ? WHERE id = ?'
+    ).run(ruleResult.classification, ruleResult.source, ruleResult.ruleId, emailId);
+
+    return {
+      emailId,
+      classification: ruleResult.classification,
+      confidence: llmResult.confidence,
+      reasoning: `Rule override: ${ruleResult.ruleId} (LLM said: ${llmResult.classification})`,
+    };
+  }
 
   db.prepare(
     'UPDATE emails SET classification = ?, classification_source = ?, classification_rule_id = NULL WHERE id = ?'
-  ).run(result.classification, 'llm', emailId);
+  ).run(llmResult.classification, 'llm', emailId);
 
-  return result;
+  return {
+    ...llmResult,
+    emailId,
+  };
 }
 
 export interface BatchClassificationResult {

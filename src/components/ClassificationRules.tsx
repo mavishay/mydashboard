@@ -98,6 +98,7 @@ export function ClassificationRules() {
   const [rules, setRules] = useState<ClassificationRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
   const [formName, setFormName] = useState('');
   const [formPriority, setFormPriority] = useState(0);
   const [formAction, setFormAction] = useState<RuleAction>('classify');
@@ -156,6 +157,30 @@ export function ClassificationRules() {
     );
   };
 
+  const resetForm = () => {
+    setEditing(false);
+    setEditingRuleId(null);
+    setFormName('');
+    setFormPriority(0);
+    setFormAction('classify');
+    setFormClassification('noise');
+    setFormConditions([{ field: 'from', operator: 'contains', value: '' }]);
+    setError(null);
+    setTestResult(null);
+  };
+
+  const handleStartEdit = (rule: ClassificationRule) => {
+    setEditing(true);
+    setEditingRuleId(rule.id);
+    setFormName(rule.name);
+    setFormPriority(rule.priority);
+    setFormAction(rule.action);
+    setFormClassification(rule.classification ?? 'noise');
+    setFormConditions([...rule.conditions]);
+    setError(null);
+    setTestResult(null);
+  };
+
   const handleSaveRule = async () => {
     setError(null);
     if (!formName.trim()) {
@@ -168,20 +193,25 @@ export function ClassificationRules() {
     }
 
     try {
-      await window.electronAPI.rules.create({
-        name: formName.trim(),
-        enabled: true,
-        priority: formPriority,
-        conditions: formConditions,
-        action: formAction,
-        classification: formAction === 'classify' ? formClassification : null,
-      });
-      setEditing(false);
-      setFormName('');
-      setFormPriority(0);
-      setFormAction('classify');
-      setFormClassification('noise');
-      setFormConditions([{ field: 'from', operator: 'contains', value: '' }]);
+      if (editingRuleId) {
+        await window.electronAPI.rules.update(editingRuleId, {
+          name: formName.trim(),
+          priority: formPriority,
+          conditions: formConditions,
+          action: formAction,
+          classification: formClassification,
+        });
+      } else {
+        await window.electronAPI.rules.create({
+          name: formName.trim(),
+          enabled: true,
+          priority: formPriority,
+          conditions: formConditions,
+          action: formAction,
+          classification: formClassification,
+        });
+      }
+      resetForm();
       await loadRules();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save rule');
@@ -286,9 +316,14 @@ export function ClassificationRules() {
                 </div>
               </div>
             </div>
-            <button onClick={() => handleDelete(rule.id)} style={{ ...btnSmall, color: '#d32f2f', border: '1px solid #d32f2f' }}>
-              Delete
-            </button>
+            <div style={{ display: 'flex', gap: '0.375rem' }}>
+              <button onClick={() => handleStartEdit(rule)} style={{ ...btnSmall, border: '1px solid #1976d2', color: '#1976d2' }}>
+                Edit
+              </button>
+              <button onClick={() => handleDelete(rule.id)} style={{ ...btnSmall, color: '#d32f2f', border: '1px solid #d32f2f' }}>
+                Delete
+              </button>
+            </div>
           </div>
           <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
             {rule.conditions.map((c, i) => (
@@ -319,7 +354,9 @@ export function ClassificationRules() {
             marginBottom: '1rem',
           }}
         >
-          <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem' }}>New Classification Rule</h3>
+          <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem' }}>
+            {editingRuleId ? 'Edit Classification Rule' : 'New Classification Rule'}
+          </h3>
 
           {error && (
             <div style={{ color: '#d32f2f', fontSize: '0.8125rem', padding: '0.5rem', background: '#ffeaea', borderRadius: '4px', marginBottom: '0.75rem' }}>
@@ -425,14 +462,14 @@ export function ClassificationRules() {
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-            <button onClick={() => { setEditing(false); setError(null); setTestResult(null); }} style={btnSmall}>
+            <button onClick={resetForm} style={btnSmall}>
               Cancel
             </button>
             <button
               onClick={handleSaveRule}
               style={{ ...btnSmall, background: '#1976d2', border: '1px solid #1976d2', color: '#fff' }}
             >
-              Save rule
+              {editingRuleId ? 'Update rule' : 'Save rule'}
             </button>
           </div>
         </div>

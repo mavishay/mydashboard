@@ -24,6 +24,7 @@ export interface RuleEvaluationResult {
   classification: Classification;
   source: ClassificationSource;
   ruleId: string | null;
+  skipLlm: boolean;
 }
 
 interface RuleRow {
@@ -146,6 +147,7 @@ export function evaluateRules(
           classification: rule.classification,
           source: 'rule',
           ruleId: rule.id,
+          skipLlm: true,
         };
       }
       if (rule.action === 'classify' && rule.classification) {
@@ -153,6 +155,7 @@ export function evaluateRules(
           classification: rule.classification,
           source: 'rule',
           ruleId: rule.id,
+          skipLlm: false,
         };
       }
     }
