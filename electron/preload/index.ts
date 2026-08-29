@@ -71,6 +71,7 @@ const ALLOWED_INVOKE = new Set([
   'cron:status',
   'cron:update-config',
   'cron:run-now',
+  'accounts:updateColor',
 ] as const);
 
 const ALLOWED_ON = new Set([
@@ -258,5 +259,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     runNow: () => gatedInvoke('cron:run-now') as Promise<import('../main/cron/cron-scheduler').CronStatus>,
     onStatusUpdate: (callback: (status: import('../main/cron/cron-scheduler').CronStatus) => void) =>
       gatedOn('cron:status-update', callback),
+  },
+  accounts: {
+    updateColor: (accountId: string, color: string | null) =>
+      gatedInvoke('accounts:updateColor', { accountId, color }) as Promise<{ success: boolean }>,
   },
 });

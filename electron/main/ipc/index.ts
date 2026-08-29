@@ -16,6 +16,7 @@ import { registerNotificationHandlers } from './notification-handlers';
 import { registerSetupHandlers } from './setup-handlers';
 import { registerCronHandlers } from './cron-handlers';
 import { CronScheduler } from '../cron/cron-scheduler';
+import { registerAccountColorHandlers } from './account-color-handlers';
 
 export function registerIpcHandlers(
   db: Database.Database,
@@ -38,6 +39,7 @@ export function registerIpcHandlers(
   registerClassificationHandlers(ipcMain, db, notificationService);
   registerAiConsentHandlers(ipcMain, db);
   registerSetupHandlers(ipcMain, db);
+  registerAccountColorHandlers(ipcMain, db);
 
   const cronScheduler = new CronScheduler(db, getWindow);
   registerCronHandlers(ipcMain, db, cronScheduler);

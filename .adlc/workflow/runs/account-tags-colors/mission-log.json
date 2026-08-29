@@ -1,0 +1,110 @@
+{
+  "feature": "account-tags-colors",
+  "route": "spec",
+  "execution": "sync",
+  "supervision": "gated",
+  "brief": {
+    "goal": "Add configurable account tags/labels with color settings so users can visually identify which account an email, task, or calendar event belongs to.",
+    "constraints": "Tech stack: Electron + React + TypeScript + SQLite. Must follow existing IPC patterns (contextBridge allowlist, registerHandlers). Database migration: add color column to accounts table. PRD requirements: REQ-003 (account badges), REQ-004 (per-account identity), REQ-016 (source badges). Issue #32 specifies: preset palette + custom hex input, colors persist across restarts. Must work in both light and dark themes.",
+    "non_goals": "Calendar event coloring (blocked by issue #17, not implemented yet). Bulk color operations (assign all, reset all). Color import/export functionality. Modifying core email/task data structures (only add color metadata to accounts).",
+    "success_criteria": [
+      "Color picker offers preset palette (8-10 colors) + custom hex input in Settings",
+      "Email list shows colored account indicator (dot or left-border) per email",
+      "Task list shows colored account indicator per task",
+      "Account filter dropdown shows color dots next to account names",
+      "Colors persist across app restarts (SQLite storage)",
+      "Default colors auto-assigned on account connection (distinct per account)",
+      "Colors work in both light and dark themes"
+    ]
+  },
+  "steps": [
+    {
+      "id": "specify",
+      "phase": "specify",
+      "tier": "strong",
+      "prompt": "Write a feature specification for the goal below. Include requirements, constraints, and measurable success criteria.",
+      "status": "completed"
+    },
+    {
+      "id": "brainstorm",
+      "phase": "brainstorm",
+      "tier": "strong",
+      "prompt": "Explore approaches and tradeoffs for the goal below. Consider multiple viable solutions and present a recommended design.",
+      "status": "completed"
+    },
+    {
+      "id": "clarify",
+      "phase": "clarify",
+      "tier": "fast",
+      "prompt": "Review the specification and interview the team to resolve any vague success criteria or missing constraints.",
+      "status": "completed"
+    },
+    {
+      "id": "plan",
+      "phase": "plan",
+      "tier": "strong",
+      "prompt": "Break down the specification into an implementation plan with ordered, verifiable tasks.",
+      "status": "completed"
+    },
+    {
+      "id": "analyze",
+      "phase": "analyze",
+      "tier": "fast",
+      "prompt": "Adversarially review the plan before implementation. Challenge every non-trivial decision.",
+      "status": "completed"
+    },
+    {
+      "id": "implement",
+      "phase": "implement",
+      "tier": "strong",
+      "prompt": "Implement the next pending task from the plan. Follow test-driven practices.",
+      "status": "completed"
+    },
+    {
+      "id": "converge",
+      "phase": "converge",
+      "tier": "fast",
+      "prompt": "Review the implementation against the specification and success criteria. Verify independently — you are the checker, not the maker.",
+      "status": "completed"
+    }
+  ],
+  "discovered": {
+    "skills_dirs": [],
+    "commands_dirs": [],
+    "local_skills": []
+  },
+  "completed_steps": ["specify", "brainstorm", "clarify", "plan", "analyze", "loop_0_implement", "converge"],
+  "step_results": {
+    "specify": {
+      "output": "Wrote comprehensive feature spec with source references, IPC channel spec, database migration, preset palette, UI design, and file change list.",
+      "confidence": "HIGH"
+    },
+    "brainstorm": {
+      "output": "Explored approaches for color picker UX, badge design, and theme handling. Confirmed spec design decisions.",
+      "confidence": "HIGH"
+    },
+    "clarify": {
+      "output": "Identified 10 spec gaps and resolved them: hex validation, edge cases, UI inconsistencies, Zod schema, default color assignment.",
+      "confidence": "HIGH"
+    },
+    "plan": {
+      "output": "Created 8-task implementation plan across 3 layers: database, IPC/preload, UI components.",
+      "confidence": "HIGH"
+    },
+    "analyze": {
+      "output": "Adversarially reviewed plan, found 8 issues, fixed execution diagram and task descriptions.",
+      "confidence": "HIGH"
+    },
+    "loop_0_implement": {
+      "output": "Implemented all 8 tasks: DB migration, IPC handler, preload bridge, listAccounts color field, default color assignment, Settings UI, EmailList indicators, TaskList indicators.",
+      "confidence": "HIGH"
+    },
+    "converge": {
+      "output": "Verified all acceptance criteria. Found and fixed hex validation bug (frontend uppercase accepted but backend rejected). Quality: 13/14 (93%).",
+      "confidence": "HIGH"
+    }
+  },
+  "spec_corrections": 0,
+  "consecutive_tasks_appended": 0,
+  "consecutive_score_regressions": 0
+}

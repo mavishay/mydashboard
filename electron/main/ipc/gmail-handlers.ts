@@ -43,6 +43,7 @@ interface AccountResponse {
   id: string;
   email: string;
   displayName: string;
+  color: string | null;
 }
 
 export function registerGmailHandlers(
@@ -117,6 +118,7 @@ export function registerGmailHandlers(
         id: gmailAccount.id,
         email: gmailAccount.email,
         displayName: gmailAccount.display_name,
+        color: gmailAccount.color ?? null,
       };
     } catch (error) {
       if (error instanceof Error) {
@@ -154,6 +156,7 @@ export function registerGmailHandlers(
       id: a.id,
       email: a.email,
       displayName: a.display_name,
+      color: a.color ?? null,
     }));
   });
 

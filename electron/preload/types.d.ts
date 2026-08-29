@@ -89,11 +89,14 @@ declare global {
       connect: () => Promise<{ id: string; email: string; displayName: string }>;
       disconnect: (accountId: string) => Promise<void>;
       listAccounts: () => Promise<
-        { id: string; email: string; displayName: string }[]
+        { id: string; email: string; displayName: string; color: string | null }[]
       >;
       getToken: (
         accountId: string
       ) => Promise<{ accessToken: string } | null>;
+    };
+    accounts: {
+      updateColor: (accountId: string, color: string | null) => Promise<{ success: boolean }>;
     };
     n8n: {
       status: () => Promise<{ status: string }>;
