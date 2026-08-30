@@ -73,6 +73,10 @@ Add every issue to the project board:
 gh project item-add 1 --owner mavishay --url "https://github.com/mavishay/mydashboard/issues/<number>"
 ```
 
+### PR Best Practices
+
+**ALWAYS connect PRs to their corresponding issues.** When creating a PR, include the issue number in the title or body (e.g., `#28` in title or `Closes #28` in body) so GitHub links them automatically.
+
 #### Checklist for New Issues
 
 1. `gh api user --jq '.login'` → verify `mavishay`
