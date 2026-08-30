@@ -353,7 +353,13 @@ export function registerGoogleTasksHandlers(
       const { deleteTask } = await import('../sync/google-tasks-api');
       const accessToken = await getValidAccessToken(db, accountId);
 
-      await deleteTask(accessToken, taskListId, taskId);
+      try {
+        await deleteTask(accessToken, taskListId, taskId);
+      } catch (err: unknown) {
+        // 404 = task or list already gone on Google's side — still clean up locally
+        const status = (err as { code?: number; status?: number }).code ?? (err as { status?: number }).status;
+        if (status !== 404) throw err;
+      }
 
       // Hard-delete locally
       db.prepare(`DELETE FROM google_tasks WHERE id = ?`).run(taskId);
