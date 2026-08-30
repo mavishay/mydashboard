@@ -14,6 +14,7 @@ import {
 } from './email/utils';
 import { SortGroupControls } from './email/SortGroupControls';
 import { EmailGroupHeader } from './email/EmailGroupHeader';
+import { EmailPreviewModal } from './EmailPreviewModal';
 
 type Classification = 'urgent' | 'action' | 'fyi' | 'noise' | null;
 
@@ -108,6 +109,7 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
   const [accountsColorMap, setAccountsColorMap] = useState<Record<string, string>>({});
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+<<<<<<< HEAD
   const [sortPrefs, setSortPrefs] = useState<SortPrefs>(() => loadSortPrefs());
   const [groupPrefs, setGroupPrefs] = useState<GroupPrefs>(() => loadGroupPrefs());
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -117,6 +119,8 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
     classification: 'desc',
     account: 'asc',
   });
+  const [previewEmailId, setPreviewEmailId] = useState<string | null>(null);
+  const [previewAccountId, setPreviewAccountId] = useState<string | null>(null);
 
   const loadEmails = useCallback(async () => {
     try {
@@ -552,6 +556,7 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+<<<<<<< HEAD
             {[...groupedEmails.entries()].map(([groupKey, groupEmails]) => (
               <div key={groupKey} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {groupPrefs.option !== 'none' && (
@@ -565,6 +570,10 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
                 {!collapsedGroups.has(groupKey) && groupEmails.map((email) => (
                   <div
                     key={email.id}
+                    onClick={() => {
+                      setPreviewEmailId(email.id);
+                      setPreviewAccountId(email.accountId);
+                    }}
                     style={{
                       padding: '0.75rem 1rem',
                       border: '1px solid #e0e0e0',
@@ -572,6 +581,7 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
                       borderRadius: '8px',
                       background: (CLASSIFICATION_COLORS[email.classification ?? 'unclassified']?.bg ?? '#e3f2fd') + '20',
                       marginLeft: groupPrefs.option !== 'none' ? '1rem' : '0',
+                      cursor: 'pointer',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
@@ -594,7 +604,10 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
                           {formatDate(email.receivedAt)}
                         </span>
                         <button
-                          onClick={() => handleConvertToTask(email)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleConvertToTask(email);
+                          }}
                           disabled={convertingIds.has(email.id)}
                           style={{
                             padding: '0.25rem 0.5rem',
@@ -618,6 +631,17 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
           </div>
         )}
       </div>
+
+      {previewEmailId && previewAccountId && (
+        <EmailPreviewModal
+          emailId={previewEmailId}
+          accountId={previewAccountId}
+          onClose={() => {
+            setPreviewEmailId(null);
+            setPreviewAccountId(null);
+          }}
+        />
+      )}
 
       {convertModal && (
         <div style={{

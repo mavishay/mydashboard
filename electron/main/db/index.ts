@@ -22,6 +22,7 @@ import migration015 from './migrations/015-cron-scheduler.sql?raw';
 import migration016 from './migrations/016-account-colors.sql?raw';
 import migration017 from './migrations/017-classification-rules.sql?raw';
 import migration018 from './migrations/018-email-cleanup.sql?raw';
+import migration019 from './migrations/019-email-body.sql?raw';
 
 const MIGRATIONS: Record<number, string> = {
   1: migration001,
@@ -42,6 +43,7 @@ const MIGRATIONS: Record<number, string> = {
   16: migration016,
   17: migration017,
   18: migration018,
+  19: migration019,
 };
 
 export function initializeDatabase(
