@@ -80,6 +80,8 @@ const ALLOWED_INVOKE = new Set([
   'cron:update-config',
   'cron:run-now',
   'accounts:updateColor',
+  'gmail:getEmailDetail',
+  'shell:openExternal',
 ] as const);
 
 const ALLOWED_ON = new Set([
@@ -132,6 +134,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
       gatedInvoke('gmail:syncAll') as Promise<Array<{ accountId: string; status: string; fetched: number; classified: number; error?: string }>>,
     syncStatus: () =>
       gatedInvoke('gmail:syncStatus') as Promise<Array<{ accountId: string; status: string; lastSyncAt: string | null; error: string | null }>>,
+    getEmailDetail: (emailId: string) =>
+      gatedInvoke('gmail:getEmailDetail', { emailId }) as Promise<{
+        id: string;
+        accountId: string;
+        externalId: string;
+        subject: string | null;
+        fromAddress: string | null;
+        receivedAt: string | null;
+        bodyHtml: string | null;
+        snippet: string | null;
+        attachments: Array<{ filename: string; mimeType: string; size: number }>;
+      } | null>,
     onSyncHealth: (callback: (status: unknown) => void) => gatedOn('gmail:sync-health', callback),
   },
   n8n: {
@@ -291,5 +305,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   accounts: {
     updateColor: (accountId: string, color: string | null) =>
       gatedInvoke('accounts:updateColor', { accountId, color }) as Promise<{ success: boolean }>,
+  },
+  shell: {
+    openExternal: (url: string) =>
+      gatedInvoke('shell:openExternal', { url }) as Promise<void>,
   },
 });

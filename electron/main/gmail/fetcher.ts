@@ -113,6 +113,171 @@ export interface FetchResult {
   skipped: number;
 }
 
+export interface EmailAttachment {
+  filename: string;
+  mimeType: string;
+  size: number;
+}
+
+export interface EmailDetail {
+  id: string;
+  accountId: string;
+  externalId: string;
+  subject: string | null;
+  fromAddress: string | null;
+  receivedAt: string | null;
+  bodyHtml: string | null;
+  snippet: string | null;
+  attachments: EmailAttachment[];
+  accountIndex: number;
+}
+
+function decodeBase64Url(data: string): string {
+  const base64 = data.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+  return Buffer.from(padded, 'base64').toString('utf-8');
+}
+
+function extractHtmlBody(payload: gmail_v1.Schema$MessagePart | undefined): string | null {
+  if (!payload) return null;
+
+  if (payload.mimeType === 'text/html' && payload.body?.data) {
+    return decodeBase64Url(payload.body.data);
+  }
+
+  if (payload.parts) {
+    for (const part of payload.parts) {
+      const result = extractHtmlBody(part);
+      if (result) return result;
+    }
+  }
+
+  return null;
+}
+
+function extractAttachments(payload: gmail_v1.Schema$MessagePart | undefined): EmailAttachment[] {
+  if (!payload) return [];
+
+  const attachments: EmailAttachment[] = [];
+
+  if (payload.parts) {
+    for (const part of payload.parts) {
+      if (part.filename && part.body?.size) {
+        attachments.push({
+          filename: part.filename,
+          mimeType: part.mimeType ?? 'application/octet-stream',
+          size: part.body.size,
+        });
+      }
+      attachments.push(...extractAttachments(part));
+    }
+  }
+
+  return attachments;
+}
+
+export async function getEmailDetail(
+  db: Database.Database,
+  emailId: string
+): Promise<EmailDetail | null> {
+  const email = db
+    .prepare(
+      `SELECT id, account_id, external_id, subject, from_address, received_at, body_html, snippet, attachments
+       FROM emails WHERE id = ?`
+    )
+    .get(emailId) as {
+    id: string;
+    account_id: string;
+    external_id: string;
+    subject: string | null;
+    from_address: string | null;
+    received_at: string | null;
+    body_html: string | null;
+    snippet: string | null;
+    attachments: string | null;
+  } | undefined;
+
+  if (!email) return null;
+
+  // Get account index for Gmail URL
+  const account = db
+    .prepare('SELECT id FROM accounts WHERE id = ?')
+    .get(email.account_id) as { id: string } | undefined;
+  
+  const accountIndex = account
+    ? (db.prepare('SELECT COUNT(*) as count FROM accounts WHERE id <= ?').get(email.account_id) as { count: number }).count - 1
+    : 0;
+
+  // Parse cached attachments
+  const cachedAttachments: EmailAttachment[] = email.attachments
+    ? JSON.parse(email.attachments)
+    : [];
+
+  if (email.body_html !== null) {
+    return {
+      id: email.id,
+      accountId: email.account_id,
+      externalId: email.external_id,
+      subject: email.subject,
+      fromAddress: email.from_address,
+      receivedAt: email.received_at,
+      bodyHtml: email.body_html,
+      snippet: email.snippet,
+      attachments: cachedAttachments,
+      accountIndex,
+    };
+  }
+
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new Error('Google OAuth credentials not configured');
+  }
+
+  const tokens = retrieveTokens(db, email.account_id);
+  if (!tokens) {
+    throw new Error('No tokens found for account');
+  }
+
+  const oauth2Client = createOAuth2Client(clientId, clientSecret, tokens);
+  const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+  let message: gmail_v1.Schema$Message;
+  try {
+    const response = await gmail.users.messages.get({
+      userId: 'me',
+      id: email.external_id,
+      format: 'full',
+    });
+    message = response.data;
+  } catch (err) {
+    console.error(`[Fetcher] Failed to fetch email detail for ${email.external_id}:`, err);
+    throw err;
+  }
+
+  const bodyHtml = extractHtmlBody(message.payload);
+  const attachments = extractAttachments(message.payload);
+
+  // Cache body and attachments
+  if (bodyHtml !== null || attachments.length > 0) {
+    db.prepare('UPDATE emails SET body_html = ?, attachments = ? WHERE id = ?')
+      .run(bodyHtml, JSON.stringify(attachments), email.id);
+  }
+
+  return {
+    id: email.id,
+    accountId: email.account_id,
+    externalId: email.external_id,
+    subject: email.subject,
+    fromAddress: email.from_address,
+    receivedAt: email.received_at,
+    bodyHtml,
+    snippet: email.snippet,
+    attachments,
+    accountIndex,
+  };
+}
+
 export async function fetchEmailsForAccount(
   db: Database.Database,
   accountId: string,

@@ -92,6 +92,25 @@ declare global {
     updatedAt: string;
   }
 
+  interface EmailAttachment {
+    filename: string;
+    mimeType: string;
+    size: number;
+  }
+
+  interface EmailDetail {
+    id: string;
+    accountId: string;
+    externalId: string;
+    subject: string | null;
+    fromAddress: string | null;
+    receivedAt: string | null;
+    bodyHtml: string | null;
+    snippet: string | null;
+    attachments: EmailAttachment[];
+    accountIndex: number;
+  }
+
   interface ElectronAPI {
     window: {
       minimize: () => Promise<void>;
@@ -112,6 +131,7 @@ declare global {
       getToken: (
         accountId: string
       ) => Promise<{ accessToken: string } | null>;
+      getEmailDetail: (emailId: string) => Promise<EmailDetail | null>;
     };
     accounts: {
       updateColor: (accountId: string, color: string | null) => Promise<{ success: boolean }>;
@@ -214,6 +234,9 @@ declare global {
       update: (id: string, updates: { name?: string; enabled?: boolean; priority?: number; conditions?: ClassificationRuleCondition[]; action?: string; classification?: string | null }) => Promise<ClassificationRule>;
       delete: (id: string) => Promise<void>;
       test: (conditions: ClassificationRuleCondition[], email: { from?: string | null; to?: string | null; subject?: string | null; body?: string | null; date?: string | null }) => Promise<{ matched: boolean }>;
+    };
+    shell: {
+      openExternal: (url: string) => Promise<void>;
     };
   }
 

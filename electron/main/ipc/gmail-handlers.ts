@@ -19,6 +19,7 @@ import {
 import { createOAuthServer, buildAuthUrl } from '../auth/oauth-server';
 import { recordTelemetryEvent } from '../telemetry';
 import { GmailSyncManager } from '../gmail/sync';
+import { getEmailDetail } from '../gmail/fetcher';
 
 const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
@@ -37,6 +38,10 @@ const GetTokenSchema = z.object({
 const SyncSchema = z.object({
   accountId: z.string().min(1),
   maxResults: z.number().int().min(1).max(100).optional(),
+});
+
+const GetEmailDetailSchema = z.object({
+  emailId: z.string().min(1),
 });
 
 interface AccountResponse {
@@ -222,4 +227,21 @@ export function registerGmailHandlers(
       error: s.error,
     }));
   });
+
+  ipcMain.handle(
+    'gmail:getEmailDetail',
+    async (_event, rawPayload: { emailId: string }) => {
+      const parsed = GetEmailDetailSchema.safeParse(rawPayload);
+      if (!parsed.success) {
+        throw new Error('Invalid email ID');
+      }
+
+      const detail = await getEmailDetail(db, parsed.data.emailId);
+      if (!detail) {
+        throw new Error('Email not found');
+      }
+
+      return detail;
+    }
+  );
 }

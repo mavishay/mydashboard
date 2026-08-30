@@ -1,0 +1,90 @@
+{
+  "feature": "email-preview-modal",
+  "brief": {
+    "goal": "Add an email preview modal that shows full email content (subject, sender, body) and a link to open the email in Gmail in the browser",
+    "constraints": [
+      "Electron + React desktop application",
+      "Uses better-sqlite3 for local database",
+      "Uses googleapis for Gmail integration",
+      "No component library - all UI is hand-built with inline styles",
+      "Must follow existing modal patterns (HealthCheckWizard, Convert-to-Task modal)",
+      "Schema currently at version 17"
+    ],
+    "nonGoals": [
+      "Mark as read functionality (Issue #21 - separate feature)",
+      "Convert to task functionality (Issue #19 - separate feature)",
+      "Email reply/forward functionality"
+    ],
+    "successCriteria": [
+      "Click email opens preview modal with full content",
+      "Modal shows subject, sender, date, body",
+      "HTML email body renders correctly in sandboxed iframe",
+      "Open in Gmail button opens email in system browser",
+      "Modal shows account badge with color",
+      "Modal shows attachment names and sizes",
+      "Escape key closes modal",
+      "Loading state while fetching email detail",
+      "Body HTML is sandboxed (no script execution)",
+      "Works for emails from all connected accounts",
+      "First open caches body for offline viewing"
+    ]
+  },
+  "route": "spec",
+  "steps": [
+    {
+      "id": "specify",
+      "phase": "specify",
+      "tier": "strong",
+      "prompt": "Write a feature specification for the email preview modal feature. Include requirements, constraints, and measurable success criteria.",
+      "status": "completed"
+    },
+    {
+      "id": "plan",
+      "phase": "plan",
+      "tier": "strong",
+      "prompt": "Break down the specification into an implementation plan with ordered, verifiable tasks.",
+      "status": "completed"
+    },
+    {
+      "id": "implement",
+      "phase": "implement",
+      "tier": "strong",
+      "prompt": "Implement the next pending task from the plan. Follow test-driven practices.",
+      "status": "completed"
+    },
+    {
+      "id": "converge",
+      "phase": "converge",
+      "tier": "fast",
+      "prompt": "Review the implementation against the specification and success criteria. Verify independently — you are the checker, not the maker.",
+      "status": "completed"
+    }
+  ],
+  "completed_steps": ["specify", "plan", "implement", "converge"],
+  "step_results": {
+    "specify": {
+      "output": "Created comprehensive feature specification for email preview modal with 11 functional requirements, 3 security requirements, and detailed technical design including IPC handlers, database migration, and component architecture.",
+      "confidence": "HIGH"
+    },
+    "plan": {
+      "output": "Created 7-task implementation plan covering database migration, Gmail API body fetch, IPC handler, preload types, React modal component, integration, and verification.",
+      "confidence": "HIGH"
+    },
+    "implement": {
+      "output": "Implemented all 7 tasks: database migration, Gmail API body fetch function, IPC handler, preload API exposure, EmailPreviewModal component, EmailList integration, and end-to-end verification.",
+      "confidence": "HIGH"
+    },
+    "converge": {
+      "output": "All 11 success criteria verified, no non-goal features introduced, implementation follows existing patterns. Sandboxed iframe correctly prevents script execution.",
+      "confidence": "HIGH"
+    }
+  },
+  "discovered": {
+    "skills_dirs": [],
+    "commands_dirs": [],
+    "local_skills": []
+  },
+  "consecutive_tasks_appended": 0,
+  "consecutive_score_regressions": 0,
+  "spec_corrections": 0
+}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { EmailPreviewModal } from './EmailPreviewModal';
 
 type Classification = 'urgent' | 'action' | 'fyi' | 'noise' | null;
 
@@ -90,6 +91,8 @@ export function EmailList() {
   const [accountsColorMap, setAccountsColorMap] = useState<Record<string, string>>({});
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [previewEmailId, setPreviewEmailId] = useState<string | null>(null);
+  const [previewAccountId, setPreviewAccountId] = useState<string | null>(null);
 
   const loadEmails = useCallback(async () => {
     try {
@@ -456,12 +459,17 @@ export function EmailList() {
             {emails.map((email) => (
               <div
                 key={email.id}
+                onClick={() => {
+                  setPreviewEmailId(email.id);
+                  setPreviewAccountId(email.accountId);
+                }}
                 style={{
                   padding: '0.75rem 1rem',
                   border: '1px solid #e0e0e0',
                   borderLeft: `3px solid ${accountsColorMap[email.accountId] ?? '#9e9e9e'}`,
                   borderRadius: '8px',
                   background: (CLASSIFICATION_COLORS[email.classification ?? 'unclassified']?.bg ?? '#e3f2fd') + '20',
+                  cursor: 'pointer',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
@@ -484,7 +492,10 @@ export function EmailList() {
                       {formatDate(email.receivedAt)}
                     </span>
                     <button
-                      onClick={() => handleConvertToTask(email)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleConvertToTask(email);
+                      }}
                       disabled={convertingIds.has(email.id)}
                       style={{
                         padding: '0.25rem 0.5rem',
@@ -506,6 +517,17 @@ export function EmailList() {
           </div>
         )}
       </div>
+
+      {previewEmailId && previewAccountId && (
+        <EmailPreviewModal
+          emailId={previewEmailId}
+          accountId={previewAccountId}
+          onClose={() => {
+            setPreviewEmailId(null);
+            setPreviewAccountId(null);
+          }}
+        />
+      )}
 
       {convertModal && (
         <div style={{

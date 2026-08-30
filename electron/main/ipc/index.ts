@@ -1,6 +1,6 @@
 import type { BrowserWindow } from 'electron';
 import type Database from 'better-sqlite3';
-import { ipcMain } from 'electron';
+import { ipcMain, shell } from 'electron';
 import { registerWindowHandlers } from './window-handlers';
 import { registerGmailHandlers } from './gmail-handlers';
 import { registerN8nHandlers } from './n8n-handlers';
@@ -44,6 +44,14 @@ export function registerIpcHandlers(
   registerSetupHandlers(ipcMain, db);
   registerRulesHandlers(ipcMain, db);
   registerAccountColorHandlers(ipcMain, db);
+
+  ipcMain.handle('shell:openExternal', async (_event, payload: { url: string }) => {
+    const url = new URL(payload.url);
+    if (!['https:', 'http:'].includes(url.protocol)) {
+      throw new Error('Only HTTP(S) URLs are allowed');
+    }
+    await shell.openExternal(payload.url);
+  });
 
   const cronScheduler = new CronScheduler(db, getWindow);
   registerCronHandlers(ipcMain, db, cronScheduler);
