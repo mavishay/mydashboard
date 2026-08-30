@@ -12,6 +12,7 @@ export interface FetchedEmail {
   fromAddress: string | null;
   toAddresses: string | null;
   receivedAt: string | null;
+  labelIds: string[];
 }
 
 function createOAuth2Client(
@@ -66,6 +67,7 @@ function parseMessage(
     fromAddress: from,
     toAddresses: to,
     receivedAt: parseDateSafe(date),
+    labelIds: msg.labelIds ?? [],
   };
 }
 
@@ -73,10 +75,19 @@ function storeEmails(
   db: Database.Database,
   accountId: string,
   emails: FetchedEmail[]
-): { inserted: number; skipped: number } {
-  const insert = db.prepare(
-    `INSERT OR IGNORE INTO emails (id, account_id, external_id, subject, snippet, from_address, to_addresses, received_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+): { inserted: number; updated: number; skipped: number } {
+  const upsert = db.prepare(
+    `INSERT INTO emails (id, account_id, external_id, subject, snippet, from_address, to_addresses, received_at, label_ids, is_read, last_synced_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+     ON CONFLICT(account_id, external_id) DO UPDATE SET
+       subject = excluded.subject,
+       snippet = excluded.snippet,
+       from_address = excluded.from_address,
+       to_addresses = excluded.to_addresses,
+       received_at = excluded.received_at,
+       label_ids = excluded.label_ids,
+       is_read = excluded.is_read,
+       last_synced_at = datetime('now')`
   );
 
   let inserted = 0;
@@ -84,7 +95,10 @@ function storeEmails(
 
   const transaction = db.transaction(() => {
     for (const email of emails) {
-      const result = insert.run(
+      const isRead = email.labelIds.includes('UNREAD') ? 0 : 1;
+      const labelIdsJson = JSON.stringify(email.labelIds);
+
+      const result = upsert.run(
         email.id,
         email.accountId,
         email.externalId,
@@ -92,7 +106,9 @@ function storeEmails(
         email.snippet,
         email.fromAddress,
         email.toAddresses,
-        email.receivedAt
+        email.receivedAt,
+        labelIdsJson,
+        isRead
       );
       if (result.changes > 0) {
         inserted++;
@@ -118,7 +134,7 @@ export async function fetchEmailsForAccount(
   accountId: string,
   maxResults: number = 50
 ): Promise<FetchResult> {
-  console.log(`[Fetcher] Fetching emails for account ${accountId} (max: ${maxResults})`);
+  console.log(`[Fetcher] Fetching unread emails for account ${accountId} (max: ${maxResults})`);
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -134,18 +150,21 @@ export async function fetchEmailsForAccount(
   const oauth2Client = createOAuth2Client(clientId, clientSecret, tokens);
   const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-  console.log(`[Fetcher] Calling Gmail API...`);
+  console.log(`[Fetcher] Calling Gmail API (unread only)...`);
   const listResponse = await gmail.users.messages.list({
     userId: 'me',
     maxResults,
+    q: 'is:unread',
   });
 
   const messages = listResponse.data.messages ?? [];
-  console.log(`[Fetcher] Gmail API returned ${messages.length} message references`);
+  console.log(`[Fetcher] Gmail API returned ${messages.length} unread message references`);
 
+  const unreadExternalIds = new Set<string>();
   const emails: FetchedEmail[] = [];
   for (const msgRef of messages) {
     if (!msgRef.id) continue;
+    unreadExternalIds.add(msgRef.id);
     const msg = await gmail.users.messages.get({
       userId: 'me',
       id: msgRef.id,
@@ -158,10 +177,15 @@ export async function fetchEmailsForAccount(
     }
   }
 
-  console.log(`[Fetcher] Parsed ${emails.length} emails from Gmail`);
+  console.log(`[Fetcher] Parsed ${emails.length} unread emails from Gmail`);
 
   const { inserted, skipped } = storeEmails(db, accountId, emails);
-  console.log(`[Fetcher] Stored: ${inserted} new, ${skipped} duplicates`);
+  console.log(`[Fetcher] Stored: ${inserted} new, ${skipped} unchanged`);
+
+  const markedRead = markReadOutsideFetch(db, accountId, unreadExternalIds);
+  if (markedRead > 0) {
+    console.log(`[Fetcher] Marked ${markedRead} emails as read (no longer in Gmail unread)`);
+  }
 
   return {
     accountId,
@@ -196,4 +220,31 @@ export async function fetchEmailsForAllAccounts(
   }
 
   return results;
+}
+
+function markReadOutsideFetch(
+  db: Database.Database,
+  accountId: string,
+  unreadExternalIds: Set<string>
+): number {
+  if (unreadExternalIds.size === 0) {
+    const result = db
+      .prepare(
+        "UPDATE emails SET is_read = 1 WHERE account_id = ? AND is_read = 0"
+      )
+      .run(accountId);
+    return result.changes;
+  }
+
+  const placeholders = Array.from(unreadExternalIds)
+    .map(() => '?')
+    .join(',');
+  const result = db
+    .prepare(
+      `UPDATE emails SET is_read = 1
+       WHERE account_id = ? AND is_read = 0
+         AND external_id NOT IN (${placeholders})`
+    )
+    .run(accountId, ...unreadExternalIds);
+  return result.changes;
 }

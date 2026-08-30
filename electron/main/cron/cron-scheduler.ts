@@ -2,6 +2,7 @@ import type Database from 'better-sqlite3';
 import type { BrowserWindow } from 'electron';
 import { fetchEmailsForAllAccounts } from '../gmail/fetcher';
 import { classifyUnclassifiedEmails } from '../ai/classifier';
+import { cleanupStaleReadEmails } from './cleanup';
 
 export interface CronStatus {
   enabled: boolean;
@@ -160,6 +161,11 @@ export class CronScheduler {
     try {
       await fetchEmailsForAllAccounts(this.db);
       await this.classifyForAllAccounts();
+
+      const { deleted } = cleanupStaleReadEmails(this.db);
+      if (deleted > 0) {
+        console.log(`[CronScheduler] Cleaned up ${deleted} stale read emails`);
+      }
 
       this.db
         .prepare(

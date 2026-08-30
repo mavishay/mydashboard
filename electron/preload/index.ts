@@ -80,6 +80,10 @@ const ALLOWED_INVOKE = new Set([
   'cron:update-config',
   'cron:run-now',
   'accounts:updateColor',
+  'emailCleanup:getSettings',
+  'emailCleanup:setRetentionDays',
+  'emailCleanup:runCleanup',
+  'emailCleanup:getEligibleCount',
 ] as const);
 
 const ALLOWED_ON = new Set([
@@ -291,5 +295,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   accounts: {
     updateColor: (accountId: string, color: string | null) =>
       gatedInvoke('accounts:updateColor', { accountId, color }) as Promise<{ success: boolean }>,
+  },
+  emailCleanup: {
+    getSettings: () =>
+      gatedInvoke('emailCleanup:getSettings') as Promise<{ retentionDays: number }>,
+    setRetentionDays: (days: number) =>
+      gatedInvoke('emailCleanup:setRetentionDays', { days }) as Promise<{ retentionDays: number }>,
+    runCleanup: () =>
+      gatedInvoke('emailCleanup:runCleanup') as Promise<{ deleted: number; eligibleCount: number }>,
+    getEligibleCount: () =>
+      gatedInvoke('emailCleanup:getEligibleCount') as Promise<{ count: number }>,
   },
 });
