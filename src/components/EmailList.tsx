@@ -109,7 +109,6 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
   const [accountsColorMap, setAccountsColorMap] = useState<Record<string, string>>({});
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-<<<<<<< HEAD
   const [sortPrefs, setSortPrefs] = useState<SortPrefs>(() => loadSortPrefs());
   const [groupPrefs, setGroupPrefs] = useState<GroupPrefs>(() => loadGroupPrefs());
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -556,7 +555,6 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-<<<<<<< HEAD
             {[...groupedEmails.entries()].map(([groupKey, groupEmails]) => (
               <div key={groupKey} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {groupPrefs.option !== 'none' && (
