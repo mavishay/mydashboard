@@ -1,4 +1,19 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import {
+  SortPrefs,
+  GroupPrefs,
+  SortOption,
+  SortDirection,
+  GroupOption,
+  sortEmails,
+  groupEmails,
+  loadSortPrefs,
+  saveSortPrefs,
+  loadGroupPrefs,
+  saveGroupPrefs,
+} from './email/utils';
+import { SortGroupControls } from './email/SortGroupControls';
+import { EmailGroupHeader } from './email/EmailGroupHeader';
 
 type Classification = 'urgent' | 'action' | 'fyi' | 'noise' | null;
 
@@ -18,6 +33,9 @@ interface Account {
   displayName: string;
   color: string | null;
 }
+
+const SORT_CYCLE: SortOption[] = ['date', 'sender', 'classification', 'account'];
+const GROUP_CYCLE: GroupOption[] = ['none', 'account', 'classification', 'date', 'sender-domain'];
 
 interface TaskListItem {
   id: string;
@@ -90,6 +108,15 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
   const [accountsColorMap, setAccountsColorMap] = useState<Record<string, string>>({});
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [sortPrefs, setSortPrefs] = useState<SortPrefs>(() => loadSortPrefs());
+  const [groupPrefs, setGroupPrefs] = useState<GroupPrefs>(() => loadGroupPrefs());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [lastDirectionMap, setLastDirectionMap] = useState<Record<SortOption, SortDirection>>({
+    date: 'desc',
+    sender: 'asc',
+    classification: 'desc',
+    account: 'asc',
+  });
 
   const loadEmails = useCallback(async () => {
     try {
@@ -146,6 +173,69 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
   useEffect(() => {
     loadEmails();
   }, [loadEmails]);
+
+  useEffect(() => {
+    saveSortPrefs(sortPrefs);
+  }, [sortPrefs]);
+
+  useEffect(() => {
+    saveGroupPrefs(groupPrefs);
+  }, [groupPrefs]);
+
+  const cycleSort = useCallback(() => {
+    setSortPrefs(prev => {
+      const currentIndex = SORT_CYCLE.indexOf(prev.option);
+      const nextIndex = (currentIndex + 1) % SORT_CYCLE.length;
+      const nextOption = SORT_CYCLE[nextIndex];
+      setLastDirectionMap(current => ({ ...current, [prev.option]: prev.direction }));
+      return { option: nextOption, direction: lastDirectionMap[nextOption] };
+    });
+  }, [lastDirectionMap]);
+
+  const cycleGroup = useCallback(() => {
+    setGroupPrefs(prev => {
+      const currentIndex = GROUP_CYCLE.indexOf(prev.option);
+      const nextIndex = (currentIndex + 1) % GROUP_CYCLE.length;
+      return { option: GROUP_CYCLE[nextIndex] };
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      if (e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        cycleSort();
+      } else if (e.key === 'g' || e.key === 'G') {
+        e.preventDefault();
+        cycleGroup();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [cycleSort, cycleGroup]);
+
+  const sortedEmails = useMemo(() => {
+    return sortEmails(emails, sortPrefs.option, sortPrefs.direction);
+  }, [emails, sortPrefs]);
+
+  const groupedEmails = useMemo(() => {
+    return groupEmails(sortedEmails, groupPrefs.option, accounts);
+  }, [sortedEmails, groupPrefs, accounts]);
+
+  const toggleGroupCollapse = useCallback((key: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }, []);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -426,6 +516,14 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
         </button>
       </div>
 
+      <SortGroupControls
+        sortPrefs={sortPrefs}
+        groupPrefs={groupPrefs}
+        onSortChange={setSortPrefs}
+        onGroupChange={setGroupPrefs}
+        emailCount={emails.length}
+      />
+
       {error && (
         <div style={{
           padding: '0.75rem 1rem',
@@ -454,54 +552,67 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {emails.map((email) => (
-              <div
-                key={email.id}
-                style={{
-                  padding: '0.75rem 1rem',
-                  border: '1px solid #e0e0e0',
-                  borderLeft: `3px solid ${accountsColorMap[email.accountId] ?? '#9e9e9e'}`,
-                  borderRadius: '8px',
-                  background: (CLASSIFICATION_COLORS[email.classification ?? 'unclassified']?.bg ?? '#e3f2fd') + '20',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                      <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>
-                        {extractDisplayName(email.fromAddress)}
-                      </span>
-                      <ClassificationBadge classification={email.classification} />
-                    </div>
-                    <div style={{ fontWeight: 500, fontSize: '0.875rem', marginBottom: '0.25rem' }}>
-                      {email.subject || '(no subject)'}
-                    </div>
-                    <div style={{ color: '#666', fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {email.snippet}
+            {[...groupedEmails.entries()].map(([groupKey, groupEmails]) => (
+              <div key={groupKey} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {groupPrefs.option !== 'none' && (
+                  <EmailGroupHeader
+                    label={groupKey}
+                    count={groupEmails.length}
+                    isCollapsed={collapsedGroups.has(groupKey)}
+                    onToggleCollapse={() => toggleGroupCollapse(groupKey)}
+                  />
+                )}
+                {!collapsedGroups.has(groupKey) && groupEmails.map((email) => (
+                  <div
+                    key={email.id}
+                    style={{
+                      padding: '0.75rem 1rem',
+                      border: '1px solid #e0e0e0',
+                      borderLeft: `3px solid ${accountsColorMap[email.accountId] ?? '#9e9e9e'}`,
+                      borderRadius: '8px',
+                      background: (CLASSIFICATION_COLORS[email.classification ?? 'unclassified']?.bg ?? '#e3f2fd') + '20',
+                      marginLeft: groupPrefs.option !== 'none' ? '1rem' : '0',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                          <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>
+                            {extractDisplayName(email.fromAddress)}
+                          </span>
+                          <ClassificationBadge classification={email.classification} />
+                        </div>
+                        <div style={{ fontWeight: 500, fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                          {email.subject || '(no subject)'}
+                        </div>
+                        <div style={{ color: '#666', fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {email.snippet}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+                        <span style={{ color: '#999', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                          {formatDate(email.receivedAt)}
+                        </span>
+                        <button
+                          onClick={() => handleConvertToTask(email)}
+                          disabled={convertingIds.has(email.id)}
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '4px',
+                            border: '1px solid #1976d2',
+                            background: convertingIds.has(email.id) ? '#e3f2fd' : '#1976d2',
+                            color: convertingIds.has(email.id) ? '#90caf9' : '#fff',
+                            cursor: convertingIds.has(email.id) ? 'not-allowed' : 'pointer',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {convertingIds.has(email.id) ? 'Creating...' : 'Convert to Task'}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
-                    <span style={{ color: '#999', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
-                      {formatDate(email.receivedAt)}
-                    </span>
-                    <button
-                      onClick={() => handleConvertToTask(email)}
-                      disabled={convertingIds.has(email.id)}
-                      style={{
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '4px',
-                        border: '1px solid #1976d2',
-                        background: convertingIds.has(email.id) ? '#e3f2fd' : '#1976d2',
-                        color: convertingIds.has(email.id) ? '#90caf9' : '#fff',
-                        cursor: convertingIds.has(email.id) ? 'not-allowed' : 'pointer',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {convertingIds.has(email.id) ? 'Creating...' : 'Convert to Task'}
-                    </button>
-                  </div>
-                </div>
+                ))}
               </div>
             ))}
           </div>
