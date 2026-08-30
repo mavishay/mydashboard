@@ -171,7 +171,12 @@ export async function classifyEmail(
     .prepare('SELECT id, subject, snippet, from_address, to_addresses, received_at FROM emails WHERE id = ?')
     .get(emailId) as EmailRow | undefined;
 
-  if (!email) return null;
+  if (!email) {
+    console.log(`[classify] Email ${emailId} not found, skipping`);
+    return null;
+  }
+
+  console.log(`[classify] Classifying email ${emailId}: "${email.subject ?? '(no subject)'}" from ${email.from_address ?? 'unknown'}`);
 
   const emailData: EmailData = {
     from: email.from_address,
@@ -183,6 +188,7 @@ export async function classifyEmail(
 
   const ruleResult = evaluateRules(db, emailData);
   if (ruleResult && ruleResult.skipLlm) {
+    console.log(`[classify] Email ${emailId} matched rule "${ruleResult.ruleId}" -> ${ruleResult.classification} (skipped LLM)`);
     db.prepare(
       'UPDATE emails SET classification = ?, classification_source = ?, classification_rule_id = ? WHERE id = ?'
     ).run(ruleResult.classification, ruleResult.source, ruleResult.ruleId, emailId);
@@ -198,6 +204,7 @@ export async function classifyEmail(
   const keyInfo = getActiveApiKey(db);
   if (!keyInfo) {
     if (ruleResult) {
+      console.log(`[classify] Email ${emailId} rule override (no API key): "${ruleResult.ruleId}" -> ${ruleResult.classification}`);
       db.prepare(
         'UPDATE emails SET classification = ?, classification_source = ?, classification_rule_id = ? WHERE id = ?'
       ).run(ruleResult.classification, ruleResult.source, ruleResult.ruleId, emailId);
@@ -213,6 +220,7 @@ export async function classifyEmail(
   }
 
   const prompt = buildPrompt(email);
+  console.log(`[classify] Email ${emailId} calling LLM provider: ${keyInfo.provider}`);
 
   let rawResponse: string;
   if (keyInfo.provider === 'openai' || keyInfo.provider === 'litellm') {
@@ -223,12 +231,16 @@ export async function classifyEmail(
     throw new Error(`Unsupported provider: ${keyInfo.provider}`);
   }
 
+  console.log(`[classify] Email ${emailId} LLM raw response: ${rawResponse.substring(0, 200)}`);
+
   const llmResult = parseClassificationResponse(rawResponse);
   if (!llmResult) {
+    console.error(`[classify] Email ${emailId} failed to parse LLM response: ${rawResponse}`);
     throw new Error('Failed to parse LLM classification response');
   }
 
   if (ruleResult) {
+    console.log(`[classify] Email ${emailId} rule override: "${ruleResult.ruleId}" -> ${ruleResult.classification} (LLM said: ${llmResult.classification})`);
     db.prepare(
       'UPDATE emails SET classification = ?, classification_source = ?, classification_rule_id = ? WHERE id = ?'
     ).run(ruleResult.classification, ruleResult.source, ruleResult.ruleId, emailId);
@@ -241,6 +253,7 @@ export async function classifyEmail(
     };
   }
 
+  console.log(`[classify] Email ${emailId} LLM result: ${llmResult.classification} (confidence: ${llmResult.confidence})`);
   db.prepare(
     'UPDATE emails SET classification = ?, classification_source = ?, classification_rule_id = NULL WHERE id = ?'
   ).run(llmResult.classification, 'llm', emailId);
@@ -274,6 +287,8 @@ export async function classifyUnclassifiedEmails(
 
   const emails = db.prepare(query).all(...params) as { id: string }[];
 
+  console.log(`[classify] Batch: ${emails.length} unclassified emails${accountId ? ` for account ${accountId}` : ''}`);
+
   const classified: ClassificationResult[] = [];
   let errors = 0;
 
@@ -284,11 +299,12 @@ export async function classifyUnclassifiedEmails(
         classified.push(result);
       }
     } catch (err) {
-      console.error(`Failed to classify email ${email.id}:`, err);
+      console.error(`[classify] Failed to classify email ${email.id}:`, err);
       errors++;
     }
   }
 
+  console.log(`[classify] Batch complete: ${classified.length} classified, ${errors} errors`);
   return { classified, errors };
 }
 

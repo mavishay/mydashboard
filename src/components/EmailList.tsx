@@ -75,7 +75,7 @@ function ClassificationBadge({ classification }: { classification: Classificatio
   );
 }
 
-export function EmailList() {
+export function EmailList({ onCountChange }: { onCountChange?: (count: number) => void } = {}) {
   const [emails, setEmails] = useState<Email[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string>('');
@@ -100,13 +100,14 @@ export function EmailList() {
         limit: 50,
       });
       setEmails(result);
+      onCountChange?.(result.length);
     } catch (err) {
       console.error('Failed to load emails:', err);
       setError('Failed to load emails. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [selectedAccount, selectedClassification]);
+  }, [selectedAccount, selectedClassification, onCountChange]);
 
   const loadAccounts = useCallback(async () => {
     try {

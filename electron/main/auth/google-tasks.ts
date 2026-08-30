@@ -9,7 +9,7 @@ import {
   retrieveTokens,
 } from './gmail';
 
-const GOOGLE_TASKS_SCOPES = ['https://www.googleapis.com/auth/tasks.readonly'];
+const GOOGLE_TASKS_SCOPES = ['https://www.googleapis.com/auth/tasks'];
 const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // 5 minutes
 
 export interface GoogleTasksTokenSet {

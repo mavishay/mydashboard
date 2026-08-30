@@ -19,6 +19,7 @@ export function Dashboard() {
     lastMode: 'work_hours' | 'off_hours' | null;
     config: { workIntervalSeconds: number; offHoursIntervalSeconds: number };
   } | null>(null);
+  const [emailCount, setEmailCount] = useState(0);
 
   useEffect(() => {
     window.electronAPI.n8n.status().then((result) => {
@@ -100,8 +101,8 @@ export function Dashboard() {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1rem', marginTop: '1rem', height: 'calc(100vh - 120px)' }}>
         <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '1rem', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          <h2 style={{ margin: '0 0 1rem 0' }}>Email</h2>
-          <EmailList />
+          <h2 style={{ margin: '0 0 1rem 0' }}>Email{emailCount > 0 ? ` (${emailCount})` : ''}</h2>
+          <EmailList onCountChange={setEmailCount} />
         </div>
         <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '1rem', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ margin: '0 0 1rem 0' }}>Tasks</h2>
