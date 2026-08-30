@@ -215,6 +215,12 @@ declare global {
       delete: (id: string) => Promise<void>;
       test: (conditions: ClassificationRuleCondition[], email: { from?: string | null; to?: string | null; subject?: string | null; body?: string | null; date?: string | null }) => Promise<{ matched: boolean }>;
     };
+    emailCleanup: {
+      getSettings: () => Promise<{ retentionDays: number }>;
+      setRetentionDays: (days: number) => Promise<{ retentionDays: number }>;
+      runCleanup: () => Promise<{ deleted: number; eligibleCount: number }>;
+      getEligibleCount: () => Promise<{ count: number }>;
+    };
   }
 
   interface Window {

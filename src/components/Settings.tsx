@@ -91,6 +91,10 @@ export function Settings({ onBack }: { onBack: () => void }) {
   const [hexInput, setHexInput] = useState('');
   const [hexError, setHexError] = useState<string | null>(null);
   const [colorSaving, setColorSaving] = useState(false);
+  const [retentionDays, setRetentionDays] = useState<number>(3);
+  const [retentionSaving, setRetentionSaving] = useState(false);
+  const [cleanupResult, setCleanupResult] = useState<{ deleted: number; eligibleCount: number } | null>(null);
+  const [cleanupRunning, setCleanupRunning] = useState(false);
 
   const loadKeys = useCallback(async () => {
     try {
@@ -137,13 +141,23 @@ export function Settings({ onBack }: { onBack: () => void }) {
     }
   }, []);
 
+  const loadRetentionSettings = useCallback(async () => {
+    try {
+      const settings = await window.electronAPI.emailCleanup.getSettings();
+      setRetentionDays(settings.retentionDays);
+    } catch (err) {
+      console.error('Failed to load retention settings:', err);
+    }
+  }, []);
+
   useEffect(() => {
     loadKeys();
     loadGmailAccounts();
     loadTelemetrySettings();
     loadAiConsentSettings();
     loadCronStatus();
-  }, [loadKeys, loadGmailAccounts, loadTelemetrySettings, loadAiConsentSettings, loadCronStatus]);
+    loadRetentionSettings();
+  }, [loadKeys, loadGmailAccounts, loadTelemetrySettings, loadAiConsentSettings, loadCronStatus, loadRetentionSettings]);
 
   const handleSave = async () => {
     setError(null);
@@ -274,6 +288,31 @@ export function Settings({ onBack }: { onBack: () => void }) {
       console.error('Failed to run cron now:', err);
     } finally {
       setCronSaving(false);
+    }
+  };
+
+  const handleRetentionChange = async (newDays: number) => {
+    setRetentionSaving(true);
+    try {
+      const result = await window.electronAPI.emailCleanup.setRetentionDays(newDays);
+      setRetentionDays(result.retentionDays);
+    } catch (err) {
+      console.error('Failed to update retention days:', err);
+    } finally {
+      setRetentionSaving(false);
+    }
+  };
+
+  const handleRunCleanup = async () => {
+    setCleanupRunning(true);
+    setCleanupResult(null);
+    try {
+      const result = await window.electronAPI.emailCleanup.runCleanup();
+      setCleanupResult(result);
+    } catch (err) {
+      console.error('Failed to run cleanup:', err);
+    } finally {
+      setCleanupRunning(false);
     }
   };
 
@@ -521,6 +560,58 @@ export function Settings({ onBack }: { onBack: () => void }) {
         ) : (
           <p style={{ color: '#999', fontSize: '0.875rem' }}>Loading...</p>
         )}
+      </section>
+
+      <section style={{ marginBottom: '2rem' }}>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Email Retention</h2>
+        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '1rem' }}>
+          Read emails are automatically deleted from the local database after the retention period. Only unread emails are shown.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+            <span style={{ color: '#666' }}>Delete read emails after</span>
+            <input
+              type="number"
+              min={1}
+              max={30}
+              value={retentionDays}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                if (!isNaN(val) && val >= 1 && val <= 30) {
+                  handleRetentionChange(val);
+                }
+              }}
+              disabled={retentionSaving}
+              style={{ width: '3rem', padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.875rem' }}
+            />
+            <span style={{ color: '#666' }}>days (1-30)</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button
+              onClick={handleRunCleanup}
+              disabled={cleanupRunning}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '4px',
+                border: '1px solid #ccc',
+                background: cleanupRunning ? '#f5f5f5' : '#1976d2',
+                color: cleanupRunning ? '#999' : '#fff',
+                cursor: cleanupRunning ? 'not-allowed' : 'pointer',
+                fontSize: '0.875rem',
+                alignSelf: 'flex-start',
+              }}
+            >
+              {cleanupRunning ? 'Running...' : 'Run Cleanup Now'}
+            </button>
+            {cleanupResult && (
+              <span style={{ color: '#666', fontSize: '0.75rem' }}>
+                Deleted {cleanupResult.deleted} email{cleanupResult.deleted !== 1 ? 's' : ''} | {cleanupResult.eligibleCount} eligible
+              </span>
+            )}
+          </div>
+        </div>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>

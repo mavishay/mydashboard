@@ -309,7 +309,7 @@ export function getClassifiedEmails(
   receivedAt: string | null;
   classification: Classification;
 }> {
-  const conditions: string[] = [];
+  const conditions: string[] = ['is_read = 0'];
   const params: unknown[] = [];
 
   if (options.accountId) {

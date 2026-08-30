@@ -19,6 +19,7 @@ import { registerRulesHandlers } from './rules-handlers';
 import { registerCronHandlers } from './cron-handlers';
 import { CronScheduler } from '../cron/cron-scheduler';
 import { registerAccountColorHandlers } from './account-color-handlers';
+import { registerEmailCleanupHandlers } from './email-cleanup-handlers';
 
 export function registerIpcHandlers(
   db: Database.Database,
@@ -44,6 +45,7 @@ export function registerIpcHandlers(
   registerSetupHandlers(ipcMain, db);
   registerRulesHandlers(ipcMain, db);
   registerAccountColorHandlers(ipcMain, db);
+  registerEmailCleanupHandlers(ipcMain, db);
 
   const cronScheduler = new CronScheduler(db, getWindow);
   registerCronHandlers(ipcMain, db, cronScheduler);
