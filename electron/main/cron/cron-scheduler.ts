@@ -170,7 +170,11 @@ export class CronScheduler {
         console.log(`[CronScheduler] Cleaned up ${deleted} stale read emails`);
       }
 
-      await this.calendarSync.syncAll();
+      try {
+        await this.calendarSync.syncAll();
+      } catch (err) {
+        console.error('[CronScheduler] Calendar sync failed:', err);
+      }
 
       this.db
         .prepare(

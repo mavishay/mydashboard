@@ -26,8 +26,8 @@ export function TodayCalendar({ onError }: TodayCalendarProps) {
 
   const fetchEvents = useCallback(async () => {
     try {
-      setLoading(true);
       setError(null);
+      await window.electronAPI.calendar.syncAll();
       const todayEvents = await window.electronAPI.calendar.getTodayEvents();
       setEvents(todayEvents);
     } catch (err) {
