@@ -401,6 +401,83 @@ export async function markEmailAsRead(
     throw new Error('emailId, externalId, and accountId are required');
   }
 
+  await callGmailModifyApi(db, externalId, accountId);
+  db.prepare('UPDATE emails SET is_read = 1 WHERE id = ?').run(emailId);
+  return { success: true };
+}
+
+export interface MarkAsReadBatchResult {
+  success: boolean;
+  marked: number;
+  failed: string[];
+}
+
+export async function markEmailsAsReadBatch(
+  db: Database.Database,
+  emails: Array<{ emailId: string; externalId: string; accountId: string }>
+): Promise<MarkAsReadBatchResult> {
+  const BATCH_CHUNK_SIZE = 10;
+  const BATCH_DELAY_MS = 1000;
+  const MAX_RETRIES = 3;
+
+  let marked = 0;
+  const failed: string[] = [];
+  const succeededIds: string[] = [];
+
+  for (let i = 0; i < emails.length; i += BATCH_CHUNK_SIZE) {
+    const chunk = emails.slice(i, i + BATCH_CHUNK_SIZE);
+
+    const results = await Promise.allSettled(
+      chunk.map(async (email) => {
+        let retries = 0;
+        while (true) {
+          try {
+            await callGmailModifyApi(db, email.externalId, email.accountId);
+            return email.emailId;
+          } catch (err: unknown) {
+            const error = err as { code?: number };
+            if (error.code === 429 && retries < MAX_RETRIES) {
+              retries++;
+              await new Promise((resolve) => setTimeout(resolve, 2000));
+              continue;
+            }
+            throw err;
+          }
+        }
+      })
+    );
+
+    for (let j = 0; j < results.length; j++) {
+      if (results[j].status === 'fulfilled') {
+        marked++;
+        succeededIds.push(chunk[j].emailId);
+      } else {
+        failed.push(chunk[j].emailId);
+      }
+    }
+
+    if (i + BATCH_CHUNK_SIZE < emails.length) {
+      await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
+    }
+  }
+
+  if (succeededIds.length > 0) {
+    const updateMany = db.prepare('UPDATE emails SET is_read = 1 WHERE id = ?');
+    db.transaction(() => {
+      for (const id of succeededIds) {
+        updateMany.run(id);
+      }
+    })();
+  }
+
+  return { success: true, marked, failed };
+}
+
+async function callGmailModifyApi(
+  db: Database.Database,
+  externalId: string,
+  accountId: string
+): Promise<void> {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
@@ -425,9 +502,7 @@ export async function markEmailAsRead(
         id: externalId,
         requestBody: { removeLabelIds: ['UNREAD'] },
       });
-
-      db.prepare('UPDATE emails SET is_read = 1 WHERE id = ?').run(emailId);
-      return { success: true };
+      return;
     } catch (err: unknown) {
       const error = err as { code?: number; message?: string };
 
@@ -436,8 +511,7 @@ export async function markEmailAsRead(
       }
 
       if (error.code === 404) {
-        db.prepare('UPDATE emails SET is_read = 1 WHERE id = ?').run(emailId);
-        return { success: true };
+        return;
       }
 
       if (error.code === 429 && retries < maxRetries) {
@@ -457,62 +531,6 @@ export async function markEmailAsRead(
       throw new Error(`Failed to mark email as read: ${error.message ?? 'Unknown error'}`, { cause: err });
     }
   }
-}
-
-export interface MarkAsReadBatchResult {
-  success: boolean;
-  marked: number;
-  failed: string[];
-}
-
-export async function markEmailsAsReadBatch(
-  db: Database.Database,
-  emails: Array<{ emailId: string; externalId: string; accountId: string }>
-): Promise<MarkAsReadBatchResult> {
-  const BATCH_CHUNK_SIZE = 10;
-  const BATCH_DELAY_MS = 1000;
-  const MAX_RETRIES = 3;
-
-  let marked = 0;
-  const failed: string[] = [];
-
-  for (let i = 0; i < emails.length; i += BATCH_CHUNK_SIZE) {
-    const chunk = emails.slice(i, i + BATCH_CHUNK_SIZE);
-
-    const results = await Promise.allSettled(
-      chunk.map(async (email) => {
-        let retries = 0;
-        while (true) {
-          try {
-            await markEmailAsRead(db, email.emailId, email.externalId, email.accountId);
-            return email.emailId;
-          } catch (err: unknown) {
-            const error = err as { code?: number };
-            if (error.code === 429 && retries < MAX_RETRIES) {
-              retries++;
-              await new Promise((resolve) => setTimeout(resolve, 2000));
-              continue;
-            }
-            throw err;
-          }
-        }
-      })
-    );
-
-    for (let j = 0; j < results.length; j++) {
-      if (results[j].status === 'fulfilled') {
-        marked++;
-      } else {
-        failed.push(chunk[j].emailId);
-      }
-    }
-
-    if (i + BATCH_CHUNK_SIZE < emails.length) {
-      await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
-    }
-  }
-
-  return { success: true, marked, failed };
 }
 
 function markReadOutsideFetch(

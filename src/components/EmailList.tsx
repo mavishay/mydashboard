@@ -391,13 +391,14 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
   }, [onCountChange]);
 
   const handleBatchMarkAsRead = useCallback(async () => {
-    const emailsToMark = emails.filter(e => selectedIds.has(e.id));
+    const idsToMark = new Set(selectedIds);
+    const emailsToMark = emails.filter(e => idsToMark.has(e.id));
     if (emailsToMark.length === 0) return;
 
     setBatchProgress(`Marking 0/${emailsToMark.length}...`);
 
     setEmails(prev => prev.map(e =>
-      selectedIds.has(e.id) ? { ...e, isRead: 1 } : e
+      idsToMark.has(e.id) ? { ...e, isRead: 1 } : e
     ));
 
     try {
@@ -414,13 +415,13 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
       }
 
       setTimeout(() => {
-        setEmails(prev => prev.filter(e => !selectedIds.has(e.id)));
+        setEmails(prev => prev.filter(e => !idsToMark.has(e.id)));
         onCountChange?.(prev => prev - result.marked);
       }, 500);
     } catch (err) {
       setError(`Batch mark as read failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setEmails(prev => prev.map(e =>
-        selectedIds.has(e.id) ? { ...e, isRead: 0 } : e
+        idsToMark.has(e.id) ? { ...e, isRead: 0 } : e
       ));
     } finally {
       setSelectedIds(new Set());
