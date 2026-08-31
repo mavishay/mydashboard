@@ -10,5 +10,14 @@ export default defineConfig({
       provider: 'v8',
       include: ['electron/**/*.ts'],
     },
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        singleFork: true,
+      },
+    },
+    reporters: ['default'],
+    testTimeout: 15000,
+    hookTimeout: 10000,
   },
 });
