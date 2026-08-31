@@ -112,6 +112,21 @@ declare global {
     accountIndex: number;
   }
 
+  interface CalendarEventResponse {
+    id: string;
+    accountId: string;
+    title: string;
+    startTime: string;
+    endTime: string;
+    allDay: boolean;
+    location: string | null;
+    description: string | null;
+    htmlLink: string | null;
+    calendarName: string | null;
+    accountEmail: string;
+    accountColor: string | null;
+  }
+
   interface ElectronAPI {
     window: {
       minimize: () => Promise<void>;
@@ -242,6 +257,12 @@ declare global {
     };
     shell: {
       openExternal: (url: string) => Promise<void>;
+    };
+    calendar: {
+      sync: (accountId: string) => Promise<{ accountId: string; status: string; lastSyncAt: string | null; error?: string; fetched: number }>;
+      syncAll: () => Promise<Array<{ accountId: string; status: string; lastSyncAt: string | null; error?: string; fetched: number }>>;
+      getTodayEvents: () => Promise<CalendarEventResponse[]>;
+      status: () => Promise<Array<{ accountId: string; status: string; lastSyncAt: string | null; error: string | null; fetched: number }>>;
     };
   }
 

@@ -84,6 +84,10 @@ const ALLOWED_INVOKE = new Set([
   'gmail:markAsRead',
   'gmail:markAsReadBatch',
   'shell:openExternal',
+  'calendar:sync',
+  'calendar:syncAll',
+  'calendar:getTodayEvents',
+  'calendar:status',
   'services:status',
   'services:start',
   'services:stop',
@@ -328,5 +332,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   shell: {
     openExternal: (url: string) =>
       gatedInvoke('shell:openExternal', { url }) as Promise<void>,
+  },
+  calendar: {
+    sync: (accountId: string) =>
+      gatedInvoke('calendar:sync', { accountId }) as Promise<{ accountId: string; status: string; lastSyncAt: string | null; error?: string; fetched: number }>,
+    syncAll: () =>
+      gatedInvoke('calendar:syncAll') as Promise<Array<{ accountId: string; status: string; lastSyncAt: string | null; error?: string; fetched: number }>>,
+    getTodayEvents: () =>
+      gatedInvoke('calendar:getTodayEvents') as Promise<CalendarEventResponse[]>,
+    status: () =>
+      gatedInvoke('calendar:status') as Promise<Array<{ accountId: string; status: string; lastSyncAt: string | null; error: string | null; fetched: number }>>,
   },
 });

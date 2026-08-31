@@ -3,6 +3,7 @@ import type { BrowserWindow } from 'electron';
 import { fetchEmailsForAllAccounts } from '../gmail/fetcher';
 import { classifyUnclassifiedEmails } from '../ai/classifier';
 import { cleanupStaleReadEmails } from './cleanup';
+import { CalendarSync } from '../calendar/calendar-sync';
 
 export interface CronStatus {
   enabled: boolean;
@@ -43,6 +44,7 @@ export class CronScheduler {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private running = false;
   private nextRunAt = 0;
+  private calendarSync: CalendarSync;
 
   constructor(
     db: Database.Database,
@@ -50,6 +52,7 @@ export class CronScheduler {
   ) {
     this.db = db;
     this.getWindow = getWindow;
+    this.calendarSync = new CalendarSync(db);
   }
 
   start(): void {
@@ -165,6 +168,12 @@ export class CronScheduler {
       const { deleted } = cleanupStaleReadEmails(this.db);
       if (deleted > 0) {
         console.log(`[CronScheduler] Cleaned up ${deleted} stale read emails`);
+      }
+
+      try {
+        await this.calendarSync.syncAll();
+      } catch (err) {
+        console.error('[CronScheduler] Calendar sync failed:', err);
       }
 
       this.db
