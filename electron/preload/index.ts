@@ -85,6 +85,8 @@ const ALLOWED_INVOKE = new Set([
   'emailCleanup:runCleanup',
   'emailCleanup:getEligibleCount',
   'gmail:getEmailDetail',
+  'gmail:markAsRead',
+  'gmail:markAsReadBatch',
   'shell:openExternal',
 ] as const);
 
@@ -150,6 +152,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
         snippet: string | null;
         attachments: Array<{ filename: string; mimeType: string; size: number }>;
       } | null>,
+    markAsRead: (data: { emailId: string; externalId: string; accountId: string }) =>
+      gatedInvoke('gmail:markAsRead', data) as Promise<{ success: boolean }>,
+    markAsReadBatch: (data: { emails: Array<{ emailId: string; externalId: string; accountId: string }> }) =>
+      gatedInvoke('gmail:markAsReadBatch', data) as Promise<{ success: boolean; marked: number; failed: string[] }>,
     onSyncHealth: (callback: (status: unknown) => void) => gatedOn('gmail:sync-health', callback),
   },
   n8n: {

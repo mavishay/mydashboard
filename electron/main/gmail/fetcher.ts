@@ -387,6 +387,134 @@ export async function fetchEmailsForAllAccounts(
   return results;
 }
 
+export interface MarkAsReadResult {
+  success: boolean;
+}
+
+export async function markEmailAsRead(
+  db: Database.Database,
+  emailId: string,
+  externalId: string,
+  accountId: string
+): Promise<MarkAsReadResult> {
+  if (!emailId || !externalId || !accountId) {
+    throw new Error('emailId, externalId, and accountId are required');
+  }
+
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new Error('Google OAuth credentials not configured');
+  }
+
+  const tokens = retrieveTokens(db, accountId);
+  if (!tokens) {
+    throw new Error('No tokens found for account');
+  }
+
+  const oauth2Client = createOAuth2Client(clientId, clientSecret, tokens);
+  const gmailApi = google.gmail({ version: 'v1', auth: oauth2Client });
+
+  let retries = 0;
+  const maxRetries = 3;
+
+  while (true) {
+    try {
+      await gmailApi.users.messages.modify({
+        userId: 'me',
+        id: externalId,
+        requestBody: { removeLabelIds: ['UNREAD'] },
+      });
+
+      db.prepare('UPDATE emails SET is_read = 1 WHERE id = ?').run(emailId);
+      return { success: true };
+    } catch (err: unknown) {
+      const error = err as { code?: number; message?: string };
+
+      if (error.code === 401) {
+        throw new Error('Gmail authentication expired. Please reconnect your account.', { cause: err });
+      }
+
+      if (error.code === 404) {
+        db.prepare('UPDATE emails SET is_read = 1 WHERE id = ?').run(emailId);
+        return { success: true };
+      }
+
+      if (error.code === 429 && retries < maxRetries) {
+        retries++;
+        await new Promise((resolve) => setTimeout(resolve, retries * 1000));
+        continue;
+      }
+
+      if (error.code === 403 && error.message?.includes('insufficient permissions')) {
+        throw new Error('Gmail permission needed. Please reconnect your account in Settings.', { cause: err });
+      }
+
+      if (error.code === 403) {
+        throw new Error('Gmail API quota exceeded', { cause: err });
+      }
+
+      throw new Error(`Failed to mark email as read: ${error.message ?? 'Unknown error'}`, { cause: err });
+    }
+  }
+}
+
+export interface MarkAsReadBatchResult {
+  success: boolean;
+  marked: number;
+  failed: string[];
+}
+
+export async function markEmailsAsReadBatch(
+  db: Database.Database,
+  emails: Array<{ emailId: string; externalId: string; accountId: string }>
+): Promise<MarkAsReadBatchResult> {
+  const BATCH_CHUNK_SIZE = 10;
+  const BATCH_DELAY_MS = 1000;
+  const MAX_RETRIES = 3;
+
+  let marked = 0;
+  const failed: string[] = [];
+
+  for (let i = 0; i < emails.length; i += BATCH_CHUNK_SIZE) {
+    const chunk = emails.slice(i, i + BATCH_CHUNK_SIZE);
+
+    const results = await Promise.allSettled(
+      chunk.map(async (email) => {
+        let retries = 0;
+        while (true) {
+          try {
+            await markEmailAsRead(db, email.emailId, email.externalId, email.accountId);
+            return email.emailId;
+          } catch (err: unknown) {
+            const error = err as { code?: number };
+            if (error.code === 429 && retries < MAX_RETRIES) {
+              retries++;
+              await new Promise((resolve) => setTimeout(resolve, 2000));
+              continue;
+            }
+            throw err;
+          }
+        }
+      })
+    );
+
+    for (let j = 0; j < results.length; j++) {
+      if (results[j].status === 'fulfilled') {
+        marked++;
+      } else {
+        failed.push(chunk[j].emailId);
+      }
+    }
+
+    if (i + BATCH_CHUNK_SIZE < emails.length) {
+      await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
+    }
+  }
+
+  return { success: true, marked, failed };
+}
+
 function markReadOutsideFetch(
   db: Database.Database,
   accountId: string,

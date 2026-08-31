@@ -21,11 +21,13 @@ type Classification = 'urgent' | 'action' | 'fyi' | 'noise' | null;
 interface Email {
   id: string;
   accountId: string;
+  externalId: string;
   subject: string | null;
   snippet: string | null;
   fromAddress: string | null;
   receivedAt: string | null;
   classification: Classification;
+  isRead: number;
 }
 
 interface Account {
@@ -120,6 +122,9 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
   });
   const [previewEmailId, setPreviewEmailId] = useState<string | null>(null);
   const [previewAccountId, setPreviewAccountId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [markingIds, setMarkingIds] = useState<Set<string>>(new Set());
+  const [batchProgress, setBatchProgress] = useState<string | null>(null);
 
   const loadEmails = useCallback(async () => {
     try {
@@ -359,6 +364,71 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
     }
   };
 
+  const handleMarkAsRead = useCallback(async (email: Email) => {
+    setMarkingIds(prev => new Set(prev).add(email.id));
+    try {
+      await window.electronAPI.gmail.markAsRead({
+        emailId: email.id,
+        externalId: email.externalId,
+        accountId: email.accountId,
+      });
+      setEmails(prev => prev.map(e =>
+        e.id === email.id ? { ...e, isRead: 1 } : e
+      ));
+      setTimeout(() => {
+        setEmails(prev => prev.filter(e => e.id !== email.id));
+        onCountChange?.(prev => prev - 1);
+      }, 500);
+    } catch (err) {
+      setError(`Failed to mark as read: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setMarkingIds(prev => {
+        const next = new Set(prev);
+        next.delete(email.id);
+        return next;
+      });
+    }
+  }, [onCountChange]);
+
+  const handleBatchMarkAsRead = useCallback(async () => {
+    const emailsToMark = emails.filter(e => selectedIds.has(e.id));
+    if (emailsToMark.length === 0) return;
+
+    setBatchProgress(`Marking 0/${emailsToMark.length}...`);
+
+    setEmails(prev => prev.map(e =>
+      selectedIds.has(e.id) ? { ...e, isRead: 1 } : e
+    ));
+
+    try {
+      const result = await window.electronAPI.gmail.markAsReadBatch({
+        emails: emailsToMark.map(e => ({
+          emailId: e.id,
+          externalId: e.externalId,
+          accountId: e.accountId,
+        })),
+      });
+
+      if (result.failed.length > 0) {
+        setError(`Marked ${result.marked} emails as read. ${result.failed.length} failed.`);
+      }
+
+      setTimeout(() => {
+        setEmails(prev => prev.filter(e => !selectedIds.has(e.id)));
+        onCountChange?.(prev => prev - result.marked);
+      }, 500);
+    } catch (err) {
+      setError(`Batch mark as read failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setEmails(prev => prev.map(e =>
+        selectedIds.has(e.id) ? { ...e, isRead: 0 } : e
+      ));
+    } finally {
+      setSelectedIds(new Set());
+      setBatchProgress(null);
+      setMarkingIds(new Set());
+    }
+  }, [emails, selectedIds, onCountChange]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
@@ -527,6 +597,29 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
         emailCount={emails.length}
       />
 
+      {selectedIds.size > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '0.75rem',
+          padding: '0.5rem 0.75rem', marginBottom: '0.75rem',
+          background: '#e3f2fd', borderRadius: '8px', fontSize: '0.875rem',
+        }}>
+          <span style={{ fontWeight: 600 }}>{selectedIds.size} selected</span>
+          <button onClick={handleBatchMarkAsRead} disabled={markingIds.size > 0}
+            style={{ padding: '0.375rem 0.75rem', borderRadius: '4px', border: 'none',
+              background: '#1976d2', color: '#fff',
+              cursor: markingIds.size > 0 ? 'not-allowed' : 'pointer',
+              fontSize: '0.8125rem', fontWeight: 600 }}>
+            {batchProgress ?? 'Mark as Read'}
+          </button>
+          <button onClick={() => setSelectedIds(new Set())}
+            style={{ padding: '0.375rem 0.75rem', borderRadius: '4px',
+              border: '1px solid #ccc', background: '#fff', cursor: 'pointer',
+              fontSize: '0.8125rem' }}>
+            Clear
+          </button>
+        </div>
+      )}
+
       {error && (
         <div style={{
           padding: '0.75rem 1rem',
@@ -585,12 +678,37 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(email.id)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              setSelectedIds(prev => {
+                                const next = new Set(prev);
+                                if (next.has(email.id)) next.delete(email.id);
+                                else next.add(email.id);
+                                return next;
+                              });
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ flexShrink: 0, cursor: 'pointer' }}
+                          />
+                          {!email.isRead && (
+                            <span style={{
+                              display: 'inline-block',
+                              width: '6px',
+                              height: '6px',
+                              borderRadius: '50%',
+                              background: '#1976d2',
+                              flexShrink: 0,
+                            }} />
+                          )}
                           <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>
                             {extractDisplayName(email.fromAddress)}
                           </span>
                           <ClassificationBadge classification={email.classification} />
                         </div>
-                        <div style={{ fontWeight: 500, fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                        <div style={{ fontWeight: email.isRead ? 500 : 700, fontSize: '0.875rem', marginBottom: '0.25rem', transition: 'font-weight 300ms ease' }}>
                           {email.subject || '(no subject)'}
                         </div>
                         <div style={{ color: '#666', fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -601,6 +719,27 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
                         <span style={{ color: '#999', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
                           {formatDate(email.receivedAt)}
                         </span>
+                        {!email.isRead && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMarkAsRead(email);
+                            }}
+                            disabled={markingIds.has(email.id)}
+                            style={{
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '4px',
+                              border: '1px solid #757575',
+                              background: markingIds.has(email.id) ? '#f5f5f5' : 'transparent',
+                              color: '#757575',
+                              cursor: markingIds.has(email.id) ? 'not-allowed' : 'pointer',
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                            }}
+                          >
+                            {markingIds.has(email.id) ? 'Marking...' : 'Mark Read'}
+                          </button>
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
