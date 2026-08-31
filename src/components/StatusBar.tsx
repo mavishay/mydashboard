@@ -1,5 +1,5 @@
 interface StatusBarProps {
-  status: string;
+  services: Array<{ id: string; name: string; status: string }>;
   onClick: () => void;
   dndEnabled: boolean;
   cronStatus?: {
@@ -8,13 +8,6 @@ interface StatusBarProps {
     config: { workIntervalSeconds: number; offHoursIntervalSeconds: number };
   } | null;
 }
-
-const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
-  healthy: { color: '#22c55e', label: 'n8n: Running' },
-  unhealthy: { color: '#ef4444', label: 'n8n: Unhealthy' },
-  starting: { color: '#f59e0b', label: 'n8n: Starting' },
-  unknown: { color: '#9ca3af', label: 'n8n: Unknown' },
-};
 
 function getCronLabel(cronStatus: StatusBarProps['cronStatus']): string | null {
   if (!cronStatus?.enabled) return null;
@@ -27,9 +20,13 @@ function getCronLabel(cronStatus: StatusBarProps['cronStatus']): string | null {
   return `Cron: ${modeLabel} ${minutes < 60 ? `${minutes}m` : `${minutes / 60}h`}`;
 }
 
-export function StatusBar({ status, onClick, dndEnabled, cronStatus }: StatusBarProps) {
-  const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.unknown;
+export function StatusBar({ services, onClick, dndEnabled, cronStatus }: StatusBarProps) {
   const cronLabel = getCronLabel(cronStatus);
+
+  const runningCount = services.filter(s => s.status === 'running').length;
+  const hasErrors = services.some(s => s.status === 'error');
+  const statusColor = hasErrors ? '#ef4444' : runningCount > 0 ? '#22c55e' : '#9ca3af';
+  const statusLabel = `${runningCount}/${services.length} services`;
 
   return (
     <button
@@ -79,11 +76,11 @@ export function StatusBar({ status, onClick, dndEnabled, cronStatus }: StatusBar
           width: '8px',
           height: '8px',
           borderRadius: '50%',
-          background: config.color,
+          background: statusColor,
           display: 'inline-block',
         }}
       />
-      {config.label}
+      {statusLabel}
     </button>
   );
 }

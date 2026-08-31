@@ -7,8 +7,6 @@ interface SetupCompleteStepProps {
 }
 
 const STEP_LABELS: Record<string, string> = {
-  'docker-check': 'Docker Check',
-  'n8n-health': 'n8n Engine Health',
   'api-key': 'AI Provider Key',
   'account-connect': 'Gmail Account',
   'setup-complete': 'Setup Complete',

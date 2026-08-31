@@ -92,11 +92,11 @@ describe('preload contextBridge', () => {
     expect(api).not.toHaveProperty('db');
   });
 
-  it('n8n.dockerStatus calls correct channel', () => {
+  it('services.status calls correct channel', () => {
     mockIpcRenderer.invoke.mockClear();
     const api = mockContextBridge.exposeInMainWorld.mock.calls[0][1];
-    api.n8n.dockerStatus();
-    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('n8n:docker-status');
+    api.services.status();
+    expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('services:status');
   });
 
   it('googleTasks.listLists calls correct channel', () => {

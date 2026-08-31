@@ -13,10 +13,6 @@ const ALLOWED_INVOKE = new Set([
   'gmail:sync',
   'gmail:syncAll',
   'gmail:syncStatus',
-  'n8n:status',
-  'n8n:start',
-  'n8n:stop',
-  'n8n:docker-status',
   'lan:start',
   'lan:stop',
   'lan:status',
@@ -88,11 +84,13 @@ const ALLOWED_INVOKE = new Set([
   'gmail:markAsRead',
   'gmail:markAsReadBatch',
   'shell:openExternal',
+  'services:status',
+  'services:start',
+  'services:stop',
 ] as const);
 
 const ALLOWED_ON = new Set([
   'app:quit',
-  'n8n:health',
   'lan:deviceConnected',
   'lan:deviceDisconnected',
   'google-tasks:sync-health',
@@ -158,12 +156,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
       gatedInvoke('gmail:markAsReadBatch', data) as Promise<{ success: boolean; marked: number; failed: string[] }>,
     onSyncHealth: (callback: (status: unknown) => void) => gatedOn('gmail:sync-health', callback),
   },
-  n8n: {
-    status: () => gatedInvoke('n8n:status') as Promise<{ status: string }>,
-    start: () => gatedInvoke('n8n:start') as Promise<{ success: boolean; error?: string }>,
-    stop: () => gatedInvoke('n8n:stop') as Promise<{ success: boolean; error?: string }>,
-    dockerStatus: () => gatedInvoke('n8n:docker-status') as Promise<{ available: boolean; error?: string }>,
-    onHealth: (callback: (status: string) => void) => gatedOn('n8n:health', callback),
+  services: {
+    status: () =>
+      gatedInvoke('services:status') as Promise<{ services: Array<{ id: string; name: string; status: string; lastError: string | null; startedAt: string | null }> }>,
+    start: () =>
+      gatedInvoke('services:start') as Promise<{ services: Array<{ id: string; name: string; status: string; lastError: string | null; startedAt: string | null }> }>,
+    stop: () =>
+      gatedInvoke('services:stop') as Promise<{ services: Array<{ id: string; name: string; status: string; lastError: string | null; startedAt: string | null }> }>,
   },
   lan: {
     start: () => gatedInvoke('lan:start') as Promise<{ success: boolean; error?: string; url?: string }>,
@@ -267,7 +266,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   onboarding: {
     getStatus: () =>
-      gatedInvoke('onboarding:getStatus') as Promise<{ dockerCheckComplete: boolean; n8nHealthComplete: boolean; apiKeyComplete: boolean; accountConnected: boolean; setupCompletedAt: string | null }>,
+      gatedInvoke('onboarding:getStatus') as Promise<{ servicesReady: boolean; apiKeyComplete: boolean; accountConnected: boolean; setupCompletedAt: string | null }>,
     setStepComplete: (stepId: string) =>
       gatedInvoke('onboarding:setStepComplete', { stepId }),
     recordSetupEvent: (eventType: string, stepId?: string, metadata?: Record<string, unknown>) =>
