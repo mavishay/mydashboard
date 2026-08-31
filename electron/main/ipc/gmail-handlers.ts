@@ -19,11 +19,12 @@ import {
 import { createOAuthServer, buildAuthUrl } from '../auth/oauth-server';
 import { recordTelemetryEvent } from '../telemetry';
 import { GmailSyncManager } from '../gmail/sync';
-import { getEmailDetail } from '../gmail/fetcher';
+import { getEmailDetail, markEmailAsRead, markEmailsAsReadBatch } from '../gmail/fetcher';
 
 const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/gmail.labels',
+  'https://www.googleapis.com/auth/gmail.modify',
   'https://www.googleapis.com/auth/tasks',
 ];
 
@@ -42,6 +43,16 @@ const SyncSchema = z.object({
 
 const GetEmailDetailSchema = z.object({
   emailId: z.string().min(1),
+});
+
+const MarkAsReadSchema = z.object({
+  emailId: z.string().min(1),
+  externalId: z.string().min(1),
+  accountId: z.string().min(1),
+});
+
+const MarkAsReadBatchSchema = z.object({
+  emails: z.array(MarkAsReadSchema).min(1).max(50),
 });
 
 interface AccountResponse {
@@ -242,6 +253,35 @@ export function registerGmailHandlers(
       }
 
       return detail;
+    }
+  );
+
+  ipcMain.handle(
+    'gmail:markAsRead',
+    async (_event, rawPayload: { emailId: string; externalId: string; accountId: string }) => {
+      const parsed = MarkAsReadSchema.safeParse(rawPayload);
+      if (!parsed.success) {
+        throw new Error('Invalid payload');
+      }
+
+      return markEmailAsRead(
+        db,
+        parsed.data.emailId,
+        parsed.data.externalId,
+        parsed.data.accountId
+      );
+    }
+  );
+
+  ipcMain.handle(
+    'gmail:markAsReadBatch',
+    async (_event, rawPayload: { emails: Array<{ emailId: string; externalId: string; accountId: string }> }) => {
+      const parsed = MarkAsReadBatchSchema.safeParse(rawPayload);
+      if (!parsed.success) {
+        throw new Error('Invalid payload');
+      }
+
+      return markEmailsAsReadBatch(db, parsed.data.emails);
     }
   );
 }
