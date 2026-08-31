@@ -3,7 +3,6 @@ import type Database from 'better-sqlite3';
 import { ipcMain, shell } from 'electron';
 import { registerWindowHandlers } from './window-handlers';
 import { registerGmailHandlers } from './gmail-handlers';
-import { registerN8nHandlers } from './n8n-handlers';
 import { registerLanHandlers } from './lan-handlers';
 import type { LanServerInstance } from '../server/index';
 import { registerApiKeyHandlers } from './api-key-handlers';
@@ -26,12 +25,10 @@ export function registerIpcHandlers(
   db: Database.Database,
   getWindow: () => BrowserWindow | null = () => null,
   quit: () => void = () => {},
-  composeDir: string = process.cwd(),
   lanServer?: LanServerInstance
 ): { notificationService?: import('../services/notification-service').NotificationService; cronScheduler: CronScheduler } {
   registerWindowHandlers(ipcMain, getWindow, quit);
   registerGmailHandlers(ipcMain, db, getWindow);
-  registerN8nHandlers(ipcMain, composeDir);
   registerApiKeyHandlers(ipcMain, db);
   if (lanServer) {
     registerLanHandlers(ipcMain, lanServer);

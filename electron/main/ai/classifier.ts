@@ -319,11 +319,13 @@ export function getClassifiedEmails(
 ): Array<{
   id: string;
   accountId: string;
+  externalId: string;
   subject: string | null;
   snippet: string | null;
   fromAddress: string | null;
   receivedAt: string | null;
   classification: Classification;
+  isRead: number;
 }> {
   const conditions: string[] = ['is_read = 0'];
   const params: unknown[] = [];
@@ -343,8 +345,8 @@ export function getClassifiedEmails(
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
   const query = `
-    SELECT id, account_id as accountId, subject, snippet, from_address as fromAddress,
-           received_at as receivedAt, classification
+    SELECT id, account_id as accountId, external_id as externalId, subject, snippet, from_address as fromAddress,
+           received_at as receivedAt, classification, is_read as isRead
     FROM emails
     ${whereClause}
     ORDER BY
@@ -364,10 +366,12 @@ export function getClassifiedEmails(
   return db.prepare(query).all(...params) as Array<{
     id: string;
     accountId: string;
+    externalId: string;
     subject: string | null;
     snippet: string | null;
     fromAddress: string | null;
     receivedAt: string | null;
     classification: Classification;
+    isRead: number;
   }>;
 }

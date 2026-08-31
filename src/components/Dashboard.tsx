@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Settings } from './Settings';
 import { TaskList } from './TaskList';
 import { TelemetryStats } from './TelemetryStats';
@@ -6,14 +6,22 @@ import { EmailList } from './EmailList';
 import { StatusBar } from './StatusBar';
 import { HealthCheckWizard } from './HealthCheckWizard';
 import { TodayCalendar } from './TodayCalendar';
+import { ServiceStatusPanel } from './ServiceStatusPanel';
 
 type Page = 'dashboard' | 'settings' | 'telemetry-stats';
 
+interface ServiceInfo {
+  id: string;
+  name: string;
+  status: string;
+  lastError: string | null;
+  startedAt: string | null;
+}
+
 export function Dashboard() {
   const [page, setPage] = useState<Page>('dashboard');
-  const [n8nStatus, setN8nStatus] = useState<string>('unknown');
-  const [showWizard, setShowWizard] = useState(false);
-  const [restarting, setRestarting] = useState(false);
+  const [services, setServices] = useState<ServiceInfo[]>([]);
+  const [showPanel, setShowPanel] = useState(false);
   const [dndEnabled, setDndEnabled] = useState(false);
   const [cronStatus, setCronStatus] = useState<{
     enabled: boolean;
@@ -23,8 +31,8 @@ export function Dashboard() {
   const [emailCount, setEmailCount] = useState(0);
 
   useEffect(() => {
-    window.electronAPI.n8n.status().then((result) => {
-      setN8nStatus(result.status);
+    window.electronAPI.services.status().then((result) => {
+      setServices(result.services);
     });
 
     window.electronAPI.notification.getDndStatus().then((result) => {
@@ -35,27 +43,13 @@ export function Dashboard() {
       setCronStatus(result);
     });
 
-    const cleanupN8n = window.electronAPI.n8n.onHealth((status: string) => {
-      setN8nStatus(status);
-    });
-
     const cleanupCron = window.electronAPI.cron.onStatusUpdate((status) => {
       setCronStatus(status);
     });
 
     return () => {
-      if (typeof cleanupN8n === 'function') cleanupN8n();
       if (typeof cleanupCron === 'function') cleanupCron();
     };
-  }, []);
-
-  const handleRestart = useCallback(async () => {
-    setRestarting(true);
-    try {
-      await window.electronAPI.n8n.start();
-    } finally {
-      setRestarting(false);
-    }
   }, []);
 
   if (page === 'settings') {
@@ -71,7 +65,7 @@ export function Dashboard() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h1 style={{ margin: 0 }}>Focus Board</h1>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <StatusBar status={n8nStatus} onClick={() => setShowWizard(true)} dndEnabled={dndEnabled} cronStatus={cronStatus} />
+          <StatusBar services={services} onClick={() => setShowPanel(true)} dndEnabled={dndEnabled} cronStatus={cronStatus} />
           <button
             onClick={() => setPage('telemetry-stats')}
             style={{
@@ -114,13 +108,8 @@ export function Dashboard() {
         </div>
       </div>
 
-      {showWizard && (
-        <HealthCheckWizard
-          status={n8nStatus}
-          onClose={() => setShowWizard(false)}
-          onRestart={handleRestart}
-          restarting={restarting}
-        />
+      {showPanel && (
+        <ServiceStatusPanel onClose={() => setShowPanel(false)} />
       )}
     </div>
   );

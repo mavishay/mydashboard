@@ -32,8 +32,7 @@ describe('Setup Tracker Module', () => {
     db.exec(`
       CREATE TABLE IF NOT EXISTS setup_status (
         id INTEGER PRIMARY KEY CHECK (id = 1),
-        docker_check_complete INTEGER NOT NULL DEFAULT 0,
-        n8n_health_complete INTEGER NOT NULL DEFAULT 0,
+        services_ready INTEGER NOT NULL DEFAULT 0,
         api_key_complete INTEGER NOT NULL DEFAULT 0,
         account_connected INTEGER NOT NULL DEFAULT 0,
         setup_completed_at TEXT,
@@ -85,8 +84,7 @@ describe('Setup Tracker Module', () => {
   describe('getSetupStatus', () => {
     it('returns defaults when no row exists', () => {
       const status = getSetupStatus(db);
-      expect(status.dockerCheckComplete).toBe(false);
-      expect(status.n8nHealthComplete).toBe(false);
+      expect(status.servicesReady).toBe(false);
       expect(status.apiKeyComplete).toBe(false);
       expect(status.accountConnected).toBe(false);
       expect(status.setupCompletedAt).toBeNull();
@@ -101,22 +99,21 @@ describe('Setup Tracker Module', () => {
     it('returns correct status after marking steps complete', () => {
       markStepComplete(db, 'docker-check');
       const status = getSetupStatus(db);
-      expect(status.dockerCheckComplete).toBe(true);
-      expect(status.n8nHealthComplete).toBe(false);
+      expect(status.servicesReady).toBe(true);
     });
   });
 
   describe('markStepComplete', () => {
-    it('updates correct boolean column for docker-check', () => {
+    it('updates services_ready for docker-check (migration)', () => {
       markStepComplete(db, 'docker-check');
-      const row = db.prepare('SELECT docker_check_complete FROM setup_status WHERE id = 1').get() as any;
-      expect(row.docker_check_complete).toBe(1);
+      const row = db.prepare('SELECT services_ready FROM setup_status WHERE id = 1').get() as any;
+      expect(row.services_ready).toBe(1);
     });
 
-    it('updates correct boolean column for n8n-health', () => {
+    it('updates services_ready for n8n-health (migration)', () => {
       markStepComplete(db, 'n8n-health');
-      const row = db.prepare('SELECT n8n_health_complete FROM setup_status WHERE id = 1').get() as any;
-      expect(row.n8n_health_complete).toBe(1);
+      const row = db.prepare('SELECT services_ready FROM setup_status WHERE id = 1').get() as any;
+      expect(row.services_ready).toBe(1);
     });
 
     it('updates correct boolean column for api-key', () => {
@@ -156,13 +153,11 @@ describe('Setup Tracker Module', () => {
 
     it('returns false when only some steps are complete', () => {
       markStepComplete(db, 'docker-check');
-      markStepComplete(db, 'n8n-health');
       expect(isSetupComplete(db)).toBe(false);
     });
 
-    it('returns true when all four columns are 1', () => {
+    it('returns true when all required columns are 1', () => {
       markStepComplete(db, 'docker-check');
-      markStepComplete(db, 'n8n-health');
       markStepComplete(db, 'api-key');
       markStepComplete(db, 'account-connect');
       expect(isSetupComplete(db)).toBe(true);

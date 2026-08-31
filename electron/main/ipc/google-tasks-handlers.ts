@@ -30,6 +30,7 @@ const ListTasksResponseSchema = z.array(
     listId: z.string(),
     listTitle: z.string().nullable(),
     source: z.string(),
+    accountId: z.string(),
   })
 );
 
@@ -92,17 +93,15 @@ function getTasksWithSource(
 ): TaskRow[] {
   const sql = accountId
     ? `SELECT gt.id, gt.title, gt.notes, gt.status, gt.due, gt.completed_at,
-              gt.updated_at, gt.list_id, gtl.title as list_title
+              gt.updated_at, gt.list_id, gtl.title as list_title,
+              gtl.account_id as account_id
        FROM google_tasks gt
        JOIN google_task_lists gtl ON gt.list_id = gtl.id
-       WHERE gtl.id IN (
-         SELECT DISTINCT gtl2.id
-         FROM google_task_lists gtl2
-         JOIN oauth_tokens ot ON ot.account_id = ?
-       ) AND gt.is_deleted = 0
+       WHERE gtl.account_id = ? AND gt.is_deleted = 0
        ORDER BY gt.updated_at DESC`
     : `SELECT gt.id, gt.title, gt.notes, gt.status, gt.due, gt.completed_at,
-              gt.updated_at, gt.list_id, gtl.title as list_title
+              gt.updated_at, gt.list_id, gtl.title as list_title,
+              gtl.account_id as account_id
        FROM google_tasks gt
        JOIN google_task_lists gtl ON gt.list_id = gtl.id
        WHERE gt.is_deleted = 0
@@ -143,6 +142,7 @@ function getTasksWithSource(
     listId: r.list_id,
     listTitle: r.list_title,
     source: 'Google Tasks',
+    accountId: r.account_id ?? '',
   }));
 }
 

@@ -1,15 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockElectronAPI = {
-  n8n: {
-    dockerStatus: vi.fn().mockResolvedValue({ available: true }),
-    status: vi.fn().mockResolvedValue({ status: 'healthy' }),
-    start: vi.fn().mockResolvedValue(undefined),
+  services: {
+    status: vi.fn().mockResolvedValue({ services: [] }),
+    start: vi.fn().mockResolvedValue({ services: [] }),
+    stop: vi.fn().mockResolvedValue({ services: [] }),
   },
   onboarding: {
     getStatus: vi.fn().mockResolvedValue({
-      dockerCheckComplete: false,
-      n8nHealthComplete: false,
+      servicesReady: false,
       apiKeyComplete: false,
       accountConnected: false,
       setupCompletedAt: null,
@@ -46,27 +45,11 @@ describe('StepIndicator', () => {
   it('renders without throwing for valid props', async () => {
     const { StepIndicator } = await import('../../src/components/SetupWizard/StepIndicator');
     const steps = [
-      { id: 'docker-check', title: 'Docker Check', status: 'completed' as const },
-      { id: 'n8n-health', title: 'n8n Health', status: 'active' as const },
-      { id: 'api-key', title: 'API Key', status: 'pending' as const },
+      { id: 'api-key', title: 'API Key', status: 'completed' as const },
+      { id: 'account-connect', title: 'Account Connect', status: 'active' as const },
+      { id: 'setup-complete', title: 'Setup Complete', status: 'pending' as const },
     ];
     expect(() => StepIndicator({ steps, currentStepIndex: 1 })).not.toThrow();
-  });
-});
-
-describe('DockerCheckStep', () => {
-  it('exports a DockerCheckStep component', async () => {
-    const mod = await import('../../src/components/SetupWizard/DockerCheckStep');
-    expect(mod.DockerCheckStep).toBeDefined();
-    expect(typeof mod.DockerCheckStep).toBe('function');
-  });
-});
-
-describe('N8nHealthStep', () => {
-  it('exports an N8nHealthStep component', async () => {
-    const mod = await import('../../src/components/SetupWizard/N8nHealthStep');
-    expect(mod.N8nHealthStep).toBeDefined();
-    expect(typeof mod.N8nHealthStep).toBe('function');
   });
 });
 
@@ -106,8 +89,6 @@ describe('SetupWizard index', () => {
   it('exports all wizard components', async () => {
     const mod = await import('../../src/components/SetupWizard');
     expect(mod.StepIndicator).toBeDefined();
-    expect(mod.DockerCheckStep).toBeDefined();
-    expect(mod.N8nHealthStep).toBeDefined();
     expect(mod.ApiKeyStep).toBeDefined();
     expect(mod.AccountConnectStep).toBeDefined();
     expect(mod.SetupCompleteStep).toBeDefined();

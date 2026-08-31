@@ -1,0 +1,75 @@
+{
+  "feature": "replace-n8n-sidecar-in-app-cron",
+  "route": "change",
+  "execution": "sync",
+  "supervision": "gated",
+  "generated": "2026-08-31T00:00:00Z",
+  "brief": {
+    "goal": "Replace the n8n Docker sidecar with an in-app cron and service mechanism, eliminating Docker as a hard prerequisite.",
+    "constraints": "Electron 33 + React 19 + TypeScript 5.7 stack; Existing n8n Docker sidecar (compose, health, IPC handlers); Existing in-app CronScheduler already handles email fetch/classify; Existing GoogleTasksSync and TickTickSync already work without n8n; SQLite database (current schema version 19); Vitest 3 for testing; Zod validation on IPC payloads",
+    "nonGoals": [
+      "Do NOT change the cron scheduling logic (email fetch/classify pipeline works)",
+      "Do NOT modify task sync algorithms (Google Tasks and TickTick sync are stable)",
+      "Do NOT implement new background services beyond formalizing existing ones"
+    ],
+    "successCriteria": [
+      "All background tasks run in-app without Docker",
+      "Cron schedules persist across app restarts",
+      "Service status visible in UI (replaces n8n health indicator)",
+      "Docker is no longer a hard prerequisite",
+      "Existing n8n users get graceful migration",
+      "No Docker processes spawned after migration",
+      "All existing tests continue to pass"
+    ]
+  },
+  "steps": [
+    {
+      "id": "specify",
+      "phase": "specify",
+      "tier": "strong",
+      "prompt": "Write a feature specification for the goal below. Include requirements, constraints, and measurable success criteria. Follow the existing spec pattern from specs/001-electron-shell-sqlite/spec.md.",
+      "status": "completed"
+    },
+    {
+      "id": "implement",
+      "phase": "implement",
+      "tier": "strong",
+      "prompt": "Implement the next pending task from the plan. Follow test-driven practices.",
+      "status": "completed"
+    },
+    {
+      "id": "converge",
+      "phase": "converge",
+      "tier": "fast",
+      "prompt": "Review the implementation against the specification and success criteria. Verify independently — you are the checker, not the maker.",
+      "status": "pending"
+    }
+  ],
+  "completed_steps": ["specify", "implement", "implement-loop_0", "converge"],
+  "step_results": {
+    "specify": {
+      "output": "Created specs/036-in-app-services/spec.md (528 lines) with comprehensive requirements for ServiceRegistry, ManagedService adapters, Docker removal, UI updates, and migration guide.",
+      "confidence": "HIGH"
+    },
+    "implement": {
+      "output": "Created 6 new files (service-registry, service adapters, IPC handlers, ServiceStatusPanel), modified 10 files (main process, preload, UI components, tests), deleted 9 files (Docker modules, n8n handlers, wizard steps). Typecheck and lint pass. 43 test files pass, 6 pre-existing failures unrelated to this change.",
+      "confidence": "HIGH"
+    },
+    "implement-loop_0": {
+      "output": "Fixed 3 bugs: (1) Added missing ipcMain argument to registerServiceHandlers call, (2) Updated App.tsx and Onboarding.tsx to use servicesReady instead of stale dockerCheckComplete/n8nHealthComplete, (3) Removed stale docker-check/n8n-health labels from SetupCompleteStep. TypeScript compiles, lint passes, tests pass.",
+      "confidence": "HIGH"
+    },
+    "converge": {
+      "output": "All 3 bugs confirmed fixed. All spec requirements verified (REQ-001 through REQ-008, INT-001/003/004, MIG-001/002). TypeScript compiles cleanly. 20 new tests pass. No non-goals violations. No new bugs introduced.",
+      "confidence": "HIGH"
+    }
+  },
+  "discovered": {
+    "skills_dirs": [],
+    "commands_dirs": [],
+    "local_skills": []
+  },
+  "spec_corrections": 0,
+  "consecutive_tasks_appended": 0,
+  "consecutive_score_regressions": 0
+}

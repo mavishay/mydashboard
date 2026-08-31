@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { StepIndicator } from './StepIndicator';
-import { DockerCheckStep } from './DockerCheckStep';
-import { N8nHealthStep } from './N8nHealthStep';
 import { ApiKeyStep } from './ApiKeyStep';
 import { AccountConnectStep } from './AccountConnectStep';
 import { SetupCompleteStep } from './SetupCompleteStep';
@@ -11,11 +9,9 @@ interface SetupWizardProps {
   onComplete: () => void;
 }
 
-const STEP_IDS = ['docker-check', 'n8n-health', 'api-key', 'account-connect', 'setup-complete'];
+const STEP_IDS = ['api-key', 'account-connect', 'setup-complete'];
 
 const STEP_LABELS: Record<string, string> = {
-  'docker-check': 'Docker Check',
-  'n8n-health': 'n8n Health',
   'api-key': 'API Key',
   'account-connect': 'Account Connect',
   'setup-complete': 'Setup Complete',
@@ -34,8 +30,7 @@ function SetupWizardInner({ onComplete }: SetupWizardProps) {
         const status = await window.electronAPI.onboarding.getStatus();
         // Map status booleans to step indices
         const completedSteps = [
-          status.dockerCheckComplete,
-          status.n8nHealthComplete,
+          status.servicesReady,
           status.apiKeyComplete,
           status.accountConnected,
           status.setupCompletedAt !== null,
@@ -107,10 +102,6 @@ function SetupWizardInner({ onComplete }: SetupWizardProps) {
   const renderCurrentStep = () => {
     const stepId = STEP_IDS[currentStepIndex];
     switch (stepId) {
-      case 'docker-check':
-        return <DockerCheckStep onComplete={handleStepComplete} onError={handleStepError} />;
-      case 'n8n-health':
-        return <N8nHealthStep onComplete={handleStepComplete} onError={handleStepError} />;
       case 'api-key':
         return <ApiKeyStep onComplete={handleStepComplete} onError={handleStepError} />;
       case 'account-connect':

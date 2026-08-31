@@ -14,6 +14,7 @@ interface TaskItem {
   updatedAt: string;
   listId: string;
   listTitle: string;
+  accountId?: string;
   // extra fields for TickTick
   projectId?: string;
   projectTitle?: string;
@@ -102,6 +103,7 @@ function TaskListInner() {
         updatedAt: t.updatedAt,
         listId: t.listId,
         listTitle: t.listTitle ?? '',
+        accountId: t.accountId,
       }));
       const normalizedTtTasks: TaskItem[] = ttTasks.map((t) => ({
         id: t.id,
@@ -218,7 +220,7 @@ function TaskListInner() {
     );
     try {
       if (task.source === 'Google Tasks') {
-        const accountId = accounts.find(a => a.source === 'google-tasks')?.id;
+        const accountId = task.accountId || accounts.find(a => a.source === 'google-tasks')?.id;
         if (!accountId) throw new Error('No Google Tasks account');
         await window.electronAPI.googleTasks.updateTask({
           accountId,
@@ -251,7 +253,7 @@ function TaskListInner() {
     setTasks((prev) => prev.filter((t) => t.id !== task.id));
     try {
       if (task.source === 'Google Tasks') {
-        const accountId = accounts.find(a => a.source === 'google-tasks')?.id;
+        const accountId = task.accountId || accounts.find(a => a.source === 'google-tasks')?.id;
         if (!accountId) throw new Error('No Google Tasks account');
         await window.electronAPI.googleTasks.deleteTask({
           accountId,
@@ -382,7 +384,7 @@ function TaskListInner() {
     setEditingTaskId(null);
     try {
       if (task.source === 'Google Tasks') {
-        const accountId = accounts.find(a => a.source === 'google-tasks')?.id;
+        const accountId = task.accountId || accounts.find(a => a.source === 'google-tasks')?.id;
         if (!accountId) throw new Error('No Google Tasks account');
         await window.electronAPI.googleTasks.updateTask({
           accountId,

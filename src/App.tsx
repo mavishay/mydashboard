@@ -12,8 +12,7 @@ export function App() {
     try {
       const status = await window.electronAPI.onboarding.getStatus();
       if (
-        status.dockerCheckComplete &&
-        status.n8nHealthComplete &&
+        status.servicesReady &&
         status.apiKeyComplete &&
         status.accountConnected
       ) {

@@ -15,6 +15,8 @@ const mockGmail = {
   listAccounts: vi.fn(),
   sync: vi.fn(),
   syncAll: vi.fn(),
+  markAsRead: vi.fn(),
+  markAsReadBatch: vi.fn(),
 };
 
 const mockGoogleTasks = {
@@ -84,7 +86,7 @@ describe('EmailList', () => {
   it('renders email list', async () => {
     mockGmail.listAccounts.mockResolvedValue([{ id: 'a1', email: 'test@gmail.com', displayName: 'Test' }]);
     mockClassification.getEmails.mockResolvedValue([
-      { id: 'e1', accountId: 'a1', subject: 'Test Email', snippet: 'Hello world', fromAddress: 'sender@example.com', receivedAt: '2026-01-01T00:00:00Z', classification: 'urgent' },
+      { id: 'e1', accountId: 'a1', externalId: 'ext1', subject: 'Test Email', snippet: 'Hello world', fromAddress: 'sender@example.com', receivedAt: '2026-01-01T00:00:00Z', classification: 'urgent', isRead: 0 },
     ]);
 
     await renderEmailList();
@@ -95,7 +97,7 @@ describe('EmailList', () => {
   it('shows classification badges', async () => {
     mockGmail.listAccounts.mockResolvedValue([{ id: 'a1', email: 't@g.com', displayName: 'T' }]);
     mockClassification.getEmails.mockResolvedValue([
-      { id: 'e1', accountId: 'a1', subject: 'Test', snippet: null, fromAddress: null, receivedAt: null, classification: 'urgent' },
+      { id: 'e1', accountId: 'a1', externalId: 'ext1', subject: 'Test', snippet: null, fromAddress: null, receivedAt: null, classification: 'urgent', isRead: 0 },
     ]);
 
     await renderEmailList();
@@ -107,7 +109,7 @@ describe('EmailList', () => {
   it('shows Convert to Task button', async () => {
     mockGmail.listAccounts.mockResolvedValue([{ id: 'a1', email: 't@g.com', displayName: 'T' }]);
     mockClassification.getEmails.mockResolvedValue([
-      { id: 'e1', accountId: 'a1', subject: 'Task Email', snippet: null, fromAddress: null, receivedAt: null, classification: 'action' },
+      { id: 'e1', accountId: 'a1', externalId: 'ext1', subject: 'Task Email', snippet: null, fromAddress: null, receivedAt: null, classification: 'action', isRead: 0 },
     ]);
 
     await renderEmailList();
@@ -145,11 +147,97 @@ describe('EmailList', () => {
   it('shows email count', async () => {
     mockGmail.listAccounts.mockResolvedValue([{ id: 'a1', email: 't@g.com', displayName: 'T' }]);
     mockClassification.getEmails.mockResolvedValue([
-      { id: 'e1', accountId: 'a1', subject: 'Test', snippet: null, fromAddress: null, receivedAt: null, classification: 'urgent' },
+      { id: 'e1', accountId: 'a1', externalId: 'ext1', subject: 'Test', snippet: null, fromAddress: null, receivedAt: null, classification: 'urgent', isRead: 0 },
     ]);
 
     await renderEmailList();
     expect(screen.queryByText('1 email')).toBeTruthy();
+  });
+
+  it('shows Mark Read button for unread emails', async () => {
+    mockGmail.listAccounts.mockResolvedValue([{ id: 'a1', email: 't@g.com', displayName: 'T' }]);
+    mockClassification.getEmails.mockResolvedValue([
+      { id: 'e1', accountId: 'a1', externalId: 'ext1', subject: 'Unread', snippet: null, fromAddress: null, receivedAt: null, classification: 'urgent', isRead: 0 },
+    ]);
+
+    await renderEmailList();
+    expect(screen.queryByText('Mark Read')).toBeTruthy();
+  });
+
+  it('does not show Mark Read button for read emails', async () => {
+    mockGmail.listAccounts.mockResolvedValue([{ id: 'a1', email: 't@g.com', displayName: 'T' }]);
+    mockClassification.getEmails.mockResolvedValue([
+      { id: 'e1', accountId: 'a1', externalId: 'ext1', subject: 'Read', snippet: null, fromAddress: null, receivedAt: null, classification: 'urgent', isRead: 1 },
+    ]);
+
+    await renderEmailList();
+    expect(screen.queryByText('Mark Read')).toBeNull();
+  });
+
+  it('shows checkbox on email rows', async () => {
+    mockGmail.listAccounts.mockResolvedValue([{ id: 'a1', email: 't@g.com', displayName: 'T' }]);
+    mockClassification.getEmails.mockResolvedValue([
+      { id: 'e1', accountId: 'a1', externalId: 'ext1', subject: 'Test', snippet: null, fromAddress: null, receivedAt: null, classification: 'urgent', isRead: 0 },
+    ]);
+
+    await renderEmailList();
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    expect(checkboxes.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('shows batch toolbar when emails selected', async () => {
+    mockGmail.listAccounts.mockResolvedValue([{ id: 'a1', email: 't@g.com', displayName: 'T' }]);
+    mockClassification.getEmails.mockResolvedValue([
+      { id: 'e1', accountId: 'a1', externalId: 'ext1', subject: 'Test', snippet: null, fromAddress: null, receivedAt: null, classification: 'urgent', isRead: 0 },
+    ]);
+
+    await renderEmailList();
+    const checkbox = document.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    fireEvent.click(checkbox);
+    expect(screen.queryByText('1 selected')).toBeTruthy();
+  });
+
+  it('shows blue dot for unread emails', async () => {
+    mockGmail.listAccounts.mockResolvedValue([{ id: 'a1', email: 't@g.com', displayName: 'T' }]);
+    mockClassification.getEmails.mockResolvedValue([
+      { id: 'e1', accountId: 'a1', externalId: 'ext1', subject: 'Unread', snippet: null, fromAddress: null, receivedAt: null, classification: 'urgent', isRead: 0 },
+    ]);
+
+    await renderEmailList();
+    const spans = document.querySelectorAll('span');
+    const blueDots = Array.from(spans).filter(el =>
+      el.style.width === '6px' && el.style.height === '6px' && el.style.borderRadius === '50%'
+    );
+    expect(blueDots.length).toBe(1);
+  });
+
+  it('does not show blue dot for read emails', async () => {
+    mockGmail.listAccounts.mockResolvedValue([{ id: 'a1', email: 't@g.com', displayName: 'T' }]);
+    mockClassification.getEmails.mockResolvedValue([
+      { id: 'e1', accountId: 'a1', externalId: 'ext1', subject: 'Read', snippet: null, fromAddress: null, receivedAt: null, classification: 'urgent', isRead: 1 },
+    ]);
+
+    await renderEmailList();
+    const spans = document.querySelectorAll('span');
+    const blueDots = Array.from(spans).filter(el =>
+      el.style.width === '6px' && el.style.height === '6px' && el.style.borderRadius === '50%'
+    );
+    expect(blueDots.length).toBe(0);
+  });
+
+  it('subject is bold for unread, normal for read', async () => {
+    mockGmail.listAccounts.mockResolvedValue([{ id: 'a1', email: 't@g.com', displayName: 'T' }]);
+    mockClassification.getEmails.mockResolvedValue([
+      { id: 'e1', accountId: 'a1', externalId: 'ext1', subject: 'Unread', snippet: null, fromAddress: null, receivedAt: null, classification: 'urgent', isRead: 0 },
+      { id: 'e2', accountId: 'a1', externalId: 'ext2', subject: 'Read', snippet: null, fromAddress: null, receivedAt: null, classification: 'urgent', isRead: 1 },
+    ]);
+
+    await renderEmailList();
+    const subjects = screen.getAllByText(/^(Unread|Read)$/);
+    const unreadSubject = subjects.find(el => el.textContent === 'Unread');
+    const readSubject = subjects.find(el => el.textContent === 'Read');
+    expect(unreadSubject?.closest('div[style*="font-weight"]')?.getAttribute('style')).toContain('font-weight: 700');
+    expect(readSubject?.closest('div[style*="font-weight"]')?.getAttribute('style')).toContain('font-weight: 500');
   });
 });
 
@@ -250,7 +338,7 @@ describe('Keyboard shortcuts', () => {
     (globalThis as any).window = {
       electronAPI: {
         classification: { getEmails: vi.fn().mockResolvedValue([]), classifyAccount: vi.fn() },
-        gmail: { listAccounts: vi.fn().mockResolvedValue([]), sync: vi.fn(), syncAll: vi.fn() },
+        gmail: { listAccounts: vi.fn().mockResolvedValue([]), sync: vi.fn(), syncAll: vi.fn(), markAsRead: vi.fn(), markAsReadBatch: vi.fn() },
         googleTasks: { listAccounts: vi.fn().mockResolvedValue([]), listLists: vi.fn() },
         ticktick: { listAccounts: vi.fn().mockResolvedValue([]), listProjects: vi.fn() },
         tasks: { createFromEmail: vi.fn() },
