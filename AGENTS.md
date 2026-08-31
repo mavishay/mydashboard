@@ -77,6 +77,8 @@ gh project item-add 1 --owner mavishay --url "https://github.com/mavishay/mydash
 
 **ALWAYS connect PRs to their corresponding issues.** When creating a PR, include the issue number in the title or body (e.g., `#28` in title or `Closes #28` in body) so GitHub links them automatically.
 
+**ALWAYS fix merge conflicts immediately after creating a PR.** If the PR branch has conflicts with the base branch, resolve them before proceeding to any other work. Never leave a PR with unresolved conflicts.
+
 ### Test Cleanup
 
 After running tests, always run `pnpm test:cleanup` to kill any stale vitest worker processes. Vitest spawns child workers that can become orphaned when agent sessions end, blocking CPU. The `vitest.config.ts` uses `pool: 'forks'` with `singleFork: true` to minimize worker count.
