@@ -2,7 +2,7 @@ import Database, { Database as DatabaseType } from 'better-sqlite3';
 import { app } from 'electron';
 import { join } from 'path';
 
-const CURRENT_SCHEMA_VERSION = 19;
+const CURRENT_SCHEMA_VERSION = 20;
 
 import migration001 from './migrations/001-initial.sql?raw';
 import migration002 from './migrations/002-gmail-oauth.sql?raw';
@@ -23,6 +23,7 @@ import migration016 from './migrations/016-account-colors.sql?raw';
 import migration017 from './migrations/017-classification-rules.sql?raw';
 import migration018 from './migrations/018-email-cleanup.sql?raw';
 import migration019 from './migrations/019-email-body.sql?raw';
+import migration020 from './migrations/020-task-list-account.sql?raw';
 
 const MIGRATIONS: Record<number, string> = {
   1: migration001,
@@ -44,6 +45,7 @@ const MIGRATIONS: Record<number, string> = {
   17: migration017,
   18: migration018,
   19: migration019,
+  20: migration020,
 };
 
 export function initializeDatabase(

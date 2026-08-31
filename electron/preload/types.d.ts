@@ -20,6 +20,7 @@ declare global {
     updatedAt: string;
     listId: string;
     listTitle: string;
+    accountId: string;
   }
 
   interface GoogleTaskList {

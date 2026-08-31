@@ -362,10 +362,17 @@ export class GoogleTasksSync {
       const now = new Date().toISOString();
       this.db
         .prepare(
-          `INSERT INTO google_task_lists (id, title, updated_at, synced_at)
-           VALUES (?, ?, ?, ?)`
+          `INSERT INTO google_task_lists (id, title, updated_at, synced_at, account_id)
+           VALUES (?, ?, ?, ?, ?)`
         )
-        .run(listId, title, updated, now);
+        .run(listId, title, updated, now, this.accountId);
+    } else {
+      // Backfill account_id for lists created before migration 020
+      this.db
+        .prepare(
+          `UPDATE google_task_lists SET account_id = ? WHERE id = ? AND account_id IS NULL`
+        )
+        .run(this.accountId, listId);
     }
   }
 
