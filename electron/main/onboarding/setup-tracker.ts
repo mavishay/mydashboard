@@ -11,16 +11,16 @@ export interface SetupEvent {
 }
 
 export interface SetupStatus {
-  dockerCheckComplete: boolean;
-  n8nHealthComplete: boolean;
+  servicesReady: boolean;
   apiKeyComplete: boolean;
   accountConnected: boolean;
   setupCompletedAt: string | null;
 }
 
 const STEP_COLUMN_MAP: Record<string, string> = {
-  'docker-check': 'docker_check_complete',
-  'n8n-health': 'n8n_health_complete',
+  'docker-check': 'services_ready',
+  'n8n-health': 'services_ready',
+  'services': 'services_ready',
   'api-key': 'api_key_complete',
   'account-connect': 'account_connected',
 };
@@ -55,12 +55,11 @@ function getSetupStartTime(db: Database.Database): number | null {
 export function getSetupStatus(db: Database.Database): SetupStatus {
   const row = db
     .prepare(
-      'SELECT docker_check_complete, n8n_health_complete, api_key_complete, account_connected, setup_completed_at FROM setup_status WHERE id = 1'
+      'SELECT services_ready, api_key_complete, account_connected, setup_completed_at FROM setup_status WHERE id = 1'
     )
     .get() as
     | {
-        docker_check_complete: number;
-        n8n_health_complete: number;
+        services_ready: number;
         api_key_complete: number;
         account_connected: number;
         setup_completed_at: string | null;
@@ -72,8 +71,7 @@ export function getSetupStatus(db: Database.Database): SetupStatus {
       'INSERT OR IGNORE INTO setup_status (id) VALUES (1)'
     ).run();
     return {
-      dockerCheckComplete: false,
-      n8nHealthComplete: false,
+      servicesReady: false,
       apiKeyComplete: false,
       accountConnected: false,
       setupCompletedAt: null,
@@ -81,8 +79,7 @@ export function getSetupStatus(db: Database.Database): SetupStatus {
   }
 
   return {
-    dockerCheckComplete: row.docker_check_complete === 1,
-    n8nHealthComplete: row.n8n_health_complete === 1,
+    servicesReady: row.services_ready === 1,
     apiKeyComplete: row.api_key_complete === 1,
     accountConnected: row.account_connected === 1,
     setupCompletedAt: row.setup_completed_at,
@@ -116,12 +113,11 @@ export function markStepComplete(db: Database.Database, stepId: string): void {
 export function isSetupComplete(db: Database.Database): boolean {
   const row = db
     .prepare(
-      'SELECT docker_check_complete, n8n_health_complete, api_key_complete, account_connected FROM setup_status WHERE id = 1'
+      'SELECT services_ready, api_key_complete, account_connected FROM setup_status WHERE id = 1'
     )
     .get() as
     | {
-        docker_check_complete: number;
-        n8n_health_complete: number;
+        services_ready: number;
         api_key_complete: number;
         account_connected: number;
       }
@@ -132,8 +128,7 @@ export function isSetupComplete(db: Database.Database): boolean {
   }
 
   return (
-    row.docker_check_complete === 1 &&
-    row.n8n_health_complete === 1 &&
+    row.services_ready === 1 &&
     row.api_key_complete === 1 &&
     row.account_connected === 1
   );

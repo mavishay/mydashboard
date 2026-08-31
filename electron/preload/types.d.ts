@@ -137,12 +137,10 @@ declare global {
     accounts: {
       updateColor: (accountId: string, color: string | null) => Promise<{ success: boolean }>;
     };
-    n8n: {
-      status: () => Promise<{ status: string }>;
-      start: () => Promise<{ success: boolean; error?: string }>;
-      stop: () => Promise<{ success: boolean; error?: string }>;
-      dockerStatus: () => Promise<{ available: boolean; error?: string }>;
-      onHealth: (callback: (status: string) => void) => void;
+    services: {
+      status: () => Promise<{ services: Array<{ id: string; name: string; status: string; lastError: string | null; startedAt: string | null }> }>;
+      start: () => Promise<{ services: Array<{ id: string; name: string; status: string; lastError: string | null; startedAt: string | null }> }>;
+      stop: () => Promise<{ services: Array<{ id: string; name: string; status: string; lastError: string | null; startedAt: string | null }> }>;
     };
     lan: {
       start: () => Promise<{ success: boolean; error?: string; url?: string }>;
@@ -215,7 +213,7 @@ declare global {
       setConsent: (consented: boolean) => Promise<{ success: boolean }>;
     };
     onboarding: {
-      getStatus: () => Promise<{ dockerCheckComplete: boolean; n8nHealthComplete: boolean; apiKeyComplete: boolean; accountConnected: boolean; setupCompletedAt: string | null }>;
+      getStatus: () => Promise<{ servicesReady: boolean; apiKeyComplete: boolean; accountConnected: boolean; setupCompletedAt: string | null }>;
       setStepComplete: (stepId: string) => Promise<void>;
       recordSetupEvent: (eventType: string, stepId?: string, metadata?: Record<string, unknown>) => Promise<void>;
       startTracking: () => Promise<void>;

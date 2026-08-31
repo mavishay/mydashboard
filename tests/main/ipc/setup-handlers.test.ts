@@ -36,8 +36,7 @@ beforeEach(async () => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS setup_status (
       id INTEGER PRIMARY KEY CHECK (id = 1),
-      docker_check_complete INTEGER NOT NULL DEFAULT 0,
-      n8n_health_complete INTEGER NOT NULL DEFAULT 0,
+      services_ready INTEGER NOT NULL DEFAULT 0,
       api_key_complete INTEGER NOT NULL DEFAULT 0,
       account_connected INTEGER NOT NULL DEFAULT 0,
       setup_completed_at TEXT,
@@ -95,8 +94,7 @@ describe('registerSetupHandlers', () => {
     );
     const result = await handler[1]();
     expect(result).toEqual({
-      dockerCheckComplete: false,
-      n8nHealthComplete: false,
+      servicesReady: false,
       apiKeyComplete: false,
       accountConnected: false,
       setupCompletedAt: null,
@@ -114,7 +112,7 @@ describe('registerSetupHandlers', () => {
       ([channel]: [string]) => channel === 'onboarding:getStatus'
     );
     const result = await statusHandler[1]();
-    expect(result.dockerCheckComplete).toBe(true);
+    expect(result.servicesReady).toBe(true);
   });
 
   it('onboarding:setStepComplete rejects invalid payload', async () => {
@@ -185,8 +183,7 @@ describe('registerSetupHandlers', () => {
       ([channel]: [string]) => channel === 'onboarding:startTracking'
     );
     const result = await handler[1]();
-    expect(result).toHaveProperty('dockerCheckComplete');
-    expect(result).toHaveProperty('n8nHealthComplete');
+    expect(result).toHaveProperty('servicesReady');
     expect(result).toHaveProperty('apiKeyComplete');
     expect(result).toHaveProperty('accountConnected');
     expect(result).toHaveProperty('setupCompletedAt');
