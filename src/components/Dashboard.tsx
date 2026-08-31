@@ -5,6 +5,7 @@ import { TelemetryStats } from './TelemetryStats';
 import { EmailList } from './EmailList';
 import { StatusBar } from './StatusBar';
 import { HealthCheckWizard } from './HealthCheckWizard';
+import { TodayCalendar } from './TodayCalendar';
 
 type Page = 'dashboard' | 'settings' | 'telemetry-stats';
 
@@ -105,8 +106,11 @@ export function Dashboard() {
           <EmailList onCountChange={setEmailCount} />
         </div>
         <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '1rem', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          <h2 style={{ margin: '0 0 1rem 0' }}>Tasks</h2>
-          <TaskList />
+          <TodayCalendar />
+          <div style={{ borderTop: '1px solid #e5e7eb', marginTop: '0.75rem', paddingTop: '0.75rem' }}>
+            <h2 style={{ margin: '0 0 1rem 0' }}>Tasks</h2>
+            <TaskList />
+          </div>
         </div>
       </div>
 

@@ -86,6 +86,10 @@ const ALLOWED_INVOKE = new Set([
   'emailCleanup:getEligibleCount',
   'gmail:getEmailDetail',
   'shell:openExternal',
+  'calendar:sync',
+  'calendar:syncAll',
+  'calendar:getTodayEvents',
+  'calendar:status',
 ] as const);
 
 const ALLOWED_ON = new Set([
@@ -323,5 +327,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   shell: {
     openExternal: (url: string) =>
       gatedInvoke('shell:openExternal', { url }) as Promise<void>,
+  },
+  calendar: {
+    sync: (accountId: string) =>
+      gatedInvoke('calendar:sync', { accountId }) as Promise<{ accountId: string; status: string; lastSyncAt: string | null; error?: string; fetched: number }>,
+    syncAll: () =>
+      gatedInvoke('calendar:syncAll') as Promise<Array<{ accountId: string; status: string; lastSyncAt: string | null; error?: string; fetched: number }>>,
+    getTodayEvents: () =>
+      gatedInvoke('calendar:getTodayEvents') as Promise<CalendarEventResponse[]>,
+    status: () =>
+      gatedInvoke('calendar:status') as Promise<Array<{ accountId: string; status: string; lastSyncAt: string | null; error: string | null; fetched: number }>>,
   },
 });
