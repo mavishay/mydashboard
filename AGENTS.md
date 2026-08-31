@@ -90,7 +90,7 @@ gh project item-add 1 --owner mavishay --url "https://github.com/mavishay/mydash
 
 ### Issue Numbering
 
-Issues are numbered sequentially. Current max: #38. Next issue should be #39.
+Issues are numbered sequentially. Current max: #57. Next issue should be #58.
 
 ### Existing Issues Reference
 
@@ -111,11 +111,18 @@ Issues are numbered sequentially. Current max: #38. Next issue should be #39.
 | 36 | Replace n8n sidecar with in-app cron | OPEN | 5-infrastructure |
 | 37 | Email preview modal with browser link | OPEN | 4-improvements |
 | 38 | Custom classification rules for AI agent | OPEN | 4-improvements |
+| 51 | UI Foundation: Routing, Sidebar, Tailwind & shadcn | OPEN | 4-improvements |
+| 52 | Workload Traffic Light Dashboard Widget | OPEN | 4-improvements |
+| 53 | Daily Quote at Top of Home Page | OPEN | 4-improvements |
+| 54 | Notes Feature with DB Storage and Agent Integration | OPEN | 4-improvements |
+| 55 | AI Chat Assistant for Data Queries and Actions | OPEN | 4-improvements |
+| 56 | BUG: Email list not auto-refreshing after fetch | OPEN | 4-improvements |
+| 57 | Task Planner Wizard with AI Deadline Suggestions | OPEN | 4-improvements |
 
 ### Wave Execution Order
 
 1. **Wave 3-dependent** (#5, #12, #13) — finish existing open items
-2. **Wave 4-improvements** (#27, #28, #29, #31, #32, #33, #34, #37, #38) — new features, parallelizable
+2. **Wave 4-improvements** (#27, #28, #29, #31, #32, #33, #34, #37, #38, #51, #52, #53, #54, #55, #56, #57) — new features, parallelizable
 3. **Wave 5** (#30 notifications, #36 infra) — depends on wave 4
 4. **Wave 6-polish** (#35) — UI polish, last
 <!-- TEAM_AI_DIRECTIVES END -->
