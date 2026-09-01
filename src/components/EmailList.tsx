@@ -182,6 +182,25 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
     loadEmails();
   }, [loadEmails]);
 
+  const loadEmailsRef = useRef(loadEmails);
+  useEffect(() => {
+    loadEmailsRef.current = loadEmails;
+  }, [loadEmails]);
+
+  useEffect(() => {
+    const unsubscribe = window.electronAPI.cron.onStatusUpdate(() => {
+      loadEmailsRef.current();
+    });
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      loadEmailsRef.current();
+    }, 5 * 60 * 1000);
+    return () => clearInterval(intervalId);
+  }, []);
+
   useEffect(() => {
     saveSortPrefs(sortPrefs);
   }, [sortPrefs]);
