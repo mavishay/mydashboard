@@ -1,14 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Settings } from './Settings';
+import { useNavigate } from 'react-router-dom';
 import { TaskList } from './TaskList';
-import { TelemetryStats } from './TelemetryStats';
 import { EmailList } from './EmailList';
 import { StatusBar } from './StatusBar';
-import { HealthCheckWizard } from './HealthCheckWizard';
 import { TodayCalendar } from './TodayCalendar';
 import { ServiceStatusPanel } from './ServiceStatusPanel';
-
-type Page = 'dashboard' | 'settings' | 'telemetry-stats';
 
 interface ServiceInfo {
   id: string;
@@ -19,7 +15,7 @@ interface ServiceInfo {
 }
 
 export function Dashboard() {
-  const [page, setPage] = useState<Page>('dashboard');
+  const navigate = useNavigate();
   const [services, setServices] = useState<ServiceInfo[]>([]);
   const [showPanel, setShowPanel] = useState(false);
   const [dndEnabled, setDndEnabled] = useState(false);
@@ -52,57 +48,29 @@ export function Dashboard() {
     };
   }, []);
 
-  if (page === 'settings') {
-    return <Settings onBack={() => setPage('dashboard')} />;
-  }
-
-  if (page === 'telemetry-stats') {
-    return <TelemetryStats onBack={() => setPage('dashboard')} />;
-  }
-
   return (
-    <div style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h1 style={{ margin: 0 }}>Focus Board</h1>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+    <div className="p-8">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="m-0">Focus Board</h1>
+        <div className="flex gap-2 items-center">
           <StatusBar services={services} onClick={() => setShowPanel(true)} dndEnabled={dndEnabled} cronStatus={cronStatus} />
           <button
-            onClick={() => setPage('telemetry-stats')}
-            style={{
-              padding: '0.5rem 1rem',
-              borderRadius: '4px',
-              border: '1px solid #ccc',
-              background: '#f5f5f5',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-            }}
-          >
-            Telemetry Data
-          </button>
-          <button
-            onClick={() => setPage('settings')}
-            style={{
-              padding: '0.5rem 1rem',
-              borderRadius: '4px',
-              border: '1px solid #ccc',
-              background: '#f5f5f5',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-            }}
+            onClick={() => navigate('/settings')}
+            className="px-4 py-2 rounded border border-border bg-secondary text-secondary-foreground cursor-pointer text-sm"
           >
             Settings
           </button>
         </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1rem', marginTop: '1rem', height: 'calc(100vh - 120px)' }}>
-        <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '1rem', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          <h2 style={{ margin: '0 0 1rem 0' }}>Email{emailCount > 0 ? ` (${emailCount})` : ''}</h2>
+      <div className="grid grid-cols-[1fr_380px] gap-4 mt-4" style={{ height: 'calc(100vh - 120px)' }}>
+        <div className="border border-border rounded-lg p-4 overflow-hidden flex flex-col">
+          <h2 className="m-0 mb-4">Email{emailCount > 0 ? ` (${emailCount})` : ''}</h2>
           <EmailList onCountChange={setEmailCount} />
         </div>
-        <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '1rem', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div className="border border-border rounded-lg p-4 overflow-hidden flex flex-col">
           <TodayCalendar />
-          <div style={{ borderTop: '1px solid #e5e7eb', marginTop: '0.75rem', paddingTop: '0.75rem' }}>
-            <h2 style={{ margin: '0 0 1rem 0' }}>Tasks</h2>
+          <div className="border-t border-border mt-3 pt-3">
+            <h2 className="m-0 mb-4">Tasks</h2>
             <TaskList />
           </div>
         </div>
