@@ -81,15 +81,8 @@ function ClassificationBadge({ classification }: { classification: Classificatio
   const colors = CLASSIFICATION_COLORS[key] ?? CLASSIFICATION_COLORS.unclassified;
   return (
     <span
-      style={{
-        display: 'inline-block',
-        padding: '0.125rem 0.5rem',
-        borderRadius: '12px',
-        fontSize: '0.75rem',
-        fontWeight: 600,
-        background: colors.bg,
-        color: colors.text,
-      }}
+      className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold"
+      style={{ background: colors.bg, color: colors.text }}
     >
       {colors.label}
     </span>
@@ -450,40 +443,23 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
   }, [emails, selectedIds, onCountChange]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <div ref={dropdownRef} style={{ position: 'relative' }}>
+    <div className="flex flex-col h-full">
+      <div className="flex gap-2 mb-4 flex-wrap">
+        <div ref={dropdownRef} className="relative">
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
             aria-label="Account filter"
             aria-haspopup="listbox"
             aria-expanded={dropdownOpen}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '4px',
-              border: '1px solid #ccc',
-              background: '#fff',
-              fontSize: '0.875rem',
-              cursor: 'pointer',
-              minWidth: '160px',
-              textAlign: 'left',
-            }}
+            className="flex items-center gap-2 px-3 py-2 rounded border border-border bg-background text-sm cursor-pointer min-w-[160px] text-left"
           >
             {!selectedAccount ? (
               'All Accounts'
             ) : (
               <>
                 <span
-                  style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    background: accountsColorMap[selectedAccount] ?? '#9e9e9e',
-                    flexShrink: 0,
-                  }}
+                  className="w-3 h-3 rounded-full shrink-0"
+                  style={{ background: accountsColorMap[selectedAccount] ?? '#9e9e9e' }}
                 />
                 {accounts.find((a) => a.id === selectedAccount)?.email ?? selectedAccount}
               </>
@@ -493,37 +469,15 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
             <div
               role="listbox"
               aria-label="Select account"
-              style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                marginTop: '4px',
-                background: '#fff',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                zIndex: 10,
-                minWidth: '200px',
-                maxHeight: '240px',
-                overflowY: 'auto',
-              }}
+              className="absolute top-full left-0 mt-1 bg-background border border-border rounded shadow-lg z-10 min-w-[200px] max-h-60 overflow-y-auto"
             >
               <button
                 role="option"
                 aria-selected={!selectedAccount}
                 onClick={() => { setSelectedAccount(''); setDropdownOpen(false); }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  width: '100%',
-                  padding: '0.5rem 0.75rem',
-                  border: 'none',
-                  background: !selectedAccount ? '#e3f2fd' : 'transparent',
-                  fontSize: '0.875rem',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                }}
+                className={`flex items-center gap-2 w-full px-3 py-2 border-none text-sm cursor-pointer text-left ${
+                  !selectedAccount ? 'bg-primary/10' : 'bg-transparent'
+                }`}
               >
                 All Accounts
               </button>
@@ -533,27 +487,13 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
                   role="option"
                   aria-selected={selectedAccount === a.id}
                   onClick={() => { setSelectedAccount(a.id); setDropdownOpen(false); }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    width: '100%',
-                    padding: '0.5rem 0.75rem',
-                    border: 'none',
-                    background: selectedAccount === a.id ? '#e3f2fd' : 'transparent',
-                    fontSize: '0.875rem',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
+                  className={`flex items-center gap-2 w-full px-3 py-2 border-none text-sm cursor-pointer text-left ${
+                    selectedAccount === a.id ? 'bg-primary/10' : 'bg-transparent'
+                  }`}
                 >
                   <span
-                    style={{
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '50%',
-                      background: accountsColorMap[a.id] ?? '#9e9e9e',
-                      flexShrink: 0,
-                    }}
+                    className="w-3 h-3 rounded-full shrink-0"
+                    style={{ background: accountsColorMap[a.id] ?? '#9e9e9e' }}
                   />
                   {a.email}
                 </button>
@@ -565,7 +505,7 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
         <select
           value={selectedClassification}
           onChange={(e) => setSelectedClassification(e.target.value as Classification | '')}
-          style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.875rem' }}
+          className="px-2 py-2 rounded border border-border text-sm"
         >
           <option value="">All Classifications</option>
           <option value="urgent">Urgent</option>
@@ -577,16 +517,11 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
         <button
           onClick={handleSync}
           disabled={syncing || accounts.length === 0}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '4px',
-            border: '1px solid #1976d2',
-            background: syncing || accounts.length === 0 ? '#e3f2fd' : '#1976d2',
-            color: syncing || accounts.length === 0 ? '#90caf9' : '#fff',
-            cursor: syncing || accounts.length === 0 ? 'not-allowed' : 'pointer',
-            fontSize: '0.875rem',
-            fontWeight: 600,
-          }}
+          className={`px-4 py-2 rounded border text-sm font-semibold ${
+            syncing || accounts.length === 0
+              ? 'bg-primary/10 text-primary/50 cursor-not-allowed border-primary/20'
+              : 'bg-primary text-primary-foreground cursor-pointer border-transparent'
+          }`}
         >
           {syncing ? 'Syncing...' : 'Fetch Emails'}
         </button>
@@ -594,16 +529,11 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
         <button
           onClick={handleClassify}
           disabled={classifying || emails.length === 0}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '4px',
-            border: '1px solid #7b1fa2',
-            background: classifying || emails.length === 0 ? '#f3e5f5' : '#7b1fa2',
-            color: classifying || emails.length === 0 ? '#ce93d8' : '#fff',
-            cursor: classifying || emails.length === 0 ? 'not-allowed' : 'pointer',
-            fontSize: '0.875rem',
-            fontWeight: 600,
-          }}
+          className={`px-4 py-2 rounded border text-sm font-semibold ${
+            classifying || emails.length === 0
+              ? 'bg-purple-500/10 text-purple-400 cursor-not-allowed border-purple-500/20'
+              : 'bg-purple-600 text-white cursor-pointer border-transparent hover:bg-purple-700'
+          }`}
         >
           {classifying ? 'Classifying...' : 'AI Classify'}
         </button>
@@ -618,58 +548,39 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
       />
 
       {selectedIds.size > 0 && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '0.75rem',
-          padding: '0.5rem 0.75rem', marginBottom: '0.75rem',
-          background: '#e3f2fd', borderRadius: '8px', fontSize: '0.875rem',
-        }}>
-          <span style={{ fontWeight: 600 }}>{selectedIds.size} selected</span>
+        <div className="flex items-center gap-3 px-3 py-2 mb-3 bg-primary/10 rounded-lg text-sm">
+          <span className="font-semibold">{selectedIds.size} selected</span>
           <button onClick={handleBatchMarkAsRead} disabled={markingIds.size > 0}
-            style={{ padding: '0.375rem 0.75rem', borderRadius: '4px', border: 'none',
-              background: '#1976d2', color: '#fff',
-              cursor: markingIds.size > 0 ? 'not-allowed' : 'pointer',
-              fontSize: '0.8125rem', fontWeight: 600 }}>
+            className="px-3 py-1.5 rounded border-none bg-primary text-primary-foreground cursor-pointer text-xs font-semibold disabled:cursor-not-allowed">
             {batchProgress ?? 'Mark as Read'}
           </button>
           <button onClick={() => setSelectedIds(new Set())}
-            style={{ padding: '0.375rem 0.75rem', borderRadius: '4px',
-              border: '1px solid #ccc', background: '#fff', cursor: 'pointer',
-              fontSize: '0.8125rem' }}>
+            className="px-3 py-1.5 rounded border border-border bg-background cursor-pointer text-xs">
             Clear
           </button>
         </div>
       )}
 
       {error && (
-        <div style={{
-          padding: '0.75rem 1rem',
-          marginBottom: '1rem',
-          borderRadius: '8px',
-          background: '#ffebee',
-          color: '#c62828',
-          fontSize: '0.875rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-        }}>
-          <span style={{ fontSize: '1.25rem' }}>⚠</span>
+        <div className="px-3 py-3 mb-4 rounded-lg bg-destructive/10 text-destructive text-sm flex items-center gap-2">
+          <span className="text-lg">⚠</span>
           {error}
         </div>
       )}
 
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      <div className="flex-1 overflow-auto">
         {loading ? (
-          <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>Loading emails...</p>
+          <p className="text-muted-foreground text-center p-8">Loading emails...</p>
         ) : emails.length === 0 ? (
-          <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
+          <p className="text-muted-foreground text-center p-8">
             {accounts.length === 0
               ? 'Connect a Gmail account in Settings to get started.'
               : 'No emails found. Click "Fetch Emails" to sync.'}
           </p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div className="flex flex-col gap-2">
             {[...groupedEmails.entries()].map(([groupKey, groupEmails]) => (
-              <div key={groupKey} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div key={groupKey} className="flex flex-col gap-2">
                 {groupPrefs.option !== 'none' && (
                   <EmailGroupHeader
                     label={groupKey}
@@ -685,19 +596,16 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
                       setPreviewEmailId(email.id);
                       setPreviewAccountId(email.accountId);
                     }}
+                    className="p-3 border border-border rounded-lg cursor-pointer ml-4"
                     style={{
-                      padding: '0.75rem 1rem',
-                      border: '1px solid #e0e0e0',
-                      borderLeft: `3px solid ${accountsColorMap[email.accountId] ?? '#9e9e9e'}`,
-                      borderRadius: '8px',
+                      borderLeftWidth: '3px',
+                      borderLeftColor: accountsColorMap[email.accountId] ?? '#9e9e9e',
                       background: (CLASSIFICATION_COLORS[email.classification ?? 'unclassified']?.bg ?? '#e3f2fd') + '20',
-                      marginLeft: groupPrefs.option !== 'none' ? '1rem' : '0',
-                      cursor: 'pointer',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
                           <input
                             type="checkbox"
                             checked={selectedIds.has(email.id)}
@@ -711,32 +619,25 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
                               });
                             }}
                             onClick={(e) => e.stopPropagation()}
-                            style={{ flexShrink: 0, cursor: 'pointer' }}
+                            className="shrink-0 cursor-pointer"
                           />
                           {!email.isRead && (
-                            <span style={{
-                              display: 'inline-block',
-                              width: '6px',
-                              height: '6px',
-                              borderRadius: '50%',
-                              background: '#1976d2',
-                              flexShrink: 0,
-                            }} />
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                           )}
-                          <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>
+                          <span className="font-semibold text-sm">
                             {extractDisplayName(email.fromAddress)}
                           </span>
                           <ClassificationBadge classification={email.classification} />
                         </div>
-                        <div style={{ fontWeight: email.isRead ? 500 : 700, fontSize: '0.875rem', marginBottom: '0.25rem', transition: 'font-weight 300ms ease' }}>
+                        <div className={`text-sm mb-1 transition-all duration-300 ${email.isRead ? 'font-medium' : 'font-bold'}`}>
                           {email.subject || '(no subject)'}
                         </div>
-                        <div style={{ color: '#666', fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div className="text-muted-foreground text-xs overflow-hidden text-ellipsis whitespace-nowrap">
                           {email.snippet}
                         </div>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
-                        <span style={{ color: '#999', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-muted-foreground text-xs whitespace-nowrap">
                           {formatDate(email.receivedAt)}
                         </span>
                         {!email.isRead && (
@@ -746,16 +647,11 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
                               handleMarkAsRead(email);
                             }}
                             disabled={markingIds.has(email.id)}
-                            style={{
-                              padding: '0.25rem 0.5rem',
-                              borderRadius: '4px',
-                              border: '1px solid #757575',
-                              background: markingIds.has(email.id) ? '#f5f5f5' : 'transparent',
-                              color: '#757575',
-                              cursor: markingIds.has(email.id) ? 'not-allowed' : 'pointer',
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                            }}
+                            className={`px-2 py-1 rounded border text-xs font-semibold ${
+                              markingIds.has(email.id)
+                                ? 'bg-muted text-muted-foreground cursor-not-allowed border-border'
+                                : 'bg-transparent text-muted-foreground cursor-pointer border-border'
+                            }`}
                           >
                             {markingIds.has(email.id) ? 'Marking...' : 'Mark Read'}
                           </button>
@@ -766,16 +662,11 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
                             handleConvertToTask(email);
                           }}
                           disabled={convertingIds.has(email.id)}
-                          style={{
-                            padding: '0.25rem 0.5rem',
-                            borderRadius: '4px',
-                            border: '1px solid #1976d2',
-                            background: convertingIds.has(email.id) ? '#e3f2fd' : '#1976d2',
-                            color: convertingIds.has(email.id) ? '#90caf9' : '#fff',
-                            cursor: convertingIds.has(email.id) ? 'not-allowed' : 'pointer',
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                          }}
+                          className={`px-2 py-1 rounded border text-xs font-semibold ${
+                            convertingIds.has(email.id)
+                              ? 'bg-primary/10 text-primary/50 cursor-not-allowed border-primary/20'
+                              : 'bg-primary text-primary-foreground cursor-pointer border-transparent'
+                          }`}
                         >
                           {convertingIds.has(email.id) ? 'Creating...' : 'Convert to Task'}
                         </button>
@@ -801,39 +692,21 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
       )}
 
       {convertModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.4)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-        }}>
-          <div style={{
-            background: '#fff',
-            borderRadius: '8px',
-            padding: '1.5rem',
-            maxWidth: '400px',
-            width: '90%',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
-          }}>
-            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1rem', fontWeight: 600 }}>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000]">
+          <div className="bg-background rounded-lg p-6 max-w-[400px] w-[90%] shadow-xl">
+            <h3 className="m-0 mb-2 text-base font-semibold">
               Convert to Task
             </h3>
-            <p style={{ margin: '0 0 1rem', fontSize: '0.875rem', color: '#6b7280' }}>
+            <p className="m-0 mb-4 text-sm text-muted-foreground">
               "{convertModal.email.subject || '(no subject)'}"
             </p>
-            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.25rem' }}>
+            <label className="block text-sm font-medium mb-1">
               Select list:
             </label>
             <select
               value={selectedConvertListId}
               onChange={(e) => setSelectedConvertListId(e.target.value)}
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db', fontSize: '0.875rem', marginBottom: '1rem' }}
+              className="w-full p-2 rounded border border-border text-sm mb-4"
             >
               {convertModal.lists.map((list) => (
                 <option key={list.id} value={list.id}>
@@ -841,16 +714,16 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
                 </option>
               ))}
             </select>
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+            <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setConvertModal(null)}
-                style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', fontSize: '0.875rem' }}
+                className="px-4 py-2 rounded border border-border bg-secondary cursor-pointer text-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConvertConfirm}
-                style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: 'none', background: '#1976d2', color: '#fff', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 }}
+                className="px-4 py-2 rounded border-none bg-primary text-primary-foreground cursor-pointer text-sm font-semibold"
               >
                 Create Task
               </button>

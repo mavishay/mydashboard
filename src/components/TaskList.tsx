@@ -417,14 +417,14 @@ function TaskListInner() {
   };
 
   if (loading) {
-    return <p>Loading tasks...</p>;
+    return <p className="text-muted-foreground">Loading tasks...</p>;
   }
 
   if (error) {
     return (
       <div>
-        <p style={{ color: '#dc2626' }}>{error}</p>
-        <button onClick={loadData} style={buttonStyle}>Retry</button>
+        <p className="text-destructive">{error}</p>
+        <button onClick={loadData} className="px-3 py-1.5 rounded border border-border bg-secondary cursor-pointer text-sm mt-2">Retry</button>
       </div>
     );
   }
@@ -432,8 +432,8 @@ function TaskListInner() {
   if (accounts.length === 0) {
     return (
       <div>
-        <p>No task accounts connected</p>
-        <button onClick={handleConnect} style={{ ...buttonStyle, background: GOOGLE_BLUE, color: '#fff' }}>
+        <p className="text-muted-foreground">No task accounts connected</p>
+        <button onClick={handleConnect} className="px-3 py-1.5 rounded border-none bg-[#4285F4] text-white cursor-pointer text-sm mt-2">
           Connect Task Account
         </button>
       </div>
@@ -445,19 +445,19 @@ function TaskListInner() {
   const visibleTasks = showCompleted ? tasks : activeTasks;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexShrink: 0 }}>
-        <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex justify-between items-center mb-3 shrink-0">
+        <span className="text-xs text-muted-foreground">
           {syncStatus?.lastSyncAt
             ? `Last sync: ${new Date(syncStatus.lastSyncAt).toLocaleTimeString()}`
             : 'Not yet synced'}
           {syncStatus?.status === 'syncing' && ' (syncing...)'}
         </span>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div className="flex gap-2 items-center">
           {completedTasks.length > 0 && (
             <button
               onClick={() => setShowCompleted(!showCompleted)}
-              style={{ ...buttonStyle, fontSize: '0.75rem' }}
+              className="px-3 py-1.5 rounded border border-border bg-secondary cursor-pointer text-xs"
             >
               {showCompleted ? 'Hide' : 'Show'} Done ({completedTasks.length})
             </button>
@@ -465,40 +465,40 @@ function TaskListInner() {
           <button
             onClick={handleSync}
             disabled={syncStatus?.status === 'syncing'}
-            style={{ ...buttonStyle, fontSize: '0.75rem', opacity: syncStatus?.status === 'syncing' ? 0.5 : 1 }}
+            className={`px-3 py-1.5 rounded border border-border bg-secondary cursor-pointer text-xs ${syncStatus?.status === 'syncing' ? 'opacity-50' : ''}`}
           >
             Sync
           </button>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            style={{ ...buttonStyle, fontSize: '0.75rem', background: '#10b981', color: '#fff', border: 'none' }}
+            className="px-3 py-1.5 rounded border-none bg-emerald-500 text-white cursor-pointer text-xs"
           >
             + Add Task
           </button>
         </div>
       </div>
       {showAddForm && (
-        <div style={{ marginBottom: '1rem', padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '8px', background: '#f9fafb' }}>
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <div className="mb-4 p-3 border border-border rounded-lg bg-secondary/50">
+          <div className="flex gap-2 mb-2">
             <input
               type="text"
               placeholder="Task title"
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
-              style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }}
+              className="flex-1 p-2 rounded border border-border"
             />
             <input
               type="date"
               value={newTaskDueDate}
               onChange={(e) => setNewTaskDueDate(e.target.value)}
-              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }}
+              className="p-2 rounded border border-border"
             />
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <div className="flex gap-2 items-center">
             <select
               value={newTaskListId}
               onChange={(e) => setNewTaskListId(e.target.value)}
-              style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }}
+              className="flex-1 p-2 rounded border border-border"
             >
               {availableLists.map((list) => (
                 <option key={list.id} value={list.id}>
@@ -506,48 +506,31 @@ function TaskListInner() {
                 </option>
               ))}
             </select>
-            <button onClick={handleAddTask} style={{ ...buttonStyle, background: '#10b981', color: '#fff', border: 'none' }}>
+            <button onClick={handleAddTask} className="px-3 py-1.5 rounded border-none bg-emerald-500 text-white cursor-pointer text-sm">
               Save
             </button>
-            <button onClick={() => setShowAddForm(false)} style={buttonStyle}>
+            <button onClick={() => setShowAddForm(false)} className="px-3 py-1.5 rounded border border-border bg-secondary cursor-pointer text-sm">
               Cancel
             </button>
           </div>
         </div>
       )}
       {visibleTasks.length === 0 ? (
-        <p>{tasks.length === 0 ? 'No tasks found' : 'All tasks completed!'}</p>
+        <p className="text-muted-foreground">{tasks.length === 0 ? 'No tasks found' : 'All tasks completed!'}</p>
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, overflow: 'auto', flex: 1 }}>
+        <ul className="list-none p-0 m-0 overflow-auto flex-1">
           {visibleTasks.map((task) => {
             const taskAccount = accounts.find((a) => a.id === task.source || a.email === task.source);
             const taskColor = (taskAccount && accountsColorMap[taskAccount.email]) || GOOGLE_BLUE;
             return (
             <li
               key={task.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.5rem 0',
-                borderBottom: '1px solid #e5e7eb',
-                borderLeft: `3px solid ${taskColor}`,
-                paddingLeft: '0.5rem',
-              }}
+              className="flex items-center gap-2 py-2 border-b border-border pl-2"
+              style={{ borderLeftWidth: '3px', borderLeftColor: taskColor }}
             >
               <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  background: task.source === 'Google Tasks' ? GOOGLE_BLUE : TICKTICK_BLUE,
-                  color: '#fff',
-                  borderRadius: '9999px',
-                  padding: '0.125rem 0.5rem',
-                  fontSize: '0.625rem',
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap',
-                }}
+                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap text-white"
+                style={{ background: task.source === 'Google Tasks' ? GOOGLE_BLUE : TICKTICK_BLUE }}
                 title={task.source}
                 aria-label={task.source}
               >
@@ -558,7 +541,7 @@ function TaskListInner() {
                 checked={task.status === 'completed' || task.status === '1'}
                 onChange={() => handleToggleComplete(task)}
                 aria-label={`Mark "${task.title}" as ${task.status === 'completed' || task.status === '1' ? 'incomplete' : 'complete'}`}
-                style={{ flexShrink: 0 }}
+                className="shrink-0"
               />
               {editingTaskId === task.id ? (
                 <input
@@ -571,17 +554,15 @@ function TaskListInner() {
                     if (e.key === 'Escape') handleEditCancel();
                   }}
                   autoFocus
-                  style={{ flex: 1, padding: '0.25rem', fontSize: '0.875rem' }}
+                  className="flex-1 p-1 text-sm"
                 />
               ) : (
                 <span
-                  style={{
-                    flex: 1,
-                    textDecoration: task.status === 'completed' || task.status === '1' ? 'line-through' : 'none',
-                    color: task.status === 'completed' || task.status === '1' ? '#9ca3af' : '#111827',
-                    fontSize: '0.875rem',
-                    cursor: 'pointer',
-                  }}
+                  className={`flex-1 text-sm cursor-pointer ${
+                    task.status === 'completed' || task.status === '1'
+                      ? 'line-through text-muted-foreground'
+                      : 'text-foreground'
+                  }`}
                   onClick={() => handleEditStart(task)}
                   title="Click to edit"
                 >
@@ -589,13 +570,13 @@ function TaskListInner() {
                 </span>
               )}
               {task.dueAt && (
-                <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                <span className="text-xs text-muted-foreground">
                   {new Date(task.dueAt).toLocaleDateString()}
                 </span>
               )}
               <button
                 onClick={() => handleDelete(task)}
-                style={{ ...buttonStyle, fontSize: '0.75rem', color: '#dc2626', border: 'none', padding: '0.125rem 0.25rem' }}
+                className="text-destructive border-none p-0.5 px-1 cursor-pointer text-xs bg-transparent"
                 aria-label={`Delete "${task.title}"`}
               >
                 ×
@@ -608,15 +589,6 @@ function TaskListInner() {
     </div>
   );
 }
-
-const buttonStyle: React.CSSProperties = {
-  padding: '0.375rem 0.75rem',
-  borderRadius: '4px',
-  border: '1px solid #d1d5db',
-  background: '#f9fafb',
-  cursor: 'pointer',
-  fontSize: '0.875rem',
-};
 
 export function TaskList() {
   return (

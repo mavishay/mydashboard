@@ -1,0 +1,76 @@
+{
+  "feature": "ui-foundation-routing-sidebar-shadcn",
+  "route": "change",
+  "execution": "sync",
+  "supervision": "gated",
+  "brief": {
+    "goal": "Set up Tailwind CSS + shadcn/ui component library, add React Router with a narrow left sidebar navigation (icons + labels), implement dark/light mode theming, and migrate existing inline-styled components to shadcn-based components.",
+    "constraints": [
+      "Electron app using file:// protocol — must use HashRouter",
+      "Currently zero CSS framework, zero routing, zero component library — all inline styles",
+      "Must preserve existing functionality (Dashboard, EmailList, TaskList, Settings, Onboarding)",
+      "shadcn CLI v4.19.0 installed but never initialized",
+      "No path aliases configured"
+    ],
+    "nonGoals": [
+      "No new feature pages (Notes, Conversations are separate issues #54, #55)",
+      "No backend/database changes",
+      "No new business logic — UI foundation only"
+    ],
+    "successCriteria": [
+      "Tailwind CSS + PostCSS configured and processing classes in dev and build",
+      "Left sidebar renders with 5-6 navigation items using Lucide icons + labels (narrow, ~60px collapsed, ~200px expanded)",
+      "Dark mode / light mode toggle persisted via localStorage",
+      "Existing Dashboard, EmailList, TaskList, Settings components still function correctly",
+      "shadcn/ui components installed and used for buttons, inputs, cards, dialogs, dropdowns",
+      "No inline style={{...}} in new/modified components — Tailwind classes instead"
+    ]
+  },
+  "steps": [
+    {
+      "id": "specify",
+      "phase": "specify",
+      "tier": "strong",
+      "prompt": "Write a detailed feature specification for the UI foundation setup.",
+      "status": "completed"
+    },
+    {
+      "id": "implement",
+      "phase": "implement",
+      "tier": "strong",
+      "prompt": "Implement the UI foundation: install Tailwind CSS, shadcn/ui, react-router-dom, lucide-react. Configure Tailwind with dark mode. Set up React Router with HashRouter. Create sidebar. Add dark/light mode toggle. Migrate components to Tailwind+shadcn.",
+      "status": "completed"
+    },
+    {
+      "id": "converge",
+      "phase": "converge",
+      "tier": "fast",
+      "prompt": "Review the implementation against the specification and success criteria.",
+      "status": "completed"
+    }
+  ],
+  "completed_steps": ["specify", "implement", "converge"],
+  "discovered": {
+    "skills_dirs": [],
+    "commands_dirs": [],
+    "local_skills": []
+  },
+  "step_results": {
+    "specify": {
+      "output": "Comprehensive feature specification covering Tailwind v4, shadcn/ui init, HashRouter, sidebar, dark/light mode, and component migration.",
+      "confidence": "HIGH"
+    },
+    "implement": {
+      "output": "Implemented Tailwind CSS v4, shadcn/ui (11 components), React Router with HashRouter, collapsible sidebar with Lucide icons, dark/light mode toggle with CSS variables, and migrated Dashboard, Settings, EmailList, TaskList from inline styles to Tailwind. Typecheck and build pass.",
+      "confidence": "HIGH"
+    },
+    "converge": {
+      "output": "All 6 success criteria verified: Tailwind configured, sidebar renders (60px/200px), dark/light mode persisted, existing components function, shadcn components used (11), inline styles only for dynamic values. Build passes. No non-goals violations.",
+      "confidence": "HIGH"
+    }
+  },
+  "spec_corrections": 0,
+  "iteration_count": 1,
+  "consecutive_tasks_appended": 0,
+  "consecutive_score_regressions": 0
+}

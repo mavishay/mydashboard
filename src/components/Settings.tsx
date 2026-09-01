@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { NotificationPreferences } from './notifications/NotificationPreferences';
 import { ClassificationRules } from './ClassificationRules';
 
@@ -56,7 +57,8 @@ function maskKey(label: string, provider: string): string {
   return `${provider.charAt(0).toUpperCase()}${provider.slice(1)}: ${label.slice(0, 3)}***`;
 }
 
-export function Settings({ onBack }: { onBack: () => void }) {
+export function Settings() {
+  const navigate = useNavigate();
   const [keys, setKeys] = useState<ApiKeyMeta[]>([]);
   const [gmailAccounts, setGmailAccounts] = useState<GmailAccount[]>([]);
   const [connecting, setConnecting] = useState(false);
@@ -365,67 +367,45 @@ export function Settings({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif', maxWidth: '640px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+    <div className="p-8 font-sans max-w-[640px]">
+      <div className="flex items-center gap-4 mb-6">
         <button
-          onClick={onBack}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '1.2rem',
-            padding: '0.25rem',
-          }}
+          onClick={() => navigate('/')}
+          className="bg-transparent border-none cursor-pointer text-xl p-1"
         >
           ← Back
         </button>
-        <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Settings</h1>
+        <h1 className="m-0 text-xl">Settings</h1>
       </div>
 
-      <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Google Accounts</h2>
-        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '1rem' }}>
+      <section className="mb-8">
+        <h2 className="text-lg mb-3">Google Accounts</h2>
+        <p className="text-muted-foreground text-sm mb-4">
           Connect your Google account to access Gmail and Google Tasks.
         </p>
 
         {gmailAccounts.length === 0 ? (
-          <p style={{ color: '#999', fontSize: '0.875rem', marginBottom: '1rem' }}>
+          <p className="text-muted-foreground text-sm mb-4">
             No accounts connected.
           </p>
         ) : (
-          <div style={{ marginBottom: '1rem' }}>
+          <div className="mb-4">
             {gmailAccounts.map((account) => (
               <div
                 key={account.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0.75rem 1rem',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '8px',
-                  marginBottom: '0.5rem',
-                }}
+                className="flex items-center justify-between p-3 border border-border rounded-lg mb-2"
               >
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>
+                  <div className="font-semibold text-sm">
                     {account.displayName}
                   </div>
-                  <div style={{ color: '#666', fontSize: '0.75rem' }}>
+                  <div className="text-muted-foreground text-xs">
                     {account.email}
                   </div>
                 </div>
                 <button
                   onClick={() => handleDisconnectGmail(account.id)}
-                  style={{
-                    background: 'none',
-                    border: '1px solid #d32f2f',
-                    color: '#d32f2f',
-                    borderRadius: '4px',
-                    padding: '0.25rem 0.5rem',
-                    cursor: 'pointer',
-                    fontSize: '0.75rem',
-                  }}
+                  className="bg-transparent border border-destructive text-destructive rounded px-2 py-1 cursor-pointer text-xs"
                 >
                   Disconnect
                 </button>
@@ -437,44 +417,39 @@ export function Settings({ onBack }: { onBack: () => void }) {
         <button
           onClick={handleConnectGmail}
           disabled={connecting}
-          style={{
-            padding: '0.625rem 1.25rem',
-            borderRadius: '4px',
-            border: 'none',
-            background: connecting ? '#ccc' : '#1976d2',
-            color: '#fff',
-            cursor: connecting ? 'not-allowed' : 'pointer',
-            fontSize: '0.875rem',
-            fontWeight: 600,
-          }}
+          className={`px-5 py-2.5 rounded border-none text-sm font-semibold ${
+            connecting
+              ? 'bg-muted text-muted-foreground cursor-not-allowed'
+              : 'bg-primary text-primary-foreground cursor-pointer'
+          }`}
         >
           {connecting ? 'Connecting...' : 'Connect Gmail Account'}
         </button>
       </section>
 
-      <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Auto-Fetch</h2>
-        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '1rem' }}>
+      <section className="mb-8">
+        <h2 className="text-lg mb-3">Auto-Fetch</h2>
+        <p className="text-muted-foreground text-sm mb-4">
           Automatically fetch and classify emails on a schedule. During work hours, emails are fetched every 5 minutes. Outside work hours, every 60 minutes.
         </p>
 
         {cronStatus ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={cronStatus.enabled}
                   onChange={handleCronToggle}
                   disabled={cronSaving}
-                  style={{ width: '1.25rem', height: '1.25rem' }}
+                  className="w-5 h-5"
                 />
-                <span style={{ fontSize: '0.875rem' }}>
+                <span className="text-sm">
                   {cronStatus.enabled ? 'Auto-fetch enabled' : 'Auto-fetch disabled'}
                 </span>
               </label>
               {cronStatus.enabled && (
-                <span style={{ color: '#666', fontSize: '0.75rem' }}>
+                <span className="text-muted-foreground text-xs">
                   Mode: {cronStatus.lastMode === 'work_hours' ? 'Work Hours' : 'Off Hours'} | 
                   Interval: {cronStatus.lastMode === 'work_hours' 
                     ? `${cronStatus.config.workIntervalSeconds / 60}min` 
@@ -482,8 +457,8 @@ export function Settings({ onBack }: { onBack: () => void }) {
                 </span>
               )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-              <span style={{ color: '#666' }}>Work hours:</span>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Work hours:</span>
               <input
                 type="number"
                 min={0}
@@ -495,7 +470,7 @@ export function Settings({ onBack }: { onBack: () => void }) {
                     debouncedCronUpdate({ workStartHour: val });
                   }
                 }}
-                style={{ width: '3rem', padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.875rem' }}
+                className="w-12 p-1 rounded border border-border text-sm"
               />
               <span>:</span>
               <input
@@ -509,9 +484,9 @@ export function Settings({ onBack }: { onBack: () => void }) {
                     debouncedCronUpdate({ workStartMinute: val });
                   }
                 }}
-                style={{ width: '3rem', padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.875rem' }}
+                className="w-12 p-1 rounded border border-border text-sm"
               />
-              <span style={{ color: '#666' }}>–</span>
+              <span className="text-muted-foreground">–</span>
               <input
                 type="number"
                 min={0}
@@ -523,7 +498,7 @@ export function Settings({ onBack }: { onBack: () => void }) {
                     debouncedCronUpdate({ workEndHour: val });
                   }
                 }}
-                style={{ width: '3rem', padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.875rem' }}
+                className="w-12 p-1 rounded border border-border text-sm"
               />
               <span>:</span>
               <input
@@ -537,40 +512,35 @@ export function Settings({ onBack }: { onBack: () => void }) {
                     debouncedCronUpdate({ workEndMinute: val });
                   }
                 }}
-                style={{ width: '3rem', padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.875rem' }}
+                className="w-12 p-1 rounded border border-border text-sm"
               />
             </div>
             <button
               onClick={handleCronRunNow}
               disabled={cronSaving || !cronStatus.enabled}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '4px',
-                border: '1px solid #ccc',
-                background: cronSaving || !cronStatus.enabled ? '#f5f5f5' : '#1976d2',
-                color: cronSaving || !cronStatus.enabled ? '#999' : '#fff',
-                cursor: cronSaving || !cronStatus.enabled ? 'not-allowed' : 'pointer',
-                fontSize: '0.875rem',
-                alignSelf: 'flex-start',
-              }}
+              className={`px-4 py-2 rounded border text-sm self-start ${
+                cronSaving || !cronStatus.enabled
+                  ? 'bg-muted text-muted-foreground cursor-not-allowed border-border'
+                  : 'bg-primary text-primary-foreground cursor-pointer border-transparent'
+              }`}
             >
               {cronSaving ? 'Running...' : 'Run Now'}
             </button>
           </div>
         ) : (
-          <p style={{ color: '#999', fontSize: '0.875rem' }}>Loading...</p>
+          <p className="text-muted-foreground text-sm">Loading...</p>
         )}
       </section>
 
-      <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Email Retention</h2>
-        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '1rem' }}>
+      <section className="mb-8">
+        <h2 className="text-lg mb-3">Email Retention</h2>
+        <p className="text-muted-foreground text-sm mb-4">
           Read emails are automatically deleted from the local database after the retention period. Only unread emails are shown.
         </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-            <span style={{ color: '#666' }}>Delete read emails after</span>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Delete read emails after</span>
             <input
               type="number"
               min={1}
@@ -583,30 +553,25 @@ export function Settings({ onBack }: { onBack: () => void }) {
                 }
               }}
               disabled={retentionSaving}
-              style={{ width: '3rem', padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.875rem' }}
+              className="w-12 p-1 rounded border border-border text-sm"
             />
-            <span style={{ color: '#666' }}>days (1-30)</span>
+            <span className="text-muted-foreground">days (1-30)</span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="flex items-center gap-2">
             <button
               onClick={handleRunCleanup}
               disabled={cleanupRunning}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '4px',
-                border: '1px solid #ccc',
-                background: cleanupRunning ? '#f5f5f5' : '#1976d2',
-                color: cleanupRunning ? '#999' : '#fff',
-                cursor: cleanupRunning ? 'not-allowed' : 'pointer',
-                fontSize: '0.875rem',
-                alignSelf: 'flex-start',
-              }}
+              className={`px-4 py-2 rounded border text-sm self-start ${
+                cleanupRunning
+                  ? 'bg-muted text-muted-foreground cursor-not-allowed border-border'
+                  : 'bg-primary text-primary-foreground cursor-pointer border-transparent'
+              }`}
             >
               {cleanupRunning ? 'Running...' : 'Run Cleanup Now'}
             </button>
             {cleanupResult && (
-              <span style={{ color: '#666', fontSize: '0.75rem' }}>
+              <span className="text-muted-foreground text-xs">
                 Deleted {cleanupResult.deleted} email{cleanupResult.deleted !== 1 ? 's' : ''} | {cleanupResult.eligibleCount} eligible
               </span>
             )}
@@ -614,18 +579,18 @@ export function Settings({ onBack }: { onBack: () => void }) {
         </div>
       </section>
 
-      <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Account Colors</h2>
-        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '1rem' }}>
+      <section className="mb-8">
+        <h2 className="text-lg mb-3">Account Colors</h2>
+        <p className="text-muted-foreground text-sm mb-4">
           Customize colors to identify accounts.
         </p>
 
         {gmailAccounts.length === 0 ? (
-          <p style={{ color: '#999', fontSize: '0.875rem', marginBottom: '1rem' }}>
+          <p className="text-muted-foreground text-sm mb-4">
             Connect an account to customize colors.
           </p>
         ) : (
-          <div style={{ marginBottom: '1rem' }}>
+          <div className="mb-4">
             {gmailAccounts.map((account) => {
               const accountColor = account.color || DEFAULT_COLOR;
               const isEditing = editingAccountId === account.id;
@@ -633,32 +598,15 @@ export function Settings({ onBack }: { onBack: () => void }) {
               return (
                 <div
                   key={account.id}
-                  style={{
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '8px',
-                    marginBottom: '0.5rem',
-                    overflow: 'hidden',
-                  }}
+                  className="border border-border rounded-lg mb-2 overflow-hidden"
                 >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '0.75rem 1rem',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div className="flex items-center justify-between p-3">
+                    <div className="flex items-center gap-3">
                       <div
-                        style={{
-                          width: '16px',
-                          height: '16px',
-                          borderRadius: '50%',
-                          backgroundColor: accountColor,
-                          flexShrink: 0,
-                        }}
+                        className="w-4 h-4 rounded-full shrink-0"
+                        style={{ backgroundColor: accountColor }}
                       />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>
+                      <span className="text-sm font-medium">
                         {account.email}
                       </span>
                     </div>
@@ -673,31 +621,15 @@ export function Settings({ onBack }: { onBack: () => void }) {
                           setHexError(null);
                         }
                       }}
-                      style={{
-                        background: 'none',
-                        border: '1px solid #1976d2',
-                        color: '#1976d2',
-                        borderRadius: '4px',
-                        padding: '0.25rem 0.5rem',
-                        cursor: 'pointer',
-                        fontSize: '0.75rem',
-                      }}
+                      className="bg-transparent border border-primary text-primary rounded px-2 py-1 cursor-pointer text-xs"
                     >
                       {isEditing ? 'Cancel' : 'Edit'}
                     </button>
                   </div>
 
                   {isEditing && (
-                    <div style={{ padding: '0 1rem 1rem', borderTop: '1px solid #eee' }}>
-                      <div
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(5, 1fr)',
-                          gap: '0.5rem',
-                          marginBottom: '1rem',
-                          marginTop: '0.75rem',
-                        }}
-                      >
+                    <div className="px-4 pb-4 border-t border-border">
+                      <div className="grid grid-cols-5 gap-2 mb-4 mt-3">
                         {PRESET_COLORS.map((color) => (
                           <button
                             key={color}
@@ -707,22 +639,18 @@ export function Settings({ onBack }: { onBack: () => void }) {
                               setHexInput('');
                               setHexError(null);
                             }}
+                            className="w-8 h-8 rounded-full border-2 cursor-pointer justify-self-center"
                             style={{
-                              width: '32px',
-                              height: '32px',
-                              borderRadius: '50%',
                               backgroundColor: color,
-                              border: editingColor === color ? '3px solid #333' : '2px solid transparent',
-                              cursor: 'pointer',
-                              justifySelf: 'center',
+                              borderColor: editingColor === color ? 'hsl(var(--foreground))' : 'transparent',
                             }}
                             title={color}
                           />
                         ))}
                       </div>
 
-                      <div style={{ marginBottom: '0.75rem' }}>
-                        <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                      <div className="mb-3">
+                        <label className="block text-sm mb-1">
                           Custom Color
                         </label>
                         <input
@@ -743,50 +671,33 @@ export function Settings({ onBack }: { onBack: () => void }) {
                               setHexError('Enter a valid hex color (e.g. #ff0000)');
                             }
                           }}
-                          style={{
-                            width: '100%',
-                            padding: '0.5rem',
-                            borderRadius: '4px',
-                            border: '1px solid #ccc',
-                            fontFamily: 'monospace',
-                          }}
+                          className="w-full p-2 rounded border border-border font-mono"
                         />
                         {hexError && (
-                          <div style={{ color: '#d32f2f', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                          <div className="text-destructive text-xs mt-1">
                             {hexError}
                           </div>
                         )}
                       </div>
 
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <div className="flex gap-2 items-center">
                         <button
                           onClick={() => handleApplyColor(account.id)}
                           disabled={colorSaving || hexError !== null}
-                          style={{
-                            padding: '0.5rem 1rem',
-                            borderRadius: '4px',
-                            border: 'none',
-                            background: colorSaving || hexError ? '#ccc' : '#1976d2',
-                            color: '#fff',
-                            cursor: colorSaving || hexError ? 'not-allowed' : 'pointer',
-                            fontSize: '0.875rem',
-                            fontWeight: 600,
-                          }}
+                          className={`px-4 py-2 rounded border-none text-sm font-semibold ${
+                            colorSaving || hexError
+                              ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                              : 'bg-primary text-primary-foreground cursor-pointer'
+                          }`}
                         >
                           {colorSaving ? 'Saving...' : 'Apply'}
                         </button>
                         <button
                           onClick={() => handleResetColor(account.id)}
                           disabled={colorSaving}
-                          style={{
-                            padding: '0.5rem 1rem',
-                            borderRadius: '4px',
-                            border: '1px solid #999',
-                            background: 'none',
-                            color: '#666',
-                            cursor: colorSaving ? 'not-allowed' : 'pointer',
-                            fontSize: '0.875rem',
-                          }}
+                          className={`px-4 py-2 rounded border border-muted text-muted-foreground text-sm ${
+                            colorSaving ? 'cursor-not-allowed' : 'cursor-pointer'
+                          }`}
                         >
                           Reset to Default
                         </button>
@@ -800,18 +711,18 @@ export function Settings({ onBack }: { onBack: () => void }) {
         )}
       </section>
 
-      <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Add API Key</h2>
+      <section className="mb-8">
+        <h2 className="text-lg mb-3">Add API Key</h2>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div className="flex flex-col gap-3">
           <div>
-            <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+            <label className="block text-sm mb-1">
               Provider
             </label>
             <select
               value={provider}
               onChange={(e) => setProvider(e.target.value as Provider)}
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+              className="w-full p-2 rounded border border-border"
             >
               <option value="openai">OpenAI</option>
               <option value="anthropic">Anthropic</option>
@@ -820,7 +731,7 @@ export function Settings({ onBack }: { onBack: () => void }) {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+            <label className="block text-sm mb-1">
               Label
             </label>
             <input
@@ -828,13 +739,13 @@ export function Settings({ onBack }: { onBack: () => void }) {
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               placeholder={`${PROVIDER_LABELS[provider]} Key`}
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+              className="w-full p-2 rounded border border-border"
             />
           </div>
 
           {provider === 'litellm' && (
             <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+              <label className="block text-sm mb-1">
                 Base URL
               </label>
               <input
@@ -842,27 +753,27 @@ export function Settings({ onBack }: { onBack: () => void }) {
                 value={baseUrl}
                 onChange={(e) => setBaseUrl(e.target.value)}
                 placeholder="http://localhost:4000"
-                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                className="w-full p-2 rounded border border-border"
               />
             </div>
           )}
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+            <label className="block text-sm mb-1">
               API Key
             </label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div className="flex gap-2">
               <input
                 type={showKey ? 'text' : 'password'}
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder="sk-..."
-                style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                className="flex-1 p-2 rounded border border-border"
               />
               <button
                 type="button"
                 onClick={() => setShowKey(!showKey)}
-                style={{ padding: '0.5rem 0.75rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f5f5f5', cursor: 'pointer' }}
+                className="px-3 py-2 rounded border border-border bg-secondary cursor-pointer"
               >
                 {showKey ? 'Hide' : 'Show'}
               </button>
@@ -870,13 +781,13 @@ export function Settings({ onBack }: { onBack: () => void }) {
           </div>
 
           {error && (
-            <div style={{ color: '#d32f2f', fontSize: '0.875rem', padding: '0.5rem', background: '#ffeaea', borderRadius: '4px' }}>
+            <div className="text-destructive text-sm p-2 bg-destructive/10 rounded">
               {error}
             </div>
           )}
 
           {success && (
-            <div style={{ color: '#2e7d32', fontSize: '0.875rem', padding: '0.5rem', background: '#e8f5e9', borderRadius: '4px' }}>
+            <div className="text-green-500 dark:text-green-400 text-sm p-2 bg-green-500/10 rounded">
               API key saved and validated successfully.
             </div>
           )}
@@ -884,17 +795,11 @@ export function Settings({ onBack }: { onBack: () => void }) {
           <button
             onClick={handleSave}
             disabled={saving || !apiKey}
-            style={{
-              padding: '0.625rem 1.25rem',
-              borderRadius: '4px',
-              border: 'none',
-              background: saving || !apiKey ? '#ccc' : '#1976d2',
-              color: '#fff',
-              cursor: saving || !apiKey ? 'not-allowed' : 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              alignSelf: 'flex-start',
-            }}
+            className={`px-5 py-2.5 rounded border-none text-sm font-semibold self-start ${
+              saving || !apiKey
+                ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                : 'bg-primary text-primary-foreground cursor-pointer'
+            }`}
           >
             {saving ? 'Validating & Saving...' : 'Save API Key'}
           </button>
@@ -902,39 +807,31 @@ export function Settings({ onBack }: { onBack: () => void }) {
       </section>
 
       <section>
-        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Saved API Keys</h2>
+        <h2 className="text-lg mb-3">Saved API Keys</h2>
         {keys.length === 0 ? (
-          <p style={{ color: '#666', fontSize: '0.875rem' }}>No API keys configured.</p>
+          <p className="text-muted-foreground text-sm">No API keys configured.</p>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr style={{ borderBottom: '2px solid #eee' }}>
-                <th style={{ textAlign: 'left', padding: '0.5rem' }}>Label</th>
-                <th style={{ textAlign: 'left', padding: '0.5rem' }}>Provider</th>
-                <th style={{ textAlign: 'left', padding: '0.5rem' }}>Key</th>
-                <th style={{ textAlign: 'left', padding: '0.5rem' }}>Base URL</th>
-                <th style={{ padding: '0.5rem' }} />
+              <tr className="border-b-2 border-border">
+                <th className="text-left p-2">Label</th>
+                <th className="text-left p-2">Provider</th>
+                <th className="text-left p-2">Key</th>
+                <th className="text-left p-2">Base URL</th>
+                <th className="p-2" />
               </tr>
             </thead>
             <tbody>
               {keys.map((key) => (
-                <tr key={key.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '0.5rem' }}>{key.label}</td>
-                  <td style={{ padding: '0.5rem' }}>{PROVIDER_LABELS[key.provider]}</td>
-                  <td style={{ padding: '0.5rem', fontFamily: 'monospace' }}>{maskKey(key.label, key.provider)}</td>
-                  <td style={{ padding: '0.5rem', fontFamily: 'monospace' }}>{key.baseUrl ?? '—'}</td>
-                  <td style={{ padding: '0.5rem', textAlign: 'right' }}>
+                <tr key={key.id} className="border-b border-border">
+                  <td className="p-2">{key.label}</td>
+                  <td className="p-2">{PROVIDER_LABELS[key.provider]}</td>
+                  <td className="p-2 font-mono">{maskKey(key.label, key.provider)}</td>
+                  <td className="p-2 font-mono">{key.baseUrl ?? '—'}</td>
+                  <td className="p-2 text-right">
                     <button
                       onClick={() => handleDelete(key.id)}
-                      style={{
-                        background: 'none',
-                        border: '1px solid #d32f2f',
-                        color: '#d32f2f',
-                        borderRadius: '4px',
-                        padding: '0.25rem 0.5rem',
-                        cursor: 'pointer',
-                        fontSize: '0.75rem',
-                      }}
+                      className="bg-transparent border border-destructive text-destructive rounded px-2 py-1 cursor-pointer text-xs"
                     >
                       Delete
                     </button>
@@ -946,71 +843,71 @@ export function Settings({ onBack }: { onBack: () => void }) {
         )}
       </section>
 
-      <section style={{ marginTop: '2rem', borderTop: '1px solid #eee', paddingTop: '2rem' }}>
-        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Telemetry</h2>
-        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '1rem' }}>
+      <section className="mt-8 border-t border-border pt-8">
+        <h2 className="text-lg mb-3">Telemetry</h2>
+        <p className="text-muted-foreground text-sm mb-4">
           Help us improve by sharing anonymous usage statistics. No personal data is collected.
         </p>
         {telemetrySettings ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={telemetrySettings.optedIn}
                 onChange={handleTelemetryToggle}
                 disabled={telemetrySaving}
-                style={{ width: '1.25rem', height: '1.25rem' }}
+                className="w-5 h-5"
               />
-              <span style={{ fontSize: '0.875rem' }}>
+              <span className="text-sm">
                 {telemetrySettings.optedIn ? 'Telemetry enabled' : 'Telemetry disabled'}
               </span>
             </label>
             {telemetrySettings.consentedAt && (
-              <span style={{ color: '#999', fontSize: '0.75rem' }}>
+              <span className="text-muted-foreground text-xs">
                 Since: {new Date(telemetrySettings.consentedAt).toLocaleDateString()}
               </span>
             )}
           </div>
         ) : (
-          <p style={{ color: '#999', fontSize: '0.875rem' }}>Loading...</p>
+          <p className="text-muted-foreground text-sm">Loading...</p>
         )}
       </section>
 
-      <section style={{ marginTop: '2rem', borderTop: '1px solid #eee', paddingTop: '2rem' }}>
-        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>AI Features</h2>
-        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '1rem' }}>
+      <section className="mt-8 border-t border-border pt-8">
+        <h2 className="text-lg mb-3">AI Features</h2>
+        <p className="text-muted-foreground text-sm mb-4">
           AI features classify your emails and send email subject, sender address, and preview snippet to external LLM providers (OpenAI/Anthropic). You provide your own API keys.
         </p>
         {aiConsentSettings ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={aiConsentSettings.consented}
                 onChange={handleAiConsentToggle}
                 disabled={aiConsentSaving}
-                style={{ width: '1.25rem', height: '1.25rem' }}
+                className="w-5 h-5"
               />
-              <span style={{ fontSize: '0.875rem' }}>
+              <span className="text-sm">
                 {aiConsentSettings.consented ? 'AI features enabled' : 'AI features disabled'}
               </span>
             </label>
             {aiConsentSettings.consentedAt && (
-              <span style={{ color: '#999', fontSize: '0.75rem' }}>
+              <span className="text-muted-foreground text-xs">
                 Since: {new Date(aiConsentSettings.consentedAt).toLocaleDateString()}
               </span>
             )}
           </div>
         ) : (
-          <p style={{ color: '#999', fontSize: '0.875rem' }}>Loading...</p>
+          <p className="text-muted-foreground text-sm">Loading...</p>
         )}
-        <div style={{ marginTop: '2rem' }}>
+        <div className="mt-8">
           <NotificationPreferences />
         </div>
       </section>
 
-      <section style={{ marginTop: '2rem', borderTop: '1px solid #eee', paddingTop: '2rem' }}>
-        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>Classification Rules</h2>
+      <section className="mt-8 border-t border-border pt-8">
+        <h2 className="text-lg mb-3">Classification Rules</h2>
         <ClassificationRules />
       </section>
     </div>
