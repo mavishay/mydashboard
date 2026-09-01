@@ -35,6 +35,20 @@ const mockTasks = {
   createFromEmail: vi.fn(),
 };
 
+let cronStatusCallback: ((status: unknown) => void) | null = null;
+
+const mockCron = {
+  start: vi.fn(),
+  stop: vi.fn(),
+  status: vi.fn(),
+  updateConfig: vi.fn(),
+  runNow: vi.fn(),
+  onStatusUpdate: vi.fn((callback: (status: unknown) => void) => {
+    cronStatusCallback = callback;
+    return vi.fn();
+  }),
+};
+
 function setupDefaults() {
   mockClassification.getEmails.mockResolvedValue([]);
   mockGmail.listAccounts.mockResolvedValue([]);
@@ -44,8 +58,10 @@ function setupDefaults() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.useRealTimers();
   localStorage.clear();
   setupDefaults();
+  cronStatusCallback = null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (globalThis as any).window = {
     electronAPI: {
@@ -54,6 +70,7 @@ beforeEach(() => {
       googleTasks: mockGoogleTasks,
       ticktick: mockTickTick,
       tasks: mockTasks,
+      cron: mockCron,
     },
     alert: vi.fn(),
     navigator: {
@@ -239,6 +256,41 @@ describe('EmailList', () => {
     expect(unreadSubject?.closest('div[style*="font-weight"]')?.getAttribute('style')).toContain('font-weight: 700');
     expect(readSubject?.closest('div[style*="font-weight"]')?.getAttribute('style')).toContain('font-weight: 500');
   });
+
+  it('refreshes emails when cron status update fires', async () => {
+    mockGmail.listAccounts.mockResolvedValue([{ id: 'a1', email: 't@g.com', displayName: 'T' }]);
+    mockClassification.getEmails
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: 'e1', accountId: 'a1', externalId: 'ext1', subject: 'New Email', snippet: null, fromAddress: null, receivedAt: null, classification: 'urgent', isRead: 0 }]);
+
+    await renderEmailList();
+    expect(mockCron.onStatusUpdate).toHaveBeenCalled();
+    expect(screen.queryByText(/No emails found|Loading emails/)).toBeTruthy();
+
+    await act(async () => {
+      cronStatusCallback?.({ enabled: true, running: false });
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+
+    expect(screen.queryByText('New Email')).toBeTruthy();
+  });
+
+  it('sets up polling interval for fallback refresh', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    mockGmail.listAccounts.mockResolvedValue([{ id: 'a1', email: 't@g.com', displayName: 'T' }]);
+    mockClassification.getEmails
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: 'e1', accountId: 'a1', externalId: 'ext1', subject: 'Polled Email', snippet: null, fromAddress: null, receivedAt: null, classification: 'urgent', isRead: 0 }]);
+
+    await renderEmailList();
+    expect(screen.queryByText(/No emails found|Loading emails/)).toBeTruthy();
+
+    vi.advanceTimersByTime(5 * 60 * 1000);
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(screen.queryByText('Polled Email')).toBeTruthy();
+    vi.useRealTimers();
+  });
 });
 
 describe('SortGroupControls', () => {
@@ -342,6 +394,7 @@ describe('Keyboard shortcuts', () => {
         googleTasks: { listAccounts: vi.fn().mockResolvedValue([]), listLists: vi.fn() },
         ticktick: { listAccounts: vi.fn().mockResolvedValue([]), listProjects: vi.fn() },
         tasks: { createFromEmail: vi.fn() },
+        cron: mockCron,
       },
       alert: vi.fn(),
     };
