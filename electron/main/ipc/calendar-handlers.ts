@@ -61,6 +61,10 @@ export function registerCalendarHandlers(
     return calendarSync.getTodayEvents();
   });
 
+  ipcMain.handle('calendar:getFilteredEvents', async (_, { startDate, endDate }) => {
+    return calendarSync.getEventsForDateRange(startDate, endDate);
+  });
+
   ipcMain.handle('calendar:status', async (): Promise<CalendarSyncStatus[]> => {
     const accounts = db
       .prepare("SELECT id FROM accounts WHERE type IN ('gmail', 'google_tasks')")
