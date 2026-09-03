@@ -106,14 +106,7 @@ export class CalendarSync {
     accountEmail: string;
     accountColor: string | null;
   }> {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const endOfDay = new Date(startOfDay);
-    endOfDay.setDate(endOfDay.getDate() + 1);
-    
-    const startStr = startOfDay.toISOString();
-    const endStr = endOfDay.toISOString();
-
+    const now = new Date().toISOString();
     const events = this.db
       .prepare(`
         SELECT 
@@ -122,14 +115,72 @@ export class CalendarSync {
           a.color as account_color
         FROM calendar_events ce
         JOIN accounts a ON ce.account_id = a.id
-        WHERE (
-          (ce.all_day = 1 AND ce.start_time >= ? AND ce.start_time < ?)
-          OR
-          (ce.all_day = 0 AND ce.start_time < ? AND ce.end_time > ?)
-        )
-        ORDER BY ce.all_day DESC, ce.start_time ASC
+        WHERE date(ce.start_time) = date('now')
+          AND ce.all_day = 0
+          AND ce.end_time > ?
+        ORDER BY ce.start_time ASC
       `)
-      .all(startStr, endStr, endStr, startStr) as Array<{
+      .all(now) as Array<{
+        id: string;
+        account_id: string;
+        title: string;
+        start_time: string;
+        end_time: string;
+        all_day: number;
+        location: string | null;
+        description: string | null;
+        html_link: string | null;
+        calendar_name: string | null;
+        account_email: string;
+        account_color: string | null;
+      }>;
+
+    return events.map((e) => ({
+      id: e.id,
+      accountId: e.account_id,
+      title: e.title,
+      startTime: e.start_time,
+      endTime: e.end_time,
+      allDay: e.all_day === 1,
+      location: e.location,
+      description: e.description,
+      htmlLink: e.html_link,
+      calendarName: e.calendar_name,
+      accountEmail: e.account_email,
+      accountColor: e.account_color,
+    }));
+  }
+
+  getEventsForDateRange(startDate: string, endDate: string): Array<{
+    id: string;
+    accountId: string;
+    title: string;
+    startTime: string;
+    endTime: string;
+    allDay: boolean;
+    location: string | null;
+    description: string | null;
+    htmlLink: string | null;
+    calendarName: string | null;
+    accountEmail: string;
+    accountColor: string | null;
+  }> {
+    const now = new Date().toISOString();
+    const events = this.db
+      .prepare(`
+        SELECT 
+          ce.*,
+          a.email as account_email,
+          a.color as account_color
+        FROM calendar_events ce
+        JOIN accounts a ON ce.account_id = a.id
+        WHERE date(ce.start_time) >= date(?)
+          AND date(ce.start_time) <= date(?)
+          AND ce.all_day = 0
+          AND ce.end_time > ?
+        ORDER BY ce.start_time ASC
+      `)
+      .all(startDate, endDate, now) as Array<{
         id: string;
         account_id: string;
         title: string;
