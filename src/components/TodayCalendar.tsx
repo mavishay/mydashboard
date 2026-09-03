@@ -51,6 +51,11 @@ export function TodayCalendar({ onError }: TodayCalendarProps) {
   useEffect(() => {
     loadEventsFromDB();
     syncInBackground();
+
+    const unsubscribe = window.electronAPI.cron.onStatusUpdate(() => {
+      loadEventsFromDB();
+    });
+    return unsubscribe;
   }, []);
 
   const formatTime = (dateTime: string): string => {
