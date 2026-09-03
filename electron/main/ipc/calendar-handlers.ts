@@ -6,6 +6,11 @@ const SyncSchema = z.object({
   accountId: z.string().min(1),
 });
 
+const DateRangeSchema = z.object({
+  startDate: z.string().min(1),
+  endDate: z.string().min(1),
+});
+
 export interface CalendarEventResponse {
   id: string;
   accountId: string;
@@ -61,9 +66,17 @@ export function registerCalendarHandlers(
     return calendarSync.getTodayEvents();
   });
 
-  ipcMain.handle('calendar:getFilteredEvents', async (_, { startDate, endDate }) => {
-    return calendarSync.getEventsForDateRange(startDate, endDate);
-  });
+  ipcMain.handle(
+    'calendar:getFilteredEvents',
+    async (_, rawPayload: { startDate: string; endDate: string }): Promise<CalendarEventResponse[]> => {
+      const parsed = DateRangeSchema.safeParse(rawPayload);
+      if (!parsed.success) {
+        throw new Error(`Invalid payload: ${parsed.error.message}`);
+      }
+
+      return calendarSync.getEventsForDateRange(parsed.data.startDate, parsed.data.endDate);
+    }
+  );
 
   ipcMain.handle('calendar:status', async (): Promise<CalendarSyncStatus[]> => {
     const accounts = db
