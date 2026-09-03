@@ -15,6 +15,7 @@ import {
 import { SortGroupControls } from './email/SortGroupControls';
 import { EmailGroupHeader } from './email/EmailGroupHeader';
 import { EmailPreviewModal } from './EmailPreviewModal';
+import { useToast } from './Toast';
 
 type Classification = 'urgent' | 'action' | 'fyi' | 'noise' | null;
 
@@ -48,11 +49,11 @@ interface TaskListItem {
 }
 
 const CLASSIFICATION_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  urgent: { bg: '#ffebee', text: '#c62828', label: 'Urgent' },
-  action: { bg: '#fff3e0', text: '#e65100', label: 'Action' },
-  fyi: { bg: '#e8f5e9', text: '#2e7d32', label: 'FYI' },
-  noise: { bg: '#f5f5f5', text: '#757575', label: 'Noise' },
-  unclassified: { bg: '#e3f2fd', text: '#1565c0', label: 'Unclassified' },
+  urgent: { bg: 'oklch(0.95 0.05 27)', text: 'oklch(0.45 0.2 27)', label: 'Urgent' },
+  action: { bg: 'oklch(0.95 0.05 70)', text: 'oklch(0.5 0.15 70)', label: 'Action' },
+  fyi: { bg: 'oklch(0.95 0.05 145)', text: 'oklch(0.45 0.15 145)', label: 'FYI' },
+  noise: { bg: 'oklch(0.95 0 0)', text: 'oklch(0.55 0 0)', label: 'Noise' },
+  unclassified: { bg: 'oklch(0.95 0.03 240)', text: 'oklch(0.45 0.1 240)', label: 'Unclassified' },
 };
 
 function formatDate(dateStr: string | null): string {
@@ -89,7 +90,8 @@ function ClassificationBadge({ classification }: { classification: Classificatio
   );
 }
 
-export function EmailList({ onCountChange }: { onCountChange?: (count: number) => void } = {}) {
+export function EmailList({ onCountChange }: { onCountChange?: (count: number | ((prev: number) => number)) => void } = {}) {
+  const { toast } = useToast();
   const [emails, setEmails] = useState<Email[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string>('');
@@ -364,7 +366,7 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
         description: email.snippet || undefined,
       });
       if (!result.success) throw new Error(result.error);
-      window.alert('Task created successfully');
+      toast('Task created successfully', 'success');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create task from email');
     } finally {
@@ -570,15 +572,31 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
 
       <div className="flex-1 overflow-auto">
         {loading ? (
-          <p className="text-muted-foreground text-center p-8">Loading emails...</p>
+          <div className="flex flex-col gap-3 p-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="p-3 border border-border rounded-xl animate-pulse">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-4 w-4 bg-muted rounded" />
+                  <div className="h-2 w-2 bg-muted rounded-full" />
+                  <div className="h-4 w-20 bg-muted rounded" />
+                  <div className="h-4 w-12 bg-muted rounded-full" />
+                </div>
+                <div className="h-4 w-3/4 bg-muted rounded mb-2" />
+                <div className="h-3 w-full bg-muted rounded" />
+              </div>
+            ))}
+          </div>
         ) : emails.length === 0 ? (
-          <p className="text-muted-foreground text-center p-8">
-            {accounts.length === 0
-              ? 'Connect a Gmail account in Settings to get started.'
-              : 'No emails found. Click "Fetch Emails" to sync.'}
-          </p>
+          <div className="flex flex-col items-center justify-center p-8 text-center">
+            <div className="text-4xl mb-3 opacity-50">📧</div>
+            <p className="text-muted-foreground text-sm font-medium">
+              {accounts.length === 0
+                ? 'Connect a Gmail account in Settings to get started.'
+                : 'No emails found. Click "Fetch Emails" to sync.'}
+            </p>
+          </div>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             {[...groupedEmails.entries()].map(([groupKey, groupEmails]) => (
               <div key={groupKey} className="flex flex-col gap-2">
                 {groupPrefs.option !== 'none' && (
@@ -596,16 +614,16 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
                       setPreviewEmailId(email.id);
                       setPreviewAccountId(email.accountId);
                     }}
-                    className="p-3 border border-border rounded-lg cursor-pointer ml-4"
+                    className="group relative p-3 border border-border rounded-xl cursor-pointer ml-4 transition-all duration-200 hover:shadow-md hover:border-primary/30"
                     style={{
-                      borderLeftWidth: '3px',
+                      borderLeftWidth: '4px',
                       borderLeftColor: accountsColorMap[email.accountId] ?? '#9e9e9e',
-                      background: (CLASSIFICATION_COLORS[email.classification ?? 'unclassified']?.bg ?? '#e3f2fd') + '20',
+                      background: email.isRead ? 'hsl(var(--card))' : (CLASSIFICATION_COLORS[email.classification ?? 'unclassified']?.bg ?? '#e3f2fd') + '15',
                     }}
                   >
-                    <div className="flex justify-between items-start gap-2">
+                    <div className="flex justify-between items-start gap-3">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1.5">
                           <input
                             type="checkbox"
                             checked={selectedIds.has(email.id)}
@@ -619,57 +637,54 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number) =
                               });
                             }}
                             onClick={(e) => e.stopPropagation()}
-                            className="shrink-0 cursor-pointer"
+                            className="shrink-0 cursor-pointer h-4 w-4 rounded border-border"
                           />
-                          {!email.isRead && (
-                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                          )}
-                          <span className="font-semibold text-sm">
+                          <span
+                            className="w-2 h-2 rounded-full shrink-0"
+                            style={{ background: accountsColorMap[email.accountId] ?? '#9e9e9e' }}
+                          />
+                          <span className={`text-sm ${email.isRead ? 'text-muted-foreground' : 'font-semibold text-foreground'}`}>
                             {extractDisplayName(email.fromAddress)}
                           </span>
                           <ClassificationBadge classification={email.classification} />
                         </div>
-                        <div className={`text-sm mb-1 transition-all duration-300 ${email.isRead ? 'font-medium' : 'font-bold'}`}>
+                        <div className={`text-sm mb-1.5 ${email.isRead ? 'font-medium text-foreground/80' : 'font-bold text-foreground'}`}>
                           {email.subject || '(no subject)'}
                         </div>
-                        <div className="text-muted-foreground text-xs overflow-hidden text-ellipsis whitespace-nowrap">
+                        <div className="text-muted-foreground text-xs line-clamp-1">
                           {email.snippet}
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-1">
+                      <div className="flex flex-col items-end gap-2 shrink-0">
                         <span className="text-muted-foreground text-xs whitespace-nowrap">
                           {formatDate(email.receivedAt)}
                         </span>
-                        {!email.isRead && (
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          {!email.isRead && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMarkAsRead(email);
+                              }}
+                              disabled={markingIds.has(email.id)}
+                              className="px-2 py-1 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                              title="Mark as read"
+                            >
+                              {markingIds.has(email.id) ? '...' : '✓'}
+                            </button>
+                          )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleMarkAsRead(email);
+                              handleConvertToTask(email);
                             }}
-                            disabled={markingIds.has(email.id)}
-                            className={`px-2 py-1 rounded border text-xs font-semibold ${
-                              markingIds.has(email.id)
-                                ? 'bg-muted text-muted-foreground cursor-not-allowed border-border'
-                                : 'bg-transparent text-muted-foreground cursor-pointer border-border'
-                            }`}
+                            disabled={convertingIds.has(email.id)}
+                            className="px-2 py-1 rounded-md text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+                            title="Convert to task"
                           >
-                            {markingIds.has(email.id) ? 'Marking...' : 'Mark Read'}
+                            {convertingIds.has(email.id) ? '...' : '+Task'}
                           </button>
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleConvertToTask(email);
-                          }}
-                          disabled={convertingIds.has(email.id)}
-                          className={`px-2 py-1 rounded border text-xs font-semibold ${
-                            convertingIds.has(email.id)
-                              ? 'bg-primary/10 text-primary/50 cursor-not-allowed border-primary/20'
-                              : 'bg-primary text-primary-foreground cursor-pointer border-transparent'
-                          }`}
-                        >
-                          {convertingIds.has(email.id) ? 'Creating...' : 'Convert to Task'}
-                        </button>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -49,29 +49,31 @@ export function Dashboard() {
   }, []);
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="m-0">Focus Board</h1>
-        <div className="flex gap-2 items-center">
+    <div className="h-screen flex flex-col">
+      <div className="sticky top-0 z-10 bg-background border-b border-border px-6 py-4 flex justify-between items-center shrink-0">
+        <h1 className="m-0 text-xl font-semibold">Focus Board</h1>
+        <div className="flex gap-3 items-center">
           <StatusBar services={services} onClick={() => setShowPanel(true)} dndEnabled={dndEnabled} cronStatus={cronStatus} />
           <button
             onClick={() => navigate('/settings')}
-            className="px-4 py-2 rounded border border-border bg-secondary text-secondary-foreground cursor-pointer text-sm"
+            className="px-4 py-2 rounded-lg border border-border bg-secondary text-secondary-foreground cursor-pointer text-sm font-medium hover:bg-secondary/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             Settings
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-[1fr_380px] gap-4 mt-4" style={{ height: 'calc(100vh - 120px)' }}>
-        <div className="border border-border rounded-lg p-4 overflow-hidden flex flex-col">
-          <h2 className="m-0 mb-4">Email{emailCount > 0 ? ` (${emailCount})` : ''}</h2>
-          <EmailList onCountChange={setEmailCount} />
-        </div>
-        <div className="border border-border rounded-lg p-4 overflow-hidden flex flex-col">
-          <TodayCalendar />
-          <div className="border-t border-border mt-3 pt-3">
-            <h2 className="m-0 mb-4">Tasks</h2>
-            <TaskList />
+      <div className="flex-1 p-4 overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4 h-full">
+          <div className="border border-border rounded-xl p-4 overflow-hidden flex flex-col bg-card">
+            <h2 className="m-0 mb-4 text-base font-semibold">Email{emailCount > 0 ? ` (${emailCount})` : ''}</h2>
+            <EmailList onCountChange={setEmailCount} />
+          </div>
+          <div className="border border-border rounded-xl p-4 overflow-hidden flex flex-col bg-card">
+            <TodayCalendar />
+            <div className="border-t border-border mt-3 pt-3">
+              <h2 className="m-0 mb-4 text-base font-semibold">Tasks</h2>
+              <TaskList />
+            </div>
           </div>
         </div>
       </div>

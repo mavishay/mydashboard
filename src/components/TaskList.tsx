@@ -417,23 +417,35 @@ function TaskListInner() {
   };
 
   if (loading) {
-    return <p className="text-muted-foreground">Loading tasks...</p>;
+    return (
+      <div className="flex flex-col gap-2">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="p-3 border border-border rounded-lg animate-pulse">
+            <div className="flex items-center gap-2">
+              <div className="h-4 w-4 bg-muted rounded" />
+              <div className="h-4 w-3/4 bg-muted rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div>
-        <p className="text-destructive">{error}</p>
-        <button onClick={loadData} className="px-3 py-1.5 rounded border border-border bg-secondary cursor-pointer text-sm mt-2">Retry</button>
+      <div className="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
+        <p className="text-destructive text-sm mb-2">{error}</p>
+        <button onClick={loadData} className="px-3 py-1.5 rounded-md border border-border bg-secondary cursor-pointer text-sm hover:bg-secondary/80 transition-colors">Retry</button>
       </div>
     );
   }
 
   if (accounts.length === 0) {
     return (
-      <div>
-        <p className="text-muted-foreground">No task accounts connected</p>
-        <button onClick={handleConnect} className="px-3 py-1.5 rounded border-none bg-[#4285F4] text-white cursor-pointer text-sm mt-2">
+      <div className="flex flex-col items-center justify-center p-6 text-center">
+        <div className="text-3xl mb-2 opacity-50">✅</div>
+        <p className="text-muted-foreground text-sm mb-3">No task accounts connected</p>
+        <button onClick={handleConnect} className="px-4 py-2 rounded-lg bg-[#4285F4] text-white cursor-pointer text-sm font-medium hover:bg-[#3367d6] transition-colors">
           Connect Task Account
         </button>
       </div>
@@ -516,33 +528,47 @@ function TaskListInner() {
         </div>
       )}
       {visibleTasks.length === 0 ? (
-        <p className="text-muted-foreground">{tasks.length === 0 ? 'No tasks found' : 'All tasks completed!'}</p>
+        <div className="flex flex-col items-center justify-center p-6 text-center">
+          <div className="text-3xl mb-2 opacity-50">🎯</div>
+          <p className="text-muted-foreground text-sm">
+            {tasks.length === 0 ? 'No tasks found' : 'All tasks completed!'}
+          </p>
+        </div>
       ) : (
-        <ul className="list-none p-0 m-0 overflow-auto flex-1">
+        <ul className="list-none p-0 m-0 overflow-auto flex-1 flex flex-col gap-1.5">
           {visibleTasks.map((task) => {
             const taskAccount = accounts.find((a) => a.id === task.source || a.email === task.source);
             const taskColor = (taskAccount && accountsColorMap[taskAccount.email]) || GOOGLE_BLUE;
+            const isOverdue = task.dueAt && new Date(task.dueAt) < new Date() && !(task.status === 'completed' || task.status === '1');
+            const isCompleted = task.status === 'completed' || task.status === '1';
             return (
             <li
               key={task.id}
-              className="flex items-center gap-2 py-2 border-b border-border pl-2"
-              style={{ borderLeftWidth: '3px', borderLeftColor: taskColor }}
+              className={`group flex items-center gap-2 p-2.5 border rounded-lg transition-all duration-200 hover:shadow-sm ${
+                isOverdue ? 'border-destructive/30 bg-destructive/5' : 'border-border bg-card hover:border-primary/30'
+              }`}
+              style={{ borderLeftWidth: '4px', borderLeftColor: taskColor }}
             >
               <span
-                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap text-white"
+                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap text-white shrink-0"
                 style={{ background: task.source === 'Google Tasks' ? GOOGLE_BLUE : TICKTICK_BLUE }}
                 title={task.source}
                 aria-label={task.source}
               >
                 <span aria-hidden="true">{task.source}</span>
               </span>
-              <input
-                type="checkbox"
-                checked={task.status === 'completed' || task.status === '1'}
-                onChange={() => handleToggleComplete(task)}
-                aria-label={`Mark "${task.title}" as ${task.status === 'completed' || task.status === '1' ? 'incomplete' : 'complete'}`}
-                className="shrink-0"
-              />
+              <label className="relative flex items-center justify-center shrink-0">
+                <input
+                  type="checkbox"
+                  checked={isCompleted}
+                  onChange={() => handleToggleComplete(task)}
+                  aria-label={`Mark "${task.title}" as ${isCompleted ? 'incomplete' : 'complete'}`}
+                  className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-border checked:bg-primary checked:border-primary transition-colors"
+                />
+                <svg className="absolute w-3 h-3 text-primary-foreground pointer-events-none opacity-0 peer-checked:opacity-100" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 8L6 11L11 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </label>
               {editingTaskId === task.id ? (
                 <input
                   type="text"
@@ -554,14 +580,16 @@ function TaskListInner() {
                     if (e.key === 'Escape') handleEditCancel();
                   }}
                   autoFocus
-                  className="flex-1 p-1 text-sm"
+                  className="flex-1 p-1 text-sm border border-border rounded"
                 />
               ) : (
                 <span
                   className={`flex-1 text-sm cursor-pointer ${
-                    task.status === 'completed' || task.status === '1'
+                    isCompleted
                       ? 'line-through text-muted-foreground'
-                      : 'text-foreground'
+                      : isOverdue
+                        ? 'text-destructive font-medium'
+                        : 'text-foreground'
                   }`}
                   onClick={() => handleEditStart(task)}
                   title="Click to edit"
@@ -570,13 +598,13 @@ function TaskListInner() {
                 </span>
               )}
               {task.dueAt && (
-                <span className="text-xs text-muted-foreground">
+                <span className={`text-xs whitespace-nowrap ${isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
                   {new Date(task.dueAt).toLocaleDateString()}
                 </span>
               )}
               <button
                 onClick={() => handleDelete(task)}
-                className="text-destructive border-none p-0.5 px-1 cursor-pointer text-xs bg-transparent"
+                className="opacity-0 group-hover:opacity-100 text-destructive/70 hover:text-destructive border-none p-1 cursor-pointer text-xs bg-transparent transition-opacity"
                 aria-label={`Delete "${task.title}"`}
               >
                 ×
