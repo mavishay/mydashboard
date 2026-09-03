@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 interface CalendarEvent {
   id: string;
@@ -24,12 +24,11 @@ export function TodayCalendar({ onError }: TodayCalendarProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEvents = useCallback(async () => {
+  const loadEventsFromDB = async () => {
     try {
-      setError(null);
-      await window.electronAPI.calendar.syncAll();
       const todayEvents = await window.electronAPI.calendar.getTodayEvents();
       setEvents(todayEvents);
+      setError(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -37,15 +36,22 @@ export function TodayCalendar({ onError }: TodayCalendarProps) {
     } finally {
       setLoading(false);
     }
-  }, [onError]);
+  };
+
+  const syncInBackground = async () => {
+    try {
+      await window.electronAPI.calendar.syncAll();
+      const updatedEvents = await window.electronAPI.calendar.getTodayEvents();
+      setEvents(updatedEvents);
+    } catch (err) {
+      console.error('Background sync failed:', err);
+    }
+  };
 
   useEffect(() => {
-    fetchEvents();
-    
-    const interval = setInterval(fetchEvents, 5 * 60 * 1000);
-    
-    return () => clearInterval(interval);
-  }, [fetchEvents]);
+    loadEventsFromDB();
+    syncInBackground();
+  }, []);
 
   const formatTime = (dateTime: string): string => {
     try {
@@ -90,7 +96,7 @@ export function TodayCalendar({ onError }: TodayCalendarProps) {
           {error}
         </div>
         <button
-          onClick={fetchEvents}
+          onClick={() => { setLoading(true); loadEventsFromDB(); syncInBackground(); }}
           style={{
             marginTop: '0.5rem',
             padding: '0.25rem 0.5rem',
