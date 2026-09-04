@@ -116,6 +116,7 @@ export class CalendarSync {
         FROM calendar_events ce
         JOIN accounts a ON ce.account_id = a.id
         WHERE date(ce.start_time) = date('now')
+          AND ce.all_day = 0
           AND ce.end_time > ?
         ORDER BY ce.start_time ASC
       `)
@@ -175,6 +176,7 @@ export class CalendarSync {
         JOIN accounts a ON ce.account_id = a.id
         WHERE date(ce.start_time) >= date(?)
           AND date(ce.start_time) <= date(?)
+          AND ce.all_day = 0
           AND ce.end_time > ?
         ORDER BY ce.start_time ASC
       `)
