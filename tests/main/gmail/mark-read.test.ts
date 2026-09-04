@@ -14,6 +14,26 @@ vi.mock('electron', () => ({
   },
 }));
 
+// Shared mutable mock for googleapis
+let mockModifyFn: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue({});
+
+vi.mock('googleapis', () => ({
+  google: {
+    auth: {
+      OAuth2: vi.fn().mockImplementation(() => ({
+        setCredentials: vi.fn(),
+      })),
+    },
+    gmail: vi.fn().mockReturnValue({
+      users: {
+        messages: {
+          modify: (...args: unknown[]) => mockModifyFn(...args),
+        },
+      },
+    }),
+  },
+}));
+
 function testDbPath(): string {
   return join(__dirname, `__test_${randomBytes(4).toString('hex')}.db`);
 }
@@ -98,23 +118,7 @@ describe('markEmailAsRead', () => {
       "INSERT INTO oauth_tokens (account_id, encrypted_access_token, encrypted_refresh_token, expires_at, scope) VALUES ('acc1', X'6d6f636b2d746f6b656e', X'6d6f636b2d72656672657368', '2099-01-01T00:00:00Z', 'gmail.readonly')"
     ).run();
 
-    // Mock googleapis
-    vi.doMock('googleapis', () => ({
-      google: {
-        auth: {
-          OAuth2: vi.fn().mockImplementation(() => ({
-            setCredentials: vi.fn(),
-          })),
-        },
-        gmail: vi.fn().mockReturnValue({
-          users: {
-            messages: {
-              modify: vi.fn().mockResolvedValue({}),
-            },
-          },
-        }),
-      },
-    }));
+    mockModifyFn = vi.fn().mockResolvedValue({});
 
     const { markEmailAsRead } = await import('../../../electron/main/gmail/fetcher');
     const result = await markEmailAsRead(db, 'email1', 'ext1', 'acc1');
@@ -126,7 +130,6 @@ describe('markEmailAsRead', () => {
 
     db.close();
     cleanupDb(dbPath);
-    vi.doUnmock('googleapis');
   }, 15000);
 
   it('marks locally on 404', async () => {
@@ -147,23 +150,7 @@ describe('markEmailAsRead', () => {
       "INSERT INTO oauth_tokens (account_id, encrypted_access_token, encrypted_refresh_token, expires_at, scope) VALUES ('acc1', X'6d6f636b2d746f6b656e', X'6d6f636b2d72656672657368', '2099-01-01T00:00:00Z', 'gmail.readonly')"
     ).run();
 
-    const mockModify = vi.fn().mockRejectedValue({ code: 404, message: 'Not Found' });
-    vi.doMock('googleapis', () => ({
-      google: {
-        auth: {
-          OAuth2: vi.fn().mockImplementation(() => ({
-            setCredentials: vi.fn(),
-          })),
-        },
-        gmail: vi.fn().mockReturnValue({
-          users: {
-            messages: {
-              modify: mockModify,
-            },
-          },
-        }),
-      },
-    }));
+    mockModifyFn = vi.fn().mockRejectedValue({ code: 404, message: 'Not Found' });
 
     const { markEmailAsRead } = await import('../../../electron/main/gmail/fetcher');
     const result = await markEmailAsRead(db, 'email1', 'ext1', 'acc1');
@@ -174,7 +161,6 @@ describe('markEmailAsRead', () => {
 
     db.close();
     cleanupDb(dbPath);
-    vi.doUnmock('googleapis');
   }, 15000);
 });
 
@@ -201,22 +187,7 @@ describe('markEmailsAsReadBatch', () => {
       "INSERT INTO oauth_tokens (account_id, encrypted_access_token, encrypted_refresh_token, expires_at, scope) VALUES ('acc1', X'6d6f636b2d746f6b656e', X'6d6f636b2d72656672657368', '2099-01-01T00:00:00Z', 'gmail.readonly')"
     ).run();
 
-    vi.doMock('googleapis', () => ({
-      google: {
-        auth: {
-          OAuth2: vi.fn().mockImplementation(() => ({
-            setCredentials: vi.fn(),
-          })),
-        },
-        gmail: vi.fn().mockReturnValue({
-          users: {
-            messages: {
-              modify: vi.fn().mockResolvedValue({}),
-            },
-          },
-        }),
-      },
-    }));
+    mockModifyFn = vi.fn().mockResolvedValue({});
 
     const { markEmailsAsReadBatch } = await import('../../../electron/main/gmail/fetcher');
     const result = await markEmailsAsReadBatch(db, [
@@ -231,7 +202,6 @@ describe('markEmailsAsReadBatch', () => {
 
     db.close();
     cleanupDb(dbPath);
-    vi.doUnmock('googleapis');
   }, 15000);
 
   it('tracks failed emails', async () => {
@@ -256,28 +226,13 @@ describe('markEmailsAsReadBatch', () => {
     ).run();
 
     let callCount = 0;
-    vi.doMock('googleapis', () => ({
-      google: {
-        auth: {
-          OAuth2: vi.fn().mockImplementation(() => ({
-            setCredentials: vi.fn(),
-          })),
-        },
-        gmail: vi.fn().mockReturnValue({
-          users: {
-            messages: {
-              modify: vi.fn().mockImplementation(() => {
-                callCount++;
-                if (callCount === 1) {
-                  return Promise.resolve({});
-                }
-                return Promise.reject({ code: 500, message: 'Server error' });
-              }),
-            },
-          },
-        }),
-      },
-    }));
+    mockModifyFn = vi.fn().mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        return Promise.resolve({});
+      }
+      return Promise.reject({ code: 500, message: 'Server error' });
+    });
 
     const { markEmailsAsReadBatch } = await import('../../../electron/main/gmail/fetcher');
     const result = await markEmailsAsReadBatch(db, [
@@ -290,6 +245,5 @@ describe('markEmailsAsReadBatch', () => {
 
     db.close();
     cleanupDb(dbPath);
-    vi.doUnmock('googleapis');
   }, 15000);
 });

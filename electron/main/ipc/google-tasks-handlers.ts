@@ -291,6 +291,7 @@ export function registerGoogleTasksHandlers(
           listId: taskListId,
           listTitle: listRow?.title ?? null,
           source: 'Google Tasks',
+          accountId,
         },
       ])[0];
     }

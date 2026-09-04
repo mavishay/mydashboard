@@ -27,7 +27,23 @@ describe('classifyEmail consent guard', () => {
         id TEXT PRIMARY KEY,
         subject TEXT,
         snippet TEXT,
-        from_address TEXT
+        from_address TEXT,
+        to_addresses TEXT,
+        received_at TEXT
+      )
+    `);
+    // Create classification_rules table (needed by evaluateRules)
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS classification_rules (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        enabled INTEGER NOT NULL DEFAULT 1,
+        priority INTEGER NOT NULL DEFAULT 0,
+        conditions TEXT NOT NULL DEFAULT '[]',
+        action TEXT NOT NULL DEFAULT 'classify',
+        classification TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       )
     `);
     // Insert a dummy email

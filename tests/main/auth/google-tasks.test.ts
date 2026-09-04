@@ -41,6 +41,7 @@ describe('Google Tasks Auth', () => {
 
     it('throws when env var is missing', async () => {
       delete process.env.GOOGLE_TASKS_CLIENT_ID;
+      delete process.env.GOOGLE_CLIENT_ID;
       const { getGoogleTasksClientId } = await import(
         '../../../electron/main/auth/google-tasks'
       );
