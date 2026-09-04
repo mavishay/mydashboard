@@ -3,6 +3,33 @@ import { useState, useEffect, useCallback, Component, type ReactNode } from 'rea
 const GOOGLE_BLUE = '#4285F4';
 const TICKTICK_BLUE = '#3C8DFF';
 
+type Priority = 'high' | 'medium' | 'low';
+
+export function getPriorityFromDueDate(dueAt: string | null): Priority | null {
+  if (!dueAt) return null;
+  const now = new Date();
+  const due = new Date(dueAt);
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfDue = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+  const diffDays = Math.floor((startOfDue.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays < 0) return 'high';
+  if (diffDays === 0) return 'medium';
+  return 'low';
+}
+
+export function formatDueDate(dueAt: string | null): string {
+  if (!dueAt) return '';
+  const now = new Date();
+  const due = new Date(dueAt);
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfDue = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+  const diffDays = Math.floor((startOfDue.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === -1) return 'Yesterday';
+  if (diffDays === 1) return 'Tomorrow';
+  return due.toLocaleDateString();
+}
+
 interface TaskItem {
   id: string;
   title: string;
@@ -541,6 +568,9 @@ function TaskListInner() {
             const taskColor = (taskAccount && accountsColorMap[taskAccount.email]) || GOOGLE_BLUE;
             const isOverdue = task.dueAt && new Date(task.dueAt) < new Date() && !(task.status === 'completed' || task.status === '1');
             const isCompleted = task.status === 'completed' || task.status === '1';
+            const priority = getPriorityFromDueDate(task.dueAt);
+            const priorityColors = { high: '#ef4444', medium: '#eab308', low: '#22c55e' };
+            const priorityLabels = { high: 'High', medium: 'Medium', low: 'Low' };
             return (
             <li
               key={task.id}
@@ -598,8 +628,20 @@ function TaskListInner() {
                 </span>
               )}
               {task.dueAt && (
-                <span className={`text-xs whitespace-nowrap ${isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
-                  {new Date(task.dueAt).toLocaleDateString()}
+                <span className="flex items-center gap-1">
+                  {priority && (
+                    <span
+                      className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white shrink-0"
+                      style={{ background: priorityColors[priority] }}
+                      title={`Priority: ${priorityLabels[priority]}`}
+                      aria-label={`Priority: ${priorityLabels[priority]}`}
+                    >
+                      {priorityLabels[priority]}
+                    </span>
+                  )}
+                  <span className={`text-xs whitespace-nowrap ${isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+                    {formatDueDate(task.dueAt)}
+                  </span>
                 </span>
               )}
               <button
