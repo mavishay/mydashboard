@@ -15,8 +15,10 @@ import {
 import { SortGroupControls } from './email/SortGroupControls';
 import { EmailGroupHeader } from './email/EmailGroupHeader';
 import { EmailPreviewModal } from './EmailPreviewModal';
-import { useToast } from './Toast';
+
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 type EmailTab = 'urgent' | 'action';
 
@@ -44,57 +46,37 @@ interface Account {
 const SORT_CYCLE: SortOption[] = ['date', 'sender', 'classification', 'account'];
 const GROUP_CYCLE: GroupOption[] = ['none', 'account', 'classification', 'date', 'sender-domain'];
 
-interface TaskListItem {
-  id: string;
-  title: string;
-  source: 'google-tasks' | 'ticktick';
-  accountId: string;
+
+
+
+
+
+
+function getVariantFromClassification(classification: string) {
+  switch (classification) {
+    case 'urgent': return 'destructive';
+    case 'action': return 'default';
+    case 'fyi': return 'secondary';
+    case 'noise': return 'outline';
+    default: return 'default';
+  }
 }
 
-const CLASSIFICATION_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  urgent: { bg: 'oklch(0.95 0.05 27)', text: 'oklch(0.45 0.2 27)', label: 'Urgent' },
-  action: { bg: 'oklch(0.95 0.05 70)', text: 'oklch(0.5 0.15 70)', label: 'Action' },
-  fyi: { bg: 'oklch(0.95 0.05 145)', text: 'oklch(0.45 0.15 145)', label: 'FYI' },
-  noise: { bg: 'oklch(0.95 0 0)', text: 'oklch(0.55 0 0)', label: 'Noise' },
-  unclassified: { bg: 'oklch(0.95 0.03 240)', text: 'oklch(0.45 0.1 240)', label: 'Unclassified' },
-};
-
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return '';
-  const date = new Date(dateStr);
+function formatTimeAgo(dateString: string) {
+  const date = new Date(dateString);
   const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString();
+  const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+  
+  if (diffInHours < 1) return 'Just now';
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  return `${Math.floor(diffInHours / 24)}d ago`;
 }
 
-function extractDisplayName(from: string | null): string {
-  if (!from) return 'Unknown';
-  const match = from.match(/^"?([^"<]+)"?\s*</);
-  return match ? match[1].trim() : from.split('@')[0];
-}
 
-function ClassificationBadge({ classification }: { classification: Classification }) {
-  const key = classification ?? 'unclassified';
-  const colors = CLASSIFICATION_COLORS[key] ?? CLASSIFICATION_COLORS.unclassified;
-  return (
-    <span
-      className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold"
-      style={{ background: colors.bg, color: colors.text }}
-    >
-      {colors.label}
-    </span>
-  );
-}
+
+
 
 export function EmailList({ onCountChange }: { onCountChange?: (count: number | ((prev: number) => number)) => void } = {}) {
-  const { toast } = useToast();
   const [emails, setEmails] = useState<Email[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string>('');
@@ -102,9 +84,7 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
   const [classifying, setClassifying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [convertingIds, setConvertingIds] = useState<Set<string>>(new Set());
-  const [convertModal, setConvertModal] = useState<{ email: Email; lists: TaskListItem[] } | null>(null);
-  const [selectedConvertListId, setSelectedConvertListId] = useState('');
+
   const [accountsColorMap, setAccountsColorMap] = useState<Record<string, string>>({});
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -323,100 +303,7 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
     }
   };
 
-  const handleConvertToTask = async (email: Email) => {
-    setConvertingIds((prev) => new Set(prev).add(email.id));
-    setError(null);
-    try {
-      // Load available lists for picker
-      const [gtAccounts, ttAccounts] = await Promise.all([
-        window.electronAPI.googleTasks.listAccounts(),
-        window.electronAPI.ticktick.listAccounts(),
-      ]);
-      const lists: TaskListItem[] = [];
-      for (const acc of gtAccounts) {
-        const gtLists = await window.electronAPI.googleTasks.listLists(acc.id);
-        for (const l of gtLists) {
-          lists.push({ id: l.id, title: l.title, source: 'google-tasks', accountId: acc.id });
-        }
-      }
-      for (const acc of ttAccounts) {
-        const ttProjects = await window.electronAPI.ticktick.listProjects(acc.id);
-        for (const p of ttProjects) {
-          lists.push({ id: p.id, title: p.name, source: 'ticktick', accountId: acc.id });
-        }
-      }
-      if (lists.length === 0) {
-        throw new Error('No task accounts connected');
-      }
-      // Show list picker modal
-      setSelectedConvertListId(lists[0].id);
-      setConvertModal({ email, lists });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load task lists');
-    } finally {
-      setConvertingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(email.id);
-        return next;
-      });
-    }
-  };
 
-  const handleConvertConfirm = async () => {
-    if (!convertModal) return;
-    const { email, lists } = convertModal;
-    const listItem = lists.find((l) => l.id === selectedConvertListId);
-    if (!listItem) return;
-
-    setConvertingIds((prev) => new Set(prev).add(email.id));
-    setConvertModal(null);
-    setError(null);
-    try {
-      const result = await window.electronAPI.tasks.createFromEmail({
-        listType: listItem.source,
-        accountId: listItem.accountId,
-        listId: listItem.id,
-        title: email.subject || '(no subject)',
-        description: email.snippet || undefined,
-      });
-      if (!result.success) throw new Error(result.error);
-      toast('Task created successfully', 'success');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create task from email');
-    } finally {
-      setConvertingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(email.id);
-        return next;
-      });
-    }
-  };
-
-  const handleMarkAsRead = useCallback(async (email: Email) => {
-    setMarkingIds(prev => new Set(prev).add(email.id));
-    try {
-      await window.electronAPI.gmail.markAsRead({
-        emailId: email.id,
-        externalId: email.externalId,
-        accountId: email.accountId,
-      });
-      setEmails(prev => prev.map(e =>
-        e.id === email.id ? { ...e, isRead: 1 } : e
-      ));
-      setTimeout(() => {
-        setEmails(prev => prev.filter(e => e.id !== email.id));
-        onCountChange?.(prev => prev - 1);
-      }, 500);
-    } catch (err) {
-      setError(`Failed to mark as read: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    } finally {
-      setMarkingIds(prev => {
-        const next = new Set(prev);
-        next.delete(email.id);
-        return next;
-      });
-    }
-  }, [onCountChange]);
 
   const handleBatchMarkAsRead = useCallback(async () => {
     const idsToMark = new Set(selectedIds);
@@ -628,86 +515,37 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
                   />
                 )}
                 {!collapsedGroups.has(groupKey) && groupEmails.map((email) => (
-                  <div
+                  <Card
                     key={email.id}
                     onClick={() => {
                       setPreviewEmailId(email.id);
                       setPreviewAccountId(email.accountId);
                     }}
-                    className="group relative p-3 border border-border rounded-xl cursor-pointer ml-4 transition-all duration-200 hover:shadow-md hover:border-primary/30"
+                    className="p-4 hover:bg-accent transition-colors cursor-pointer ml-4"
                     style={{
                       borderLeftWidth: '4px',
                       borderLeftColor: accountsColorMap[email.accountId] ?? '#9e9e9e',
-                      background: email.isRead ? 'hsl(var(--card))' : (CLASSIFICATION_COLORS[email.classification ?? 'unclassified']?.bg ?? '#e3f2fd') + '15',
                     }}
                   >
-                    <div className="flex justify-between items-start gap-3">
+                    <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <input
-                            type="checkbox"
-                            checked={selectedIds.has(email.id)}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              setSelectedIds(prev => {
-                                const next = new Set(prev);
-                                if (next.has(email.id)) next.delete(email.id);
-                                else next.add(email.id);
-                                return next;
-                              });
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="shrink-0 cursor-pointer h-4 w-4 rounded border-border"
-                          />
-                          <span
-                            className="w-2 h-2 rounded-full shrink-0"
-                            style={{ background: accountsColorMap[email.accountId] ?? '#9e9e9e' }}
-                          />
-                          <span className={`text-sm ${email.isRead ? 'text-muted-foreground' : 'font-semibold text-foreground'}`}>
-                            {extractDisplayName(email.fromAddress)}
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant={getVariantFromClassification(email.classification ?? '')}>
+                            {email.classification}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            {formatTimeAgo(email.receivedAt ?? '')}
                           </span>
-                          <ClassificationBadge classification={email.classification} />
                         </div>
-                        <div className={`text-sm mb-1.5 ${email.isRead ? 'font-medium text-foreground/80' : 'font-bold text-foreground'}`}>
+                        <h3 className={`font-medium truncate ${!email.isRead ? 'font-bold' : ''}`}>
                           {email.subject || '(no subject)'}
-                        </div>
-                        <div className="text-muted-foreground text-xs line-clamp-1">
-                          {email.snippet}
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-2 shrink-0">
-                        <span className="text-muted-foreground text-xs whitespace-nowrap">
-                          {formatDate(email.receivedAt)}
-                        </span>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          {!email.isRead && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleMarkAsRead(email);
-                              }}
-                              disabled={markingIds.has(email.id)}
-                              className="px-2 py-1 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                              title="Mark as read"
-                            >
-                              {markingIds.has(email.id) ? '...' : '✓'}
-                            </button>
-                          )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleConvertToTask(email);
-                            }}
-                            disabled={convertingIds.has(email.id)}
-                            className="px-2 py-1 rounded-md text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
-                            title="Convert to task"
-                          >
-                            {convertingIds.has(email.id) ? '...' : '+Task'}
-                          </button>
-                        </div>
+                        </h3>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {email.fromAddress}
+                        </p>
                       </div>
                     </div>
-                  </div>
+                  </Card>
                 ))}
               </div>
             ))}
@@ -724,47 +562,6 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
             setPreviewAccountId(null);
           }}
         />
-      )}
-
-      {convertModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000]">
-          <div className="bg-background rounded-lg p-6 max-w-[400px] w-[90%] shadow-xl">
-            <h3 className="m-0 mb-2 text-base font-semibold">
-              Convert to Task
-            </h3>
-            <p className="m-0 mb-4 text-sm text-muted-foreground">
-              "{convertModal.email.subject || '(no subject)'}"
-            </p>
-            <label className="block text-sm font-medium mb-1">
-              Select list:
-            </label>
-            <select
-              value={selectedConvertListId}
-              onChange={(e) => setSelectedConvertListId(e.target.value)}
-              className="w-full p-2 rounded border border-border text-sm mb-4"
-            >
-              {convertModal.lists.map((list) => (
-                <option key={list.id} value={list.id}>
-                  {list.source === 'google-tasks' ? '🟢' : '🔵'} {list.title}
-                </option>
-              ))}
-            </select>
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setConvertModal(null)}
-                className="px-4 py-2 rounded border border-border bg-secondary cursor-pointer text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConvertConfirm}
-                className="px-4 py-2 rounded border-none bg-primary text-primary-foreground cursor-pointer text-sm font-semibold"
-              >
-                Create Task
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
