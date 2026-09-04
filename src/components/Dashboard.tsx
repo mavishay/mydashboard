@@ -59,7 +59,7 @@ export function Dashboard() {
           </Button>
         </div>
       </header>
-      <div className="grid grid-cols-[3fr_2fr] gap-6 h-[calc(100vh-120px)]">
+      <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 h-[calc(100vh-120px)]">
         <div className="space-y-4">
           <EmailList />
         </div>
