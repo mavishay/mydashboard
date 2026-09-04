@@ -23,11 +23,18 @@ export function TodayCalendar({ onError }: TodayCalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState({
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0]
+  });
 
   const loadEventsFromDB = async () => {
     try {
-      const todayEvents = await window.electronAPI.calendar.getTodayEvents();
-      setEvents(todayEvents);
+      const filtered = await window.electronAPI.calendar.getFilteredEvents(
+        dateRange.startDate,
+        dateRange.endDate
+      );
+      setEvents(filtered);
       setError(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -41,7 +48,10 @@ export function TodayCalendar({ onError }: TodayCalendarProps) {
   const syncInBackground = async () => {
     try {
       await window.electronAPI.calendar.syncAll();
-      const updatedEvents = await window.electronAPI.calendar.getTodayEvents();
+      const updatedEvents = await window.electronAPI.calendar.getFilteredEvents(
+        dateRange.startDate,
+        dateRange.endDate
+      );
       setEvents(updatedEvents);
     } catch (err) {
       console.error('Background sync failed:', err);
@@ -56,7 +66,7 @@ export function TodayCalendar({ onError }: TodayCalendarProps) {
       loadEventsFromDB();
     });
     return unsubscribe;
-  }, []);
+  }, [dateRange.startDate, dateRange.endDate]);
 
   const formatTime = (dateTime: string): string => {
     try {
@@ -128,7 +138,22 @@ export function TodayCalendar({ onError }: TodayCalendarProps) {
   }
 
   return (
-    <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+    <div>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.5rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+        <input
+          type="date"
+          value={dateRange.startDate}
+          onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+          style={{ flex: 1, padding: '0.25rem', border: '1px solid #ddd', borderRadius: '4px', fontSize: '0.75rem' }}
+        />
+        <input
+          type="date"
+          value={dateRange.endDate}
+          onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+          style={{ flex: 1, padding: '0.25rem', border: '1px solid #ddd', borderRadius: '4px', fontSize: '0.75rem' }}
+        />
+      </div>
+      <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
       {events.map((event) => (
         <div
           key={event.id}
@@ -164,6 +189,7 @@ export function TodayCalendar({ onError }: TodayCalendarProps) {
           </div>
         </div>
       ))}
+      </div>
     </div>
   );
 }
