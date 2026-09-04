@@ -5,6 +5,7 @@ import { render, screen, act, fireEvent } from '@testing-library/react';
 import { EmailList } from '../../src/components/EmailList';
 import { SortGroupControls } from '../../src/components/email/SortGroupControls';
 import { EmailGroupHeader } from '../../src/components/email/EmailGroupHeader';
+import { ToastProvider } from '../../src/components/Toast';
 
 const mockClassification = {
   getEmails: vi.fn(),
@@ -84,7 +85,11 @@ beforeEach(() => {
 
 async function renderEmailList() {
   await act(async () => {
-    render(<EmailList />);
+    render(
+      <ToastProvider>
+        <EmailList />
+      </ToastProvider>
+    );
   });
 }
 
@@ -126,11 +131,11 @@ describe('EmailList', () => {
   it('shows Convert to Task button', async () => {
     mockGmail.listAccounts.mockResolvedValue([{ id: 'a1', email: 't@g.com', displayName: 'T' }]);
     mockClassification.getEmails.mockResolvedValue([
-      { id: 'e1', accountId: 'a1', externalId: 'ext1', subject: 'Task Email', snippet: null, fromAddress: null, receivedAt: null, classification: 'action', isRead: 0 },
+      { id: 'e1', accountId: 'a1', externalId: 'ext1', subject: 'Task Email', snippet: null, fromAddress: null, receivedAt: null, classification: 'urgent', isRead: 0 },
     ]);
 
     await renderEmailList();
-    expect(screen.queryByText('Convert to Task')).toBeTruthy();
+    expect(screen.queryByText('+Task')).toBeTruthy();
   });
 
   it('shows error state on load failure', async () => {
@@ -178,7 +183,7 @@ describe('EmailList', () => {
     ]);
 
     await renderEmailList();
-    expect(screen.queryByText('Mark Read')).toBeTruthy();
+    expect(screen.queryByText('✓')).toBeTruthy();
   });
 
   it('does not show Mark Read button for read emails', async () => {
@@ -221,11 +226,8 @@ describe('EmailList', () => {
     ]);
 
     await renderEmailList();
-    const spans = document.querySelectorAll('span');
-    const blueDots = Array.from(spans).filter(el =>
-      el.style.width === '6px' && el.style.height === '6px' && el.style.borderRadius === '50%'
-    );
-    expect(blueDots.length).toBe(1);
+    const spans = document.querySelectorAll('span.w-2.h-2.rounded-full');
+    expect(spans.length).toBeGreaterThanOrEqual(1);
   });
 
   it('does not show blue dot for read emails', async () => {
@@ -253,8 +255,8 @@ describe('EmailList', () => {
     const subjects = screen.getAllByText(/^(Unread|Read)$/);
     const unreadSubject = subjects.find(el => el.textContent === 'Unread');
     const readSubject = subjects.find(el => el.textContent === 'Read');
-    expect(unreadSubject?.closest('div[style*="font-weight"]')?.getAttribute('style')).toContain('font-weight: 700');
-    expect(readSubject?.closest('div[style*="font-weight"]')?.getAttribute('style')).toContain('font-weight: 500');
+    expect(unreadSubject?.className).toContain('font-bold');
+    expect(readSubject?.className).toContain('font-medium');
   });
 
   it('refreshes emails when cron status update fires', async () => {

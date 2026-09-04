@@ -132,14 +132,15 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
         limit: 50,
       });
       setEmails(result);
-      onCountChange?.(result.length);
+      const filteredCount = result.filter(e => e.classification === activeTab).length;
+      onCountChange?.(filteredCount);
     } catch (err) {
       console.error('Failed to load emails:', err);
       setError('Failed to load emails. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [selectedAccount, onCountChange]);
+  }, [selectedAccount, onCountChange, activeTab]);
 
   const loadAccounts = useCallback(async () => {
     try {
@@ -244,6 +245,13 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
   const displayEmails = useMemo(() => {
     return emails.filter(e => e.classification === activeTab);
   }, [emails, activeTab]);
+
+  const tabCounts = useMemo(() => {
+    return {
+      urgent: emails.filter(e => e.classification === 'urgent').length,
+      action: emails.filter(e => e.classification === 'action').length,
+    };
+  }, [emails]);
 
   const sortedEmails = useMemo(() => {
     return sortEmails(displayEmails, sortPrefs.option, sortPrefs.direction);
@@ -538,10 +546,10 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as EmailTab)}>
         <TabsList>
           <TabsTrigger value="urgent">
-            Urgent ({emails.filter(e => e.classification === 'urgent').length})
+            Urgent ({tabCounts.urgent})
           </TabsTrigger>
           <TabsTrigger value="action">
-            Action ({emails.filter(e => e.classification === 'action').length})
+            Action ({tabCounts.action})
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -598,6 +606,13 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
               {accounts.length === 0
                 ? 'Connect a Gmail account in Settings to get started.'
                 : 'No emails found. Click "Fetch Emails" to sync.'}
+            </p>
+          </div>
+        ) : displayEmails.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-8 text-center">
+            <div className="text-4xl mb-3 opacity-50">📭</div>
+            <p className="text-muted-foreground text-sm font-medium">
+              No {activeTab} emails. Try a different tab or fetch more emails.
             </p>
           </div>
         ) : (
