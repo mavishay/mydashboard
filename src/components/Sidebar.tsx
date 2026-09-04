@@ -1,5 +1,5 @@
-import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Settings, Sun, Moon, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+import { Home, Settings, Sun, Moon, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -11,13 +11,12 @@ interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
+  { icon: Home, label: 'Dashboard', to: '/' },
   { icon: Settings, label: 'Settings', to: '/settings' },
 ] as const;
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { theme, setTheme } = useTheme();
-  const location = useLocation();
 
   return (
     <aside
@@ -25,29 +24,26 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       style={{ width: collapsed ? 60 : 200 }}
     >
       <nav className="flex-1 space-y-1 p-2">
-        {NAV_ITEMS.map(({ icon: Icon, label, to }) => {
-          const isActive = to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
-          return (
-            <Tooltip key={to} delayDuration={collapsed ? 0 : 9999}>
-              <TooltipTrigger asChild>
-                <NavLink
-                  to={to}
-                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                  }`}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span>{label}</span>}
-                </NavLink>
-              </TooltipTrigger>
-              {collapsed && (
-                <TooltipContent side="right">{label}</TooltipContent>
-              )}
-            </Tooltip>
-          );
-        })}
+        {NAV_ITEMS.map(({ icon: Icon, label, to }) => (
+          <Tooltip key={to} delayDuration={collapsed ? 0 : 9999}>
+            <TooltipTrigger asChild>
+              <NavLink
+                to={to}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    isActive ? 'bg-accent text-accent-foreground' : 'text-sidebar-foreground/70 hover:bg-accent'
+                  }`
+                }
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {!collapsed && <span>{label}</span>}
+              </NavLink>
+            </TooltipTrigger>
+            {collapsed && (
+              <TooltipContent side="right">{label}</TooltipContent>
+            )}
+          </Tooltip>
+        ))}
       </nav>
 
       <div className="space-y-1 p-2">
