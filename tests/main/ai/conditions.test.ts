@@ -40,10 +40,10 @@ describe('conditions', () => {
       expect(matchesCondition({ from: 'boss@gmail.com' }, cond)).toBe(false);
     });
 
-    it('matches regex operator', () => {
+    it('matches regex operator (case-insensitive)', () => {
       const cond: RuleCondition = { field: 'from', operator: 'matches_regex', value: '^[a-z]+@' };
       expect(matchesCondition({ from: 'john@example.com' }, cond)).toBe(true);
-      expect(matchesCondition({ from: 'JOHN@example.com' }, cond)).toBe(false);
+      expect(matchesCondition({ from: 'JOHN@example.com' }, cond)).toBe(true);
     });
 
     it('matches domain field with regex', () => {
