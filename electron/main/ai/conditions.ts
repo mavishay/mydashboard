@@ -1,5 +1,5 @@
 export type RuleField = 'from' | 'to' | 'subject' | 'body' | 'domain' | 'date';
-export type RuleOperator = 'contains' | 'equals' | 'starts_with' | 'ends_with' | 'matches_regex';
+export type RuleOperator = 'contains' | 'not_contains' | 'equals' | 'starts_with' | 'ends_with' | 'matches_regex';
 
 export interface RuleCondition {
   field: RuleField;
@@ -45,6 +45,8 @@ export function evaluateCondition(email: EmailData, condition: RuleCondition): b
   switch (condition.operator) {
     case 'contains':
       return fieldValue.includes(testValue);
+    case 'not_contains':
+      return !fieldValue.includes(testValue);
     case 'equals':
       return fieldValue === testValue;
     case 'starts_with':
@@ -53,16 +55,18 @@ export function evaluateCondition(email: EmailData, condition: RuleCondition): b
       return fieldValue.endsWith(testValue);
     case 'matches_regex':
       try {
-        const raw = condition.field === 'domain'
-          ? (email.from ?? '')
-          : email[condition.field] ?? '';
-        return new RegExp(condition.value, 'i').test(raw);
+        const raw = email[condition.field] ?? '';
+        return new RegExp(condition.value).test(raw);
       } catch {
         return false;
       }
+    default:
+      return false;
   }
 }
 
 export function evaluateConditions(email: EmailData, conditions: RuleCondition[]): boolean {
   return conditions.every((c) => evaluateCondition(email, c));
 }
+
+export const matchesCondition = evaluateCondition;

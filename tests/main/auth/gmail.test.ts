@@ -80,6 +80,15 @@ describe('Gmail Database Operations', () => {
 
   describe('createAccount', () => {
     it('creates a gmail account', () => {
+      const countMock = vi.fn().mockReturnValue({ count: 0 });
+      const insertMock = vi.fn();
+      mockDb.prepare = vi.fn().mockImplementation((sql: string) => {
+        if (sql.includes('COUNT')) {
+          return { get: countMock };
+        }
+        return { run: insertMock };
+      });
+
       const result = createAccount(
         mockDb as any,
         'test@gmail.com',

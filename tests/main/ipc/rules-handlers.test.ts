@@ -153,7 +153,7 @@ describe('rules-handlers', () => {
 
     const result = await testHandler({}, {
       conditions: [{ field: 'from', operator: 'contains', value: 'spam' }],
-      testEmail: { from: 'spam@junk.com', to: null, subject: null, body: null },
+      email: { from: 'spam@junk.com', to: null, subject: null, body: null },
     });
 
     expect(result).toEqual({ matched: true });

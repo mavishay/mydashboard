@@ -95,7 +95,7 @@ describe('markEmailAsRead', () => {
 
     // Store mock tokens
     db.prepare(
-      "INSERT INTO tokens (account_id, access_token, refresh_token, expiry_date, scope) VALUES ('acc1', 'mock-token', 'mock-refresh', 9999999999999, 'gmail.readonly')"
+      "INSERT INTO oauth_tokens (account_id, encrypted_access_token, encrypted_refresh_token, expires_at, scope) VALUES ('acc1', X'6d6f636b2d746f6b656e', X'6d6f636b2d72656672657368', '2099-01-01T00:00:00Z', 'gmail.readonly')"
     ).run();
 
     // Mock googleapis
@@ -144,7 +144,7 @@ describe('markEmailAsRead', () => {
       "INSERT INTO emails (id, account_id, external_id, subject, is_read) VALUES ('email1', 'acc1', 'ext1', 'Test', 0)"
     ).run();
     db.prepare(
-      "INSERT INTO tokens (account_id, access_token, refresh_token, expiry_date, scope) VALUES ('acc1', 'mock-token', 'mock-refresh', 9999999999999, 'gmail.readonly')"
+      "INSERT INTO oauth_tokens (account_id, encrypted_access_token, encrypted_refresh_token, expires_at, scope) VALUES ('acc1', X'6d6f636b2d746f6b656e', X'6d6f636b2d72656672657368', '2099-01-01T00:00:00Z', 'gmail.readonly')"
     ).run();
 
     const mockModify = vi.fn().mockRejectedValue({ code: 404, message: 'Not Found' });
@@ -198,7 +198,7 @@ describe('markEmailsAsReadBatch', () => {
     }
 
     db.prepare(
-      "INSERT INTO tokens (account_id, access_token, refresh_token, expiry_date, scope) VALUES ('acc1', 'mock-token', 'mock-refresh', 9999999999999, 'gmail.readonly')"
+      "INSERT INTO oauth_tokens (account_id, encrypted_access_token, encrypted_refresh_token, expires_at, scope) VALUES ('acc1', X'6d6f636b2d746f6b656e', X'6d6f636b2d72656672657368', '2099-01-01T00:00:00Z', 'gmail.readonly')"
     ).run();
 
     vi.doMock('googleapis', () => ({
@@ -252,7 +252,7 @@ describe('markEmailsAsReadBatch', () => {
       "INSERT INTO emails (id, account_id, external_id, subject, is_read) VALUES ('email2', 'acc1', 'ext2', 'Test', 0)"
     ).run();
     db.prepare(
-      "INSERT INTO tokens (account_id, access_token, refresh_token, expiry_date, scope) VALUES ('acc1', 'mock-token', 'mock-refresh', 9999999999999, 'gmail.readonly')"
+      "INSERT INTO oauth_tokens (account_id, encrypted_access_token, encrypted_refresh_token, expires_at, scope) VALUES ('acc1', X'6d6f636b2d746f6b656e', X'6d6f636b2d72656672657368', '2099-01-01T00:00:00Z', 'gmail.readonly')"
     ).run();
 
     let callCount = 0;

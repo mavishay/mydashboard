@@ -7,13 +7,14 @@ import {
   updateRule,
   deleteRule,
   testRule,
+  seedDefaultRules,
   type Classification,
 } from '../ai/rules-engine';
 import type { RuleCondition } from '../ai/conditions';
 
 const ConditionSchema = z.object({
   field: z.enum(['from', 'to', 'subject', 'body', 'domain', 'date']),
-  operator: z.enum(['contains', 'equals', 'starts_with', 'ends_with', 'matches_regex']),
+  operator: z.enum(['contains', 'not_contains', 'equals', 'starts_with', 'ends_with', 'matches_regex']),
   value: z.string().min(1),
 });
 
@@ -146,6 +147,32 @@ export function registerRulesHandlers(
       );
 
       return { matched };
+    }
+  );
+
+  ipcMain.handle(
+    'rules:toggle',
+    async (_event, payload: { id: string }) => {
+      const parsed = z.object({ id: z.string().min(1) }).safeParse(payload);
+      if (!parsed.success) {
+        throw new Error(`Invalid payload: ${parsed.error.message}`);
+      }
+
+      const rules = getAllRules(db);
+      const rule = rules.find(r => r.id === parsed.data.id);
+      if (!rule) {
+        throw new Error('Rule not found');
+      }
+
+      return updateRule(db, parsed.data.id, { enabled: !rule.enabled });
+    }
+  );
+
+  ipcMain.handle(
+    'rules:seedDefaults',
+    async () => {
+      seedDefaultRules(db);
+      return { success: true };
     }
   );
 }

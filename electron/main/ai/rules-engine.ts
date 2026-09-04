@@ -141,6 +141,8 @@ export function evaluateRules(
   const rules = getEnabledRules(db);
 
   for (const rule of rules) {
+    if (rule.conditions.length === 0) continue;
+    
     if (evaluateConditions(email, rule.conditions)) {
       if (rule.action === 'skip_llm' && rule.classification) {
         return {
@@ -169,4 +171,39 @@ export function testRule(
   email: EmailData
 ): boolean {
   return evaluateConditions(email, conditions);
+}
+
+export function testRuleMatch(
+  conditions: RuleCondition[],
+  email: EmailData
+): { matched: boolean } {
+  return { matched: evaluateConditions(email, conditions) };
+}
+
+export function seedDefaultRules(db: Database.Database): void {
+  const existing = getAllRules(db);
+  if (existing.length > 0) return;
+
+  const defaults: Omit<ClassificationRule, 'id' | 'createdAt' | 'updatedAt'>[] = [
+    {
+      name: 'Newsletter Detection',
+      enabled: true,
+      priority: 10,
+      conditions: [{ field: 'from', operator: 'contains', value: 'newsletter' }],
+      action: 'skip_llm',
+      classification: 'fyi',
+    },
+    {
+      name: 'Spam Detection',
+      enabled: true,
+      priority: 20,
+      conditions: [{ field: 'from', operator: 'contains', value: 'spam' }],
+      action: 'skip_llm',
+      classification: 'noise',
+    },
+  ];
+
+  for (const rule of defaults) {
+    createRule(db, rule);
+  }
 }
