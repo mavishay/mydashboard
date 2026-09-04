@@ -56,7 +56,7 @@ export function evaluateCondition(email: EmailData, condition: RuleCondition): b
     case 'matches_regex':
       try {
         const raw = email[condition.field] ?? '';
-        return new RegExp(condition.value).test(raw);
+        return new RegExp(condition.value, 'i').test(raw);
       } catch {
         return false;
       }

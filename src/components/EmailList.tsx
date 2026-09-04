@@ -113,15 +113,13 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
         limit: 50,
       });
       setEmails(result);
-      const filteredCount = result.filter(e => e.classification === activeTab).length;
-      onCountChange?.(filteredCount);
     } catch (err) {
       console.error('Failed to load emails:', err);
       setError('Failed to load emails. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [selectedAccount, onCountChange, activeTab]);
+  }, [selectedAccount]);
 
   const loadAccounts = useCallback(async () => {
     try {
@@ -233,6 +231,14 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
       action: emails.filter(e => e.classification === 'action').length,
     };
   }, [emails]);
+
+  const filteredCount = useMemo(() => {
+    return tabCounts[activeTab] ?? 0;
+  }, [tabCounts, activeTab]);
+
+  useEffect(() => {
+    onCountChange?.(filteredCount);
+  }, [filteredCount, onCountChange]);
 
   const sortedEmails = useMemo(() => {
     return sortEmails(displayEmails, sortPrefs.option, sortPrefs.direction);
