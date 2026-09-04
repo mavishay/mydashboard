@@ -15,7 +15,7 @@ import {
 import { SortGroupControls } from './email/SortGroupControls';
 import { EmailGroupHeader } from './email/EmailGroupHeader';
 import { EmailPreviewModal } from './EmailPreviewModal';
-
+import { useToast } from './Toast';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -46,11 +46,12 @@ interface Account {
 const SORT_CYCLE: SortOption[] = ['date', 'sender', 'classification', 'account'];
 const GROUP_CYCLE: GroupOption[] = ['none', 'account', 'classification', 'date', 'sender-domain'];
 
-
-
-
-
-
+interface TaskListItem {
+  id: string;
+  title: string;
+  source: 'google-tasks' | 'ticktick';
+  accountId: string;
+}
 
 function getVariantFromClassification(classification: string) {
   switch (classification) {
@@ -72,11 +73,8 @@ function formatTimeAgo(dateString: string) {
   return `${Math.floor(diffInHours / 24)}d ago`;
 }
 
-
-
-
-
 export function EmailList({ onCountChange }: { onCountChange?: (count: number | ((prev: number) => number)) => void } = {}) {
+  const { toast } = useToast();
   const [emails, setEmails] = useState<Email[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string>('');
@@ -103,6 +101,9 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
   const [markingIds, setMarkingIds] = useState<Set<string>>(new Set());
   const [batchProgress, setBatchProgress] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<EmailTab>('urgent');
+  const [convertingIds, setConvertingIds] = useState<Set<string>>(new Set());
+  const [convertModal, setConvertModal] = useState<{ email: Email; lists: TaskListItem[] } | null>(null);
+  const [selectedConvertListId, setSelectedConvertListId] = useState('');
 
   const loadEmails = useCallback(async () => {
     try {
@@ -303,7 +304,98 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
     }
   };
 
+  const handleConvertToTask = async (email: Email) => {
+    setConvertingIds((prev) => new Set(prev).add(email.id));
+    setError(null);
+    try {
+      const [gtAccounts, ttAccounts] = await Promise.all([
+        window.electronAPI.googleTasks.listAccounts(),
+        window.electronAPI.ticktick.listAccounts(),
+      ]);
+      const lists: TaskListItem[] = [];
+      for (const acc of gtAccounts) {
+        const gtLists = await window.electronAPI.googleTasks.listLists(acc.id);
+        for (const l of gtLists) {
+          lists.push({ id: l.id, title: l.title, source: 'google-tasks', accountId: acc.id });
+        }
+      }
+      for (const acc of ttAccounts) {
+        const ttProjects = await window.electronAPI.ticktick.listProjects(acc.id);
+        for (const p of ttProjects) {
+          lists.push({ id: p.id, title: p.name, source: 'ticktick', accountId: acc.id });
+        }
+      }
+      if (lists.length === 0) {
+        throw new Error('No task accounts connected');
+      }
+      setSelectedConvertListId(lists[0].id);
+      setConvertModal({ email, lists });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load task lists');
+    } finally {
+      setConvertingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(email.id);
+        return next;
+      });
+    }
+  };
 
+  const handleConvertConfirm = async () => {
+    if (!convertModal) return;
+    const { email, lists } = convertModal;
+    const listItem = lists.find((l) => l.id === selectedConvertListId);
+    if (!listItem) return;
+
+    setConvertingIds((prev) => new Set(prev).add(email.id));
+    setConvertModal(null);
+    setError(null);
+    try {
+      const result = await window.electronAPI.tasks.createFromEmail({
+        listType: listItem.source,
+        accountId: listItem.accountId,
+        listId: listItem.id,
+        title: email.subject || '(no subject)',
+        description: email.snippet || undefined,
+      });
+      if (!result.success) throw new Error(result.error);
+      toast('Task created successfully', 'success');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create task from email');
+    } finally {
+      setConvertingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(email.id);
+        return next;
+      });
+    }
+  };
+
+  const handleMarkAsRead = useCallback(async (email: Email) => {
+    setMarkingIds(prev => new Set(prev).add(email.id));
+    try {
+      await window.electronAPI.gmail.markAsRead({
+        emailId: email.id,
+        externalId: email.externalId,
+        accountId: email.accountId,
+      });
+      setEmails(prev => prev.map(e =>
+        e.id === email.id ? { ...e, isRead: 1 } : e
+      ));
+      setTimeout(() => {
+        setEmails(prev => prev.filter(e => e.id !== email.id));
+        onCountChange?.(prev => prev - 1);
+      }, 500);
+    } catch (err) {
+      setError(`Failed to mark as read: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setMarkingIds(prev => {
+        const next = new Set(prev);
+        next.delete(email.id);
+        return next;
+      });
+    }
+  }, [onCountChange]);
 
   const handleBatchMarkAsRead = useCallback(async () => {
     const idsToMark = new Set(selectedIds);
@@ -521,15 +613,30 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
                       setPreviewEmailId(email.id);
                       setPreviewAccountId(email.accountId);
                     }}
-                    className="p-4 hover:bg-accent transition-colors cursor-pointer ml-4"
+                    className="group relative p-4 hover:bg-accent transition-colors cursor-pointer ml-4"
                     style={{
                       borderLeftWidth: '4px',
                       borderLeftColor: accountsColorMap[email.accountId] ?? '#9e9e9e',
                     }}
                   >
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(email.id)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              setSelectedIds(prev => {
+                                const next = new Set(prev);
+                                if (next.has(email.id)) next.delete(email.id);
+                                else next.add(email.id);
+                                return next;
+                              });
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="shrink-0 cursor-pointer h-4 w-4 rounded border-border"
+                          />
                           <Badge variant={getVariantFromClassification(email.classification ?? '')}>
                             {email.classification}
                           </Badge>
@@ -543,6 +650,34 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
                         <p className="text-sm text-muted-foreground truncate">
                           {email.fromAddress}
                         </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2 shrink-0">
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          {!email.isRead && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMarkAsRead(email);
+                              }}
+                              disabled={markingIds.has(email.id)}
+                              className="px-2 py-1 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                              title="Mark as read"
+                            >
+                              {markingIds.has(email.id) ? '...' : '✓'}
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleConvertToTask(email);
+                            }}
+                            disabled={convertingIds.has(email.id)}
+                            className="px-2 py-1 rounded-md text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+                            title="Convert to task"
+                          >
+                            {convertingIds.has(email.id) ? '...' : '+Task'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </Card>
@@ -562,6 +697,47 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
             setPreviewAccountId(null);
           }}
         />
+      )}
+
+      {convertModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000]">
+          <div className="bg-background rounded-lg p-6 max-w-[400px] w-[90%] shadow-xl">
+            <h3 className="m-0 mb-2 text-base font-semibold">
+              Convert to Task
+            </h3>
+            <p className="m-0 mb-4 text-sm text-muted-foreground">
+              "{convertModal.email.subject || '(no subject)'}"
+            </p>
+            <label className="block text-sm font-medium mb-1">
+              Select list:
+            </label>
+            <select
+              value={selectedConvertListId}
+              onChange={(e) => setSelectedConvertListId(e.target.value)}
+              className="w-full p-2 rounded border border-border text-sm mb-4"
+            >
+              {convertModal.lists.map((list) => (
+                <option key={list.id} value={list.id}>
+                  {list.source === 'google-tasks' ? '🟢' : '🔵'} {list.title}
+                </option>
+              ))}
+            </select>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setConvertModal(null)}
+                className="px-4 py-2 rounded border border-border bg-secondary cursor-pointer text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConvertConfirm}
+                className="px-4 py-2 rounded border-none bg-primary text-primary-foreground cursor-pointer text-sm font-semibold"
+              >
+                Create Task
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
