@@ -112,11 +112,15 @@ function gatedInvoke(channel: string, ...args: unknown[]): Promise<unknown> {
   return ipcRenderer.invoke(channel, ...args);
 }
 
-function gatedOn(channel: string, callback: (...args: unknown[]) => void): void {
-  if (!ALLOWED_ON.has(channel as typeof ALLOWED_ON extends Set<infer T> ? T : never)) {
+function gatedOn<T extends (...args: never[]) => void>(channel: string, callback: T): () => void {
+  if (!ALLOWED_ON.has(channel as typeof ALLOWED_ON extends Set<infer U> ? U : never)) {
     throw new Error(`Blocked IPC on: ${channel}`);
   }
-  ipcRenderer.on(channel, (_event, ...args) => callback(...args));
+  const listener = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => (callback as (...a: unknown[]) => void)(...args);
+  ipcRenderer.on(channel, listener);
+  return () => {
+    ipcRenderer.removeListener(channel, listener);
+  };
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {

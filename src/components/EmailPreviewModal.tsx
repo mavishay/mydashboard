@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { EmailDetail, EmailAttachment } from '../../electron/preload/types';
+import type { EmailDetail } from '../../electron/preload/types';
 
 interface Account {
   id: string;

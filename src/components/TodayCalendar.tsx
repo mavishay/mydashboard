@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface CalendarEvent {
   id: string;
@@ -22,17 +22,19 @@ interface TodayCalendarProps {
 export function TodayCalendar({ onError }: TodayCalendarProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState({
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0]
   });
+  const dateRangeRef = useRef(dateRange);
 
-  const loadEventsFromDB = async () => {
+  const loadEventsFromDB = useCallback(async (startDate: string, endDate: string) => {
     try {
       const filtered = await window.electronAPI.calendar.getFilteredEvents(
-        dateRange.startDate,
-        dateRange.endDate
+        startDate,
+        endDate
       );
       setEvents(filtered);
       setError(null);
@@ -43,30 +45,50 @@ export function TodayCalendar({ onError }: TodayCalendarProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [onError]);
 
-  const syncInBackground = async () => {
+  const syncInBackground = useCallback(async () => {
     try {
+      setSyncing(true);
       await window.electronAPI.calendar.syncAll();
+      const { startDate, endDate } = dateRangeRef.current;
       const updatedEvents = await window.electronAPI.calendar.getFilteredEvents(
-        dateRange.startDate,
-        dateRange.endDate
+        startDate,
+        endDate
       );
       setEvents(updatedEvents);
     } catch (err) {
       console.error('Background sync failed:', err);
+    } finally {
+      setSyncing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadEventsFromDB();
+    dateRangeRef.current = dateRange;
+    setLoading(true);
+    loadEventsFromDB(dateRange.startDate, dateRange.endDate);
     syncInBackground();
 
     const unsubscribe = window.electronAPI.cron.onStatusUpdate(() => {
-      loadEventsFromDB();
+      loadEventsFromDB(dateRangeRef.current.startDate, dateRangeRef.current.endDate);
     });
     return unsubscribe;
-  }, [dateRange.startDate, dateRange.endDate]);
+  }, [dateRange.startDate, dateRange.endDate, loadEventsFromDB, syncInBackground]);
+
+  const handleDateChange = (field: 'startDate' | 'endDate', value: string) => {
+    setDateRange(prev => {
+      const next = { ...prev, [field]: value };
+      if (next.startDate > next.endDate) {
+        if (field === 'startDate') {
+          next.endDate = value;
+        } else {
+          next.startDate = value;
+        }
+      }
+      return next;
+    });
+  };
 
   const formatTime = (dateTime: string): string => {
     try {
@@ -93,6 +115,8 @@ export function TodayCalendar({ onError }: TodayCalendarProps) {
     }
   };
 
+  const isSingleDay = dateRange.startDate === dateRange.endDate;
+
   if (loading && events.length === 0) {
     return (
       <div style={{ padding: '1rem', textAlign: 'center', color: '#666' }}>
@@ -111,7 +135,7 @@ export function TodayCalendar({ onError }: TodayCalendarProps) {
           {error}
         </div>
         <button
-          onClick={() => { setLoading(true); loadEventsFromDB(); syncInBackground(); }}
+          onClick={() => { setLoading(true); loadEventsFromDB(dateRange.startDate, dateRange.endDate); syncInBackground(); }}
           style={{
             marginTop: '0.5rem',
             padding: '0.25rem 0.5rem',
@@ -131,27 +155,46 @@ export function TodayCalendar({ onError }: TodayCalendarProps) {
 
   if (events.length === 0) {
     return (
-      <div style={{ padding: '1rem', textAlign: 'center', color: '#666', fontStyle: 'italic' }}>
-        No events today
+      <div>
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.5rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+          <input
+            type="date"
+            value={dateRange.startDate}
+            onChange={(e) => handleDateChange('startDate', e.target.value)}
+            style={{ flex: 1, padding: '0.25rem', border: '1px solid #ddd', borderRadius: '4px', fontSize: '0.75rem' }}
+          />
+          <input
+            type="date"
+            value={dateRange.endDate}
+            onChange={(e) => handleDateChange('endDate', e.target.value)}
+            style={{ flex: 1, padding: '0.25rem', border: '1px solid #ddd', borderRadius: '4px', fontSize: '0.75rem' }}
+          />
+        </div>
+        <div style={{ padding: '1rem', textAlign: 'center', color: '#666', fontStyle: 'italic' }}>
+          {isSingleDay ? 'No events for this day' : 'No events for selected date range'}
+        </div>
       </div>
     );
   }
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.5rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', padding: '0.5rem', backgroundColor: '#f5f5f5', borderRadius: '4px', opacity: syncing || loading ? 0.6 : 1 }}>
         <input
           type="date"
           value={dateRange.startDate}
-          onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+          onChange={(e) => handleDateChange('startDate', e.target.value)}
+          disabled={loading || syncing}
           style={{ flex: 1, padding: '0.25rem', border: '1px solid #ddd', borderRadius: '4px', fontSize: '0.75rem' }}
         />
         <input
           type="date"
           value={dateRange.endDate}
-          onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+          onChange={(e) => handleDateChange('endDate', e.target.value)}
+          disabled={loading || syncing}
           style={{ flex: 1, padding: '0.25rem', border: '1px solid #ddd', borderRadius: '4px', fontSize: '0.75rem' }}
         />
+        {syncing && <span style={{ fontSize: '0.625rem', color: '#888', alignSelf: 'center' }}>Syncing...</span>}
       </div>
       <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
       {events.map((event) => (
