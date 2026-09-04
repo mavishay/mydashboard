@@ -1,0 +1,45 @@
+{
+  "started_at": "2026-08-29T00:00:00Z",
+  "agents": {
+    "w1:p6": {
+      "worktree_path": "/Users/mavishay/Projects/Personal/dash/alpha/.worktrees/issue-28",
+      "branch": "issue-28",
+      "base_branch": "main",
+      "phase": "done",
+      "review_cycle": 2,
+      "pr_number": 48,
+      "last_action_at": "2026-08-30T10:35:00Z",
+      "consecutive_unknown": 0,
+      "consecutive_same_dialog": 0,
+      "issue": "#28",
+      "title": "Unread-only fetch + delete read after 3 days"
+    },
+    "w1:pE": {
+      "worktree_path": "/Users/mavishay/Projects/Personal/dash/alpha/.worktrees/issue-34",
+      "branch": "issue-34",
+      "base_branch": "main",
+      "phase": "fix-1",
+      "review_cycle": 1,
+      "pr_number": null,
+      "last_action_at": "2026-08-30T11:42:00Z",
+      "consecutive_unknown": 0,
+      "consecutive_same_dialog": 0,
+      "issue": "#34",
+      "title": "Email ordering and grouping options"
+    },
+    "w1:pG": {
+      "worktree_path": "/Users/mavishay/Projects/Personal/dash/alpha/.worktrees/issue-37",
+      "branch": "issue-37",
+      "base_branch": "main",
+      "phase": "fix-1",
+      "review_cycle": 1,
+      "pr_number": null,
+      "last_action_at": "2026-08-30T11:42:00Z",
+      "consecutive_unknown": 0,
+      "consecutive_same_dialog": 0,
+      "issue": "#37",
+      "title": "Email preview modal with browser link"
+    }
+  },
+  "no_action_streak": 0
+}
