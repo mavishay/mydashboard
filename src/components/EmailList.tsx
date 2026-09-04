@@ -16,6 +16,9 @@ import { SortGroupControls } from './email/SortGroupControls';
 import { EmailGroupHeader } from './email/EmailGroupHeader';
 import { EmailPreviewModal } from './EmailPreviewModal';
 import { useToast } from './Toast';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+type EmailTab = 'urgent' | 'action';
 
 type Classification = 'urgent' | 'action' | 'fyi' | 'noise' | null;
 
@@ -95,7 +98,6 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
   const [emails, setEmails] = useState<Email[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string>('');
-  const [selectedClassification, setSelectedClassification] = useState<Classification | ''>('');
   const [syncing, setSyncing] = useState(false);
   const [classifying, setClassifying] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -120,13 +122,13 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [markingIds, setMarkingIds] = useState<Set<string>>(new Set());
   const [batchProgress, setBatchProgress] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<EmailTab>('urgent');
 
   const loadEmails = useCallback(async () => {
     try {
       setError(null);
       const result = await window.electronAPI.classification.getEmails({
         accountId: selectedAccount || undefined,
-        classification: selectedClassification || undefined,
         limit: 50,
       });
       setEmails(result);
@@ -137,7 +139,7 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
     } finally {
       setLoading(false);
     }
-  }, [selectedAccount, selectedClassification, onCountChange]);
+  }, [selectedAccount, onCountChange]);
 
   const loadAccounts = useCallback(async () => {
     try {
@@ -239,9 +241,13 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [cycleSort, cycleGroup]);
 
+  const displayEmails = useMemo(() => {
+    return emails.filter(e => e.classification === activeTab);
+  }, [emails, activeTab]);
+
   const sortedEmails = useMemo(() => {
-    return sortEmails(emails, sortPrefs.option, sortPrefs.direction);
-  }, [emails, sortPrefs]);
+    return sortEmails(displayEmails, sortPrefs.option, sortPrefs.direction);
+  }, [displayEmails, sortPrefs]);
 
   const groupedEmails = useMemo(() => {
     return groupEmails(sortedEmails, groupPrefs.option, accounts);
@@ -406,7 +412,7 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
 
   const handleBatchMarkAsRead = useCallback(async () => {
     const idsToMark = new Set(selectedIds);
-    const emailsToMark = emails.filter(e => idsToMark.has(e.id));
+    const emailsToMark = displayEmails.filter(e => idsToMark.has(e.id));
     if (emailsToMark.length === 0) return;
 
     setBatchProgress(`Marking 0/${emailsToMark.length}...`);
@@ -442,7 +448,7 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
       setBatchProgress(null);
       setMarkingIds(new Set());
     }
-  }, [emails, selectedIds, onCountChange]);
+  }, [displayEmails, selectedIds, onCountChange]);
 
   return (
     <div className="flex flex-col h-full">
@@ -504,18 +510,6 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
           )}
         </div>
 
-        <select
-          value={selectedClassification}
-          onChange={(e) => setSelectedClassification(e.target.value as Classification | '')}
-          className="px-2 py-2 rounded border border-border text-sm"
-        >
-          <option value="">All Classifications</option>
-          <option value="urgent">Urgent</option>
-          <option value="action">Action</option>
-          <option value="fyi">FYI</option>
-          <option value="noise">Noise</option>
-        </select>
-
         <button
           onClick={handleSync}
           disabled={syncing || accounts.length === 0}
@@ -541,12 +535,23 @@ export function EmailList({ onCountChange }: { onCountChange?: (count: number | 
         </button>
       </div>
 
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as EmailTab)}>
+        <TabsList>
+          <TabsTrigger value="urgent">
+            Urgent ({emails.filter(e => e.classification === 'urgent').length})
+          </TabsTrigger>
+          <TabsTrigger value="action">
+            Action ({emails.filter(e => e.classification === 'action').length})
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       <SortGroupControls
         sortPrefs={sortPrefs}
         groupPrefs={groupPrefs}
         onSortChange={setSortPrefs}
         onGroupChange={setGroupPrefs}
-        emailCount={emails.length}
+        emailCount={displayEmails.length}
       />
 
       {selectedIds.size > 0 && (
