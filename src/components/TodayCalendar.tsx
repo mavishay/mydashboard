@@ -99,6 +99,21 @@ export function TodayCalendar({ onError }: TodayCalendarProps) {
     }
   };
 
+  const formatDuration = (startTime: string, endTime: string): string => {
+    try {
+      const start = new Date(startTime);
+      const end = new Date(endTime);
+      const diffInMinutes = Math.floor((end.getTime() - start.getTime()) / (1000 * 60));
+      
+      if (diffInMinutes < 60) return `${diffInMinutes}m`;
+      const hours = Math.floor(diffInMinutes / 60);
+      const minutes = diffInMinutes % 60;
+      return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    } catch {
+      return '';
+    }
+  };
+
   const formatTimeRange = (event: CalendarEvent): string => {
     if (event.allDay) {
       return 'All day';
@@ -219,6 +234,11 @@ export function TodayCalendar({ onError }: TodayCalendarProps) {
             </div>
             <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '0.25rem' }}>
               {formatTimeRange(event)}
+              {!event.allDay && (
+                <span style={{ marginLeft: '0.5rem', color: '#888' }}>
+                  ({formatDuration(event.startTime, event.endTime)})
+                </span>
+              )}
             </div>
             {event.location && (
               <div style={{ fontSize: '0.75rem', color: '#888', marginBottom: '0.25rem' }}>
