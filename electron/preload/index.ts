@@ -265,7 +265,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     fetchEmailsAll: () =>
       gatedInvoke('classification:fetchEmailsAll') as Promise<Array<{ accountId: string; fetched: number; inserted: number; skipped: number }>>,
     getEmails: (options?: { accountId?: string; classification?: string; limit?: number; offset?: number }) =>
-      gatedInvoke('classification:getEmails', options ?? {}) as Promise<Array<{ id: string; accountId: string; subject: string | null; snippet: string | null; fromAddress: string | null; receivedAt: string | null; classification: string }>>,
+      gatedInvoke('classification:getEmails', options ?? {}) as Promise<Array<{ id: string; accountId: string; externalId: string; subject: string | null; snippet: string | null; fromAddress: string | null; receivedAt: string | null; classification: string; isRead: number }>>,
   },
   aiConsent: {
     getSettings: () =>
