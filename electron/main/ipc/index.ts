@@ -27,7 +27,7 @@ export function registerIpcHandlers(
   getWindow: () => BrowserWindow | null = () => null,
   quit: () => void = () => {},
   lanServer?: LanServerInstance
-): { notificationService?: import('../services/notification-service').NotificationService; cronScheduler: CronScheduler } {
+): { notificationService?: import('../services/notification-service').NotificationService; scheduledNotificationService?: import('../services/scheduled-notification-service').ScheduledNotificationService; cronScheduler: CronScheduler } {
   registerWindowHandlers(ipcMain, getWindow, quit);
   registerGmailHandlers(ipcMain, db, getWindow);
   registerApiKeyHandlers(ipcMain, db);
@@ -38,7 +38,7 @@ export function registerIpcHandlers(
   registerTickTickHandlers(ipcMain, db);
   registerTasksHandlers(ipcMain, db);
   registerTelemetryHandlers(ipcMain, db);
-  const { notificationService } = registerNotificationHandlers(ipcMain, db, getWindow);
+  const { notificationService, scheduledNotificationService } = registerNotificationHandlers(ipcMain, db, getWindow);
   registerClassificationHandlers(ipcMain, db, notificationService);
   registerAiConsentHandlers(ipcMain, db);
   registerSetupHandlers(ipcMain, db);
@@ -59,5 +59,5 @@ export function registerIpcHandlers(
   const cronScheduler = new CronScheduler(db, getWindow);
   registerCronHandlers(ipcMain, db, cronScheduler);
 
-  return { notificationService, cronScheduler };
+  return { notificationService, scheduledNotificationService, cronScheduler };
 }

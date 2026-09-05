@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { QuietHoursService } from '../services/quiet-hours-service';
 import { FeedbackService } from '../services/feedback-service';
 import { NotificationService } from '../services/notification-service';
+import { ScheduledNotificationService } from '../services/scheduled-notification-service';
 
 const SetQuietHoursSchema = z.object({
   enabled: z.boolean(),
@@ -27,14 +28,24 @@ const FeedbackSchema = z.object({
   feedback: z.enum(['thumbs_up', 'thumbs_down']),
 });
 
+const ScheduledSettingsSchema = z.object({
+  enabled: z.boolean(),
+  slots: z.array(z.object({
+    enabled: z.boolean(),
+    hour: z.number().int().min(0).max(23),
+    minute: z.number().int().min(0).max(59),
+  })).length(3),
+});
+
 export function registerNotificationHandlers(
   ipcMain: IpcMain,
   db: Database.Database,
   getWindow: () => BrowserWindow | null = () => null,
-): { notificationService: NotificationService } {
+): { notificationService: NotificationService; scheduledNotificationService: ScheduledNotificationService } {
   const quietHoursService = new QuietHoursService(db);
   const feedbackService = new FeedbackService(db);
   const notificationService = new NotificationService(db, quietHoursService, getWindow);
+  const scheduledNotificationService = new ScheduledNotificationService(db, quietHoursService, notificationService, getWindow);
 
   ipcMain.handle('notification:get-quiet-hours', async () => {
     return quietHoursService.getSettings();
@@ -72,5 +83,21 @@ export function registerNotificationHandlers(
     return feedbackService.record(parsed.data);
   });
 
-  return { notificationService };
+  ipcMain.handle('notification:get-scheduled-settings', async () => {
+    return scheduledNotificationService.getSettings();
+  });
+
+  ipcMain.handle('notification:set-scheduled-settings', async (_, payload) => {
+    const parsed = ScheduledSettingsSchema.safeParse(payload);
+    if (!parsed.success) {
+      throw new Error(`Invalid payload: ${parsed.error.message}`);
+    }
+    return scheduledNotificationService.updateSettings(parsed.data);
+  });
+
+  ipcMain.handle('notification:send-test-notification', async () => {
+    return scheduledNotificationService.sendTestNotification();
+  });
+
+  return { notificationService, scheduledNotificationService };
 }
