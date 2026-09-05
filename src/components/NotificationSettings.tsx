@@ -99,7 +99,7 @@ export function NotificationSettings() {
                 min="0"
                 max="23"
                 value={slot.hour}
-                onChange={(e) => updateSlot(index, 'hour', parseInt(e.target.value))}
+                onChange={(e) => updateSlot(index, 'hour', parseInt(e.target.value) || 0)}
                 className="w-16 border rounded px-2 py-1"
               />
               <span>:</span>
@@ -108,7 +108,7 @@ export function NotificationSettings() {
                 min="0"
                 max="59"
                 value={slot.minute}
-                onChange={(e) => updateSlot(index, 'minute', parseInt(e.target.value))}
+                onChange={(e) => updateSlot(index, 'minute', parseInt(e.target.value) || 0)}
                 className="w-16 border rounded px-2 py-1"
               />
             </div>

@@ -268,7 +268,9 @@ export class ScheduledNotificationService implements ManagedService {
     );
 
     this.stop();
-    this.start();
+    this.start().catch((err) => {
+      console.error('Failed to restart scheduled notifications after settings update:', err);
+    });
 
     return { success: true };
   }
