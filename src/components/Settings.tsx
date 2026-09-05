@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { NotificationPreferences } from "./notifications/NotificationPreferences";
+import { NotificationSettings } from "./NotificationSettings";
 import { ClassificationRules } from "./ClassificationRules";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Button } from "./ui/button";
@@ -970,6 +971,9 @@ export function Settings() {
         )}
         <div className="mt-8">
           <NotificationPreferences />
+        </div>
+        <div className="mt-8">
+          <NotificationSettings />
         </div>
       </section>
 
