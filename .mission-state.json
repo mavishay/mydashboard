@@ -1,0 +1,94 @@
+{
+  "feature": "system-notifications-3x-day",
+  "brief": {
+    "goal": "Implement scheduled system notifications that fire 3 times daily (9:00, 12:00, 17:00) showing unread email count with urgent highlights, today's calendar events, and incomplete tasks due today.",
+    "constraints": "Electron app with native Notification API (REQ-010). SQLite for notification_settings persistence. Depends on existing NotificationService, QuietHoursService, CronScheduler. Must use real data from DB: emails table (classification), calendar_events table, google_tasks/ticktick_tasks tables. Notification delivery within 10 seconds from classification (NFR). Must respect quiet hours and do-not-disturb modes (REQ-013).",
+    "non_goals": "Per-email urgent notification system (covered by issue #5). Email classification AI logic (covered by issue #15). Calendar data fetching (covered by issue #17). Task CRUD operations (covered by issue #31).",
+    "success_criteria": [
+      "Notifications fire at 9:00, 12:00, 17:00 with configurable per-slot enable/disable",
+      "Notification body shows unread email count with urgent highlights, today's remaining calendar events, and incomplete tasks due today",
+      "Click notification brings app to focus",
+      "Quiet hours suppress all scheduled notifications",
+      "Each time slot can be individually enabled/disabled in Settings",
+      "Test notification button works in Settings"
+    ]
+  },
+  "route": "spec",
+  "optional_phases": {
+    "brainstorm": false,
+    "clarify": false,
+    "analyze": true,
+    "trace": false
+  },
+  "discovered": {
+    "skills_dirs": [],
+    "commands_dirs": [],
+    "local_skills": []
+  },
+  "steps": [
+    {
+      "id": "specify",
+      "phase": "specify",
+      "tier": "strong",
+      "prompt": "Write a feature specification for the goal below. Include requirements, constraints, and measurable success criteria.",
+      "status": "completed"
+    },
+    {
+      "id": "plan",
+      "phase": "plan",
+      "tier": "strong",
+      "prompt": "Break down the specification into an implementation plan with ordered, verifiable tasks.",
+      "status": "completed"
+    },
+    {
+      "id": "tasks",
+      "phase": "tasks",
+      "tier": "fast",
+      "prompt": "Generate the detailed task list from the plan — each task must have exact file paths and verification steps.",
+      "status": "completed"
+    },
+    {
+      "id": "analyze",
+      "phase": "analyze",
+      "tier": "fast",
+      "prompt": "Adversarially review the plan before implementation. Challenge every non-trivial decision.",
+      "status": "completed"
+    },
+    {
+      "id": "implement",
+      "phase": "implement",
+      "tier": "strong",
+      "prompt": "Implement the next pending task from the plan. Follow test-driven practices.",
+      "status": "pending"
+    },
+    {
+      "id": "converge",
+      "phase": "converge",
+      "tier": "fast",
+      "prompt": "Review the implementation against the specification and success criteria. Verify independently — you are the checker, not the maker.",
+      "status": "pending"
+    }
+  ],
+  "completed_steps": ["specify", "plan", "tasks", "analyze"],
+  "step_results": {
+    "specify": {
+      "output": "Spec written to docs/superpowers/specs/2026-09-05-scheduled-notifications-design.md. Covers database migration 023, ScheduledNotificationService with timer-based scheduling, IPC handlers, Settings UI, and test plan. Uses real data from emails/calendar_events/google_tasks/ticktick_tasks tables.",
+      "confidence": "HIGH"
+    },
+    "plan": {
+      "output": "Implementation plan created at docs/superpowers/plans/2026-09-05-scheduled-notifications.md with 11 tasks: DB migration, service skeleton, scheduling logic, notification sending, settings update, IPC handlers, preload API, Settings UI, Settings integration, service registration, and final verification. Estimated ~9 hours total.",
+      "confidence": "HIGH"
+    },
+    "tasks": {
+      "output": "Task list formalized from plan — 11 tasks with exact file paths, code snippets, and verification steps. Plan already serves as the detailed task list.",
+      "confidence": "HIGH"
+    },
+    "analyze": {
+      "output": "Adversarial review found 3 critical bugs (read→is_read, start() recursion, notification_log schema), 4 high-severity issues (missing is_deleted filter, no try/catch, namespace mismatch, UI inline styles). All fixed in spec and plan.",
+      "confidence": "HIGH"
+    }
+  },
+  "consecutive_tasks_appended": 0,
+  "consecutive_score_regressions": 0,
+  "spec_corrections": 0
+}

@@ -46,7 +46,7 @@ Implement scheduled system notifications that fire 3 times daily (9:00, 12:00, 1
 
 | ID | Requirement | Priority | Acceptance Criteria |
 |----|-------------|----------|---------------------|
-| DB-001 | `notification_settings` table stores scheduled notification config | Must | Table created with migration 023 |
+| DB-001 | `notification_preferences` table extended with scheduled notification columns | Must | Columns added via migration 023 ALTER TABLE |
 | DB-002 | Per-slot enable/disable persisted in DB | Must | Settings survive app restart |
 | DB-003 | Slot times configurable and persisted | Must | Custom times saved and respected |
 | DB-004 | `notification_log` extended for scheduled notifications | Must | Log entries distinguish scheduled vs urgent notifications |
@@ -85,26 +85,25 @@ Implement scheduled system notifications that fire 3 times daily (9:00, 12:00, 1
 
 ### 4.1 Database Schema (Migration 023)
 
+Extends the existing `notification_preferences` table (migration 012) with scheduled notification columns:
+
 ```sql
 -- electron/main/db/migrations/023-scheduled-notifications.sql
-CREATE TABLE IF NOT EXISTS notification_settings (
-  id INTEGER PRIMARY KEY DEFAULT 1,
-  scheduled_notifications_enabled INTEGER NOT NULL DEFAULT 1,
-  slot_1_enabled INTEGER NOT NULL DEFAULT 1,
-  slot_1_hour INTEGER NOT NULL DEFAULT 9,
-  slot_1_minute INTEGER NOT NULL DEFAULT 0,
-  slot_2_enabled INTEGER NOT NULL DEFAULT 1,
-  slot_2_hour INTEGER NOT NULL DEFAULT 12,
-  slot_2_minute INTEGER NOT NULL DEFAULT 0,
-  slot_3_enabled INTEGER NOT NULL DEFAULT 1,
-  slot_3_hour INTEGER NOT NULL DEFAULT 17,
-  slot_3_minute INTEGER NOT NULL DEFAULT 0,
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  CONSTRAINT single_row CHECK (id = 1)
-);
+ALTER TABLE notification_preferences ADD COLUMN scheduled_notifications_enabled INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE notification_preferences ADD COLUMN slot_1_enabled INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE notification_preferences ADD COLUMN slot_1_hour INTEGER NOT NULL DEFAULT 9;
+ALTER TABLE notification_preferences ADD COLUMN slot_1_minute INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE notification_preferences ADD COLUMN slot_2_enabled INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE notification_preferences ADD COLUMN slot_2_hour INTEGER NOT NULL DEFAULT 12;
+ALTER TABLE notification_preferences ADD COLUMN slot_2_minute INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE notification_preferences ADD COLUMN slot_3_enabled INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE notification_preferences ADD COLUMN slot_3_hour INTEGER NOT NULL DEFAULT 17;
+ALTER TABLE notification_preferences ADD COLUMN slot_3_minute INTEGER NOT NULL DEFAULT 0;
 ```
 
 **Schema version bump:** `CURRENT_SCHEMA_VERSION` from 22 → 23 in `electron/main/db/index.ts`.
+
+This reuses the existing `notification_preferences` table (single-row constraint, quiet hours, DND) rather than creating a separate table.
 
 ### 4.2 Scheduled Notification Service
 
@@ -211,8 +210,8 @@ export class ScheduledNotificationService {
     
     // Log to notification_log
     this.db.prepare(
-      `INSERT INTO notification_log (id, email_id, subject, sender, classification, status)
-       VALUES (?, 'scheduled', ?, '', 'scheduled', 'sent')`
+      `INSERT INTO notification_log (id, email_id, subject, sender, classification, status, quiet_hours_suppressed, dnd_suppressed)
+       VALUES (?, 'scheduled', ?, '', 'scheduled', 'sent', 0, 0)`
     ).run(crypto.randomUUID(), `Summary: ${data.unreadCount} unread, ${data.todayEvents.length} events, ${data.todayTasks.length} tasks`);
   }
 
@@ -222,13 +221,13 @@ export class ScheduledNotificationService {
       SELECT 
         COUNT(*) as total,
         SUM(CASE WHEN classification = 'urgent' THEN 1 ELSE 0 END) as urgent
-      FROM emails WHERE read = 0
+      FROM emails WHERE is_read = 0
     `).get() as { total: number; urgent: number };
     
     const urgentEmails = this.db.prepare(`
       SELECT subject, from_address as sender 
       FROM emails 
-      WHERE classification = 'urgent' AND read = 0
+      WHERE classification = 'urgent' AND is_read = 0
       LIMIT 3
     `).all() as Array<{ subject: string; sender: string }>;
     
@@ -250,10 +249,10 @@ export class ScheduledNotificationService {
     const todayStr = now.toISOString().split('T')[0];
     const todayTasks = this.db.prepare(`
       SELECT title, 'Google Tasks' as source FROM google_tasks 
-      WHERE due LIKE ? AND status = 'needsAction'
+      WHERE due LIKE ? AND status = 'needsAction' AND is_deleted = 0
       UNION ALL
       SELECT title, 'TickTick' as source FROM ticktick_tasks
-      WHERE due_date LIKE ? AND status = 0
+      WHERE due_date LIKE ? AND status = 0 AND is_deleted = 0
       LIMIT 5
     `).all(`${todayStr}%`, `${todayStr}%`) as Array<{ title: string; source: string }>;
     
@@ -286,7 +285,7 @@ export class ScheduledNotificationService {
 
   getSettings(): NotificationSettings {
     const row = this.db.prepare(
-      'SELECT * FROM notification_settings WHERE id = 1'
+      'SELECT * FROM notification_preferences WHERE id = 1'
     ).get() as {
       scheduled_notifications_enabled: number;
       slot_1_enabled: number;
@@ -323,7 +322,7 @@ export class ScheduledNotificationService {
 
   updateSettings(settings: NotificationSettings): { success: boolean } {
     this.db.prepare(
-      `INSERT INTO notification_settings (id, scheduled_notifications_enabled, 
+      `INSERT INTO notification_preferences (id, scheduled_notifications_enabled, 
         slot_1_enabled, slot_1_hour, slot_1_minute,
         slot_2_enabled, slot_2_hour, slot_2_minute,
         slot_3_enabled, slot_3_hour, slot_3_minute, updated_at)
@@ -498,7 +497,7 @@ The `ScheduledNotificationService` leverages existing infrastructure:
 
 | File | Purpose |
 |------|---------|
-| `electron/main/db/migrations/023-scheduled-notifications.sql` | Database migration for notification_settings table |
+| `electron/main/db/migrations/023-scheduled-notifications.sql` | ALTER TABLE notification_preferences adding scheduled notification columns |
 | `electron/main/services/scheduled-notification-service.ts` | Service for scheduling and sending summary notifications |
 | `src/components/NotificationSettings.tsx` | Settings UI for scheduled notification configuration |
 
@@ -623,7 +622,7 @@ vi.mock('electron', () => ({
 
 ## 11. Definition of Done
 
-- [ ] `notification_settings` table created via migration 023
+- [ ] `notification_preferences` table extended via migration 023 (ALTER TABLE)
 - [ ] `CURRENT_SCHEMA_VERSION` bumped from 22 to 23
 - [ ] `scheduled-notification-service.ts` implements scheduling and notification logic
 - [ ] Service queries `emails`, `calendar_events`, `google_tasks`, `ticktick_tasks` tables

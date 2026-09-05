@@ -83,7 +83,7 @@ app.whenReady().then(async () => {
     app.getPath('userData')
   );
 
-  const { notificationService, scheduledNotificationService, cronScheduler } = registerIpcHandlers(db, () => mainWindow, () => app.quit(), lanServer);
+  const { scheduledNotificationService, cronScheduler } = registerIpcHandlers(db, () => mainWindow, () => app.quit(), lanServer);
 
   const cronService = new CronService(cronScheduler);
   serviceRegistry.register(cronService);
