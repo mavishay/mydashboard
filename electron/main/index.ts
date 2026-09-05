@@ -83,7 +83,7 @@ app.whenReady().then(async () => {
     app.getPath('userData')
   );
 
-  const { cronScheduler } = registerIpcHandlers(db, () => mainWindow, () => app.quit(), lanServer);
+  const { notificationService, scheduledNotificationService, cronScheduler } = registerIpcHandlers(db, () => mainWindow, () => app.quit(), lanServer);
 
   const cronService = new CronService(cronScheduler);
   serviceRegistry.register(cronService);
@@ -93,6 +93,10 @@ app.whenReady().then(async () => {
 
   const ticktickService = new TickTickSyncService(db);
   serviceRegistry.register(ticktickService);
+
+  if (scheduledNotificationService) {
+    serviceRegistry.register(scheduledNotificationService);
+  }
 
   await serviceRegistry.startAll();
   registerServiceHandlers(ipcMain, serviceRegistry);
