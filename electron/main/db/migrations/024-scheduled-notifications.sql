@@ -1,0 +1,10 @@
+ALTER TABLE notification_preferences ADD COLUMN scheduled_notifications_enabled INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE notification_preferences ADD COLUMN slot_1_enabled INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE notification_preferences ADD COLUMN slot_1_hour INTEGER NOT NULL DEFAULT 9;
+ALTER TABLE notification_preferences ADD COLUMN slot_1_minute INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE notification_preferences ADD COLUMN slot_2_enabled INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE notification_preferences ADD COLUMN slot_2_hour INTEGER NOT NULL DEFAULT 12;
+ALTER TABLE notification_preferences ADD COLUMN slot_2_minute INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE notification_preferences ADD COLUMN slot_3_enabled INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE notification_preferences ADD COLUMN slot_3_hour INTEGER NOT NULL DEFAULT 17;
+ALTER TABLE notification_preferences ADD COLUMN slot_3_minute INTEGER NOT NULL DEFAULT 0;

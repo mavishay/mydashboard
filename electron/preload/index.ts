@@ -94,6 +94,9 @@ const ALLOWED_INVOKE = new Set([
   'services:status',
   'services:start',
   'services:stop',
+  'notification:get-scheduled-settings',
+  'notification:set-scheduled-settings',
+  'notification:send-test-notification',
 ] as const);
 
 const ALLOWED_ON = new Set([
@@ -299,6 +302,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     feedback: (data: { notificationId: string; emailId: string; classification: 'urgent'; feedback: 'thumbs_up' | 'thumbs_down' }) =>
       gatedInvoke('notification:feedback', data) as Promise<{ success: boolean }>,
     onFocusEmail: (callback: (data: { emailId: string }) => void) => gatedOn('notification:focus-email', callback),
+    getScheduledSettings: () =>
+      gatedInvoke('notification:get-scheduled-settings') as Promise<{ enabled: boolean; slots: Array<{ enabled: boolean; hour: number; minute: number }> }>,
+    setScheduledSettings: (settings: { enabled: boolean; slots: Array<{ enabled: boolean; hour: number; minute: number }> }) =>
+      gatedInvoke('notification:set-scheduled-settings', settings) as Promise<{ success: boolean }>,
+    sendTestNotification: () =>
+      gatedInvoke('notification:send-test-notification') as Promise<{ success: boolean }>,
   },
   rules: {
     getAll: () =>
