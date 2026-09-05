@@ -1,6 +1,7 @@
 import { TaskList } from "./TaskList";
 import { EmailList } from "./EmailList";
 import { TodayCalendar } from "./TodayCalendar";
+import { WorkloadTrafficLight } from './WorkloadTrafficLight';
 import Footer from "./Footer";
 
 interface ServiceInfo {
@@ -22,6 +23,7 @@ export function Dashboard() {
           <EmailList />
         </div>
         <div className="space-y-4">
+          <WorkloadTrafficLight />
           <TodayCalendar />
           <TaskList />
         </div>
