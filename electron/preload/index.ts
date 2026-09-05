@@ -83,6 +83,8 @@ const ALLOWED_INVOKE = new Set([
   'gmail:getEmailDetail',
   'gmail:markAsRead',
   'gmail:markAsReadBatch',
+  'workload:calculate',
+  'workload:getLatest',
   'shell:openExternal',
   'calendar:sync',
   'calendar:syncAll',
@@ -337,6 +339,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   shell: {
     openExternal: (url: string) =>
       gatedInvoke('shell:openExternal', { url }) as Promise<void>,
+  },
+  workload: {
+    calculate: () =>
+      gatedInvoke('workload:calculate') as Promise<WorkloadSnapshot>,
+    getLatest: () =>
+      gatedInvoke('workload:getLatest') as Promise<WorkloadSnapshot | null>,
   },
   calendar: {
     sync: (accountId: string) =>

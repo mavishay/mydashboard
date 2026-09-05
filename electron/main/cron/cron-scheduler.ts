@@ -4,6 +4,7 @@ import { fetchEmailsForAllAccounts } from '../gmail/fetcher';
 import { classifyUnclassifiedEmails } from '../ai/classifier';
 import { cleanupStaleReadEmails } from './cleanup';
 import { CalendarSync } from '../calendar/calendar-sync';
+import { WorkloadService } from '../services/workload-service';
 
 export interface CronStatus {
   enabled: boolean;
@@ -45,6 +46,7 @@ export class CronScheduler {
   private running = false;
   private nextRunAt = 0;
   private calendarSync: CalendarSync;
+  private workloadService: WorkloadService;
 
   constructor(
     db: Database.Database,
@@ -53,6 +55,7 @@ export class CronScheduler {
     this.db = db;
     this.getWindow = getWindow;
     this.calendarSync = new CalendarSync(db);
+    this.workloadService = new WorkloadService(db);
   }
 
   start(): void {
@@ -174,6 +177,12 @@ export class CronScheduler {
         await this.calendarSync.syncAll();
       } catch (err) {
         console.error('[CronScheduler] Calendar sync failed:', err);
+      }
+
+      try {
+        this.workloadService.calculate();
+      } catch (err) {
+        console.error('[CronScheduler] Workload calculation failed:', err);
       }
 
       this.db

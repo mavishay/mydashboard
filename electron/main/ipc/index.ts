@@ -20,6 +20,7 @@ import { CronScheduler } from '../cron/cron-scheduler';
 import { registerAccountColorHandlers } from './account-color-handlers';
 import { registerEmailCleanupHandlers } from './email-cleanup-handlers';
 import { registerCalendarHandlers } from './calendar-handlers';
+import { registerWorkloadHandlers } from './workload-handlers';
 
 export function registerIpcHandlers(
   db: Database.Database,
@@ -45,6 +46,7 @@ export function registerIpcHandlers(
   registerAccountColorHandlers(ipcMain, db);
   registerEmailCleanupHandlers(ipcMain, db);
   registerCalendarHandlers(ipcMain, db);
+  registerWorkloadHandlers(ipcMain, db);
 
   ipcMain.handle('shell:openExternal', async (_event, payload: { url: string }) => {
     const url = new URL(payload.url);

@@ -127,6 +127,17 @@ declare global {
     accountColor: string | null;
   }
 
+  interface WorkloadSnapshot {
+    score: number;
+    color: 'green' | 'yellow' | 'red';
+    urgentEmails: number;
+    actionEmails: number;
+    overdueTasks: number;
+    todayTasks: number;
+    todayEvents: number;
+    calculatedAt: string;
+  }
+
   interface ElectronAPI {
     window: {
       minimize: () => Promise<void>;
@@ -257,6 +268,10 @@ declare global {
     };
     shell: {
       openExternal: (url: string) => Promise<void>;
+    };
+    workload: {
+      calculate: () => Promise<WorkloadSnapshot>;
+      getLatest: () => Promise<WorkloadSnapshot | null>;
     };
     calendar: {
       sync: (accountId: string) => Promise<{ accountId: string; status: string; lastSyncAt: string | null; error?: string; fetched: number }>;
